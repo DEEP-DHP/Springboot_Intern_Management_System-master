@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import com.rh4.models.ProjectDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -38,6 +39,8 @@ import com.rh4.services.*;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Path;
+
+import javax.swing.*;
 
 @Controller
 @RequestMapping("/bisag/admin")
@@ -75,11 +78,15 @@ public class AdminController {
     private GuideService guideService;
     @Autowired
     private DataExportService dataExportService;
+    @Autowired
+    private ThesisService thesisService;
 
     @Value("${app.storage.base-dir}")
     private String baseDir;
 
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private GroupEntity groupEntity;
 
     public static String encodePassword(String rawPassword) {
         return passwordEncoder.encode(rawPassword);
@@ -1056,7 +1063,7 @@ public class AdminController {
     @PostMapping("/intern_application/approved_intern/ans")
     public String approvedInterns(@RequestParam String message, @RequestParam long id,
                                   @RequestParam String finalStatus) {
-        System.out.println("iddd" + id + finalStatus);
+        System.out.println("id" + id + finalStatus);
         // Long ID = Long.parseLong(id);
         Optional<InternApplication> intern = internService.getInternApplication(id);
         intern.get().setFinalStatus(finalStatus);
@@ -1456,7 +1463,7 @@ public class AdminController {
     }
 
     @GetMapping("/admin_weekly_report_details/{groupId}/{weekNo}")
-    public ModelAndView chanegWeeklyReportSubmission(@PathVariable("groupId") String groupId, @PathVariable("weekNo") int weekNo, Model model) {
+    public ModelAndView changeWeeklyReportSubmission(@PathVariable("groupId") String groupId, @PathVariable("weekNo") int weekNo, Model model) {
         ModelAndView mv = new ModelAndView("/admin/admin_weekly_report_details");
         model = countNotifications(model);
         Admin admin = getSignedInAdmin();
@@ -1566,12 +1573,17 @@ public class AdminController {
         List<Branch> branch = fieldService.getBranches();
         List<Domain> domain = fieldService.getDomains();
         List<Guide> guide = guideService.getGuide();
+        List<Degree> degree = fieldService.getDegrees();
+        List<GroupEntity> groupEntities = groupService.getGroups();
+//        List<ProjectDefinition> projectDefinitions = groupService.getGroups();
         // List<Cancelled> cancelled = cancelledService.getCancelledIntern();
         model = countNotifications(model);
         mv.addObject("colleges", college);
         mv.addObject("branches", branch);
         mv.addObject("domains", domain);
         mv.addObject("guides", guide);
+        mv.addObject("degrees", degree);
+//        mv.addObject("groups", groupEntities);
         mv.addObject("admin", adminName(session));
         // mv.addObject("cancelled",cancelled);
         return mv;
@@ -1583,6 +1595,7 @@ public class AdminController {
         Branch branch;
         Optional<Guide> guide;
         Domain domain;
+        Degree degree;
         if (reportFilter.getBranch().equals("All")) {
             reportFilter.setBranch(null);
         } else {
@@ -1607,6 +1620,12 @@ public class AdminController {
             domain = fieldService.getDomainByName(reportFilter.getDomain());
         }
 
+        if (reportFilter.getDegree().equals("All")) {
+            reportFilter.setDegree(null);
+        } else {
+            degree = fieldService.findByDegreeName(reportFilter.getDegree());
+        }
+
         List<Intern> filteredInterns = internService.getFilteredInterns(reportFilter.getCollege(),
                 reportFilter.getBranch(), guide, reportFilter.getDomain(), reportFilter.getCancelled(),
                 reportFilter.getStartDate(), reportFilter.getEndDate(), reportFilter.getCancelled());
@@ -1628,4 +1647,57 @@ public class AdminController {
         adminService.changePassword(admin, newPassword);
         return "redirect:/logout";
     }
+
+    //-------------------------- View all thesis records-----------------------------------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------------------------------------------------------
+//    @GetMapping("/thesis")
+//    public String viewThesisList(Model model) {
+//        List<Thesis> thesisList = thesisService.getAllTheses();
+//        model.addAttribute("theses", thesisList);
+//        return "thesis_list";
+//    }
+
+    public AdminController(ThesisService thesisService) {
+        this.thesisService = thesisService;
+    }
+
+    // Show form to add a new thesis
+    @GetMapping("thesis/new")
+    public String showThesisForm(Model model) {
+        model.addAttribute("thesis", new Thesis());
+        return "admin/thesis_form"; // This refers to templates/admin/thesis_form.html
+    }
+
+    // Handle adding/updating a thesis record
+    @PostMapping("thesis/save")
+    public String saveThesis(@ModelAttribute("thesis") Thesis thesis) {
+        thesisService.saveThesis(thesis);
+        return "redirect:/bisag/admin/thesis";  // Redirect to thesis listing
+    }
+
+    // Show all thesis
+    @GetMapping("thesis")
+    public ModelAndView thesisList(Model model) {
+        ModelAndView mv = new ModelAndView("admin/thesis_list");
+        List<Thesis> thesisList = thesisService.getAllTheses();
+        model = countNotifications(model);
+        mv.addObject("thesis", thesisList);
+        mv.addObject("admin", adminName(session));
+        return mv;  // This refers to templates/admin/thesis_list.html
+    }
+
+    // Show form to edit an existing thesis
+//    @GetMapping("/thesis/edit/{id}")
+//    public String editThesis(@PathVariable Long id, Model model) {
+//        Thesis thesis = thesisService.getThesisById(id);
+//        model.addAttribute("thesis", thesis);
+//        return "thesis-form";
+//    }
+
+    // Delete a thesis record
+//    @GetMapping("/thesis/delete/{id}")
+//    public String deleteThesis(@PathVariable Long id) {
+//        thesisService.deleteThesis(id);
+//        return "redirect:/admin/thesis";
+//    }
 }
