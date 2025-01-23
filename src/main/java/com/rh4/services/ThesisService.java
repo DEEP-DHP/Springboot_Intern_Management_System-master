@@ -21,8 +21,8 @@ public class ThesisService {
         thesisRepo.save(thesis);
     }
 
-    public Optional<Thesis> getThesisById(long id) {
-        return thesisRepo.findById((long) id);
+    public Optional<Thesis> getThesisById(Long id) {
+        return thesisRepo.findById(id);
     }
 
     public Thesis updateThesis(Thesis thesis) {
