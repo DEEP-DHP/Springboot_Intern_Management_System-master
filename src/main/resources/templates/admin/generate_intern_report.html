@@ -83,7 +83,46 @@
 										th:value="${branch.name}"></option>
 								</select>
 							</div>
-							
+							<div class="form-group col-md-4">
+								<label for="degree" class="form-label">Select
+									Degree:</label> <select class="form-select" id="degree" name="degree" required>
+								<option value="All" selected>All</option>
+								<option th:each="degree : ${degrees}" th:text="${degree.name}"
+										th:value="${degree.name}"></option>
+							</select>
+							</div>
+							<div class="form-group col-md-4">
+								<label for="intern" class="form-label">Select
+									Intern:</label> <select class="form-select" id="intern" name="intern" required>
+								<option value="All" selected>All</option>
+								<option th:each="intern : ${intern}" th:text="${intern.id}"
+										th:value="${intern.id}"></option>
+							</select>
+							</div>
+							<div class="form-group col-md-4">
+								<label for="degree" class="form-label">Select
+									Semester:</label> <select class="form-select" id="semester" name="semester" required>
+								<option value="All" selected>All</option>
+								<option th:each="semester : ${semesters}" th:text="${semester.name}"
+										th:value="${semester.name}"></option>
+							</select>
+							</div>
+							<div class="form-group col-md-4">
+								<label for="degree" class="form-label">Select
+									Percentage:</label> <select class="form-select" id="aggregate_percentage" name="aggregate_percentage" required>
+								<option value="All" selected>All</option>
+								<option th:each="aggregate_percentage : ${aggregate_percentage}" th:text="${aggregate_percentage.name}"
+										th:value="${aggregate_percentage.name}"></option>
+							</select>
+							</div>
+							<div class="form-group col-md-4">
+								<label for="degree" class="form-label">Select
+									Project Definition:</label> <select class="form-select" id="project_definition_name" name="project_definition_name" required>
+								<option value="All" selected>All</option>
+								<option th:each="project_definition_name : ${project_definition_name}" th:text="${project_definition_name.name}"
+										th:value="${project_definition_name.name}"></option>
+							</select>
+							</div>
 						</div>
 
 						<div class="form-group row border py-4 shadow mt-4 mx-1">
