@@ -1672,20 +1672,28 @@ public class AdminController {
     @PostMapping("thesis/save")
     public String saveThesis(@ModelAttribute("thesis") Thesis thesis) {
         thesisService.saveThesis(thesis);
-        return "redirect:/bisag/admin/thesis";  // Redirect to thesis listing
+        return "redirect:/bisag/admin/thesis_list";  // Redirect to thesis listing
     }
 
-    // Show all thesis
-    @GetMapping("thesis")
-    public ModelAndView thesisList(Model model) {
-        ModelAndView mv = new ModelAndView("admin/thesis_list");
+    // Show all thesis--------------------
+    @GetMapping("/thesis_list")
+    public String getThesisList(Model model) {
         List<Thesis> thesisList = thesisService.getAllTheses();
-        model = countNotifications(model);
-        mv.addObject("thesis", thesisList);
-        mv.addObject("admin", adminName(session));
-        return mv;  // This refers to templates/admin/thesis_list.html
+        model.addAttribute("thesisList", thesisList);
+        return "admin/thesis_list";
     }
 
+    //Show thesis ID wise-------------------
+    @GetMapping("/thesis_list_detail/{id}")
+    public String getThesisDetails(@PathVariable("id") String id, Model model) {
+        Optional<Thesis> thesis = thesisService.getThesisById(Long.parseLong(id));
+        if (thesis.isPresent()) {
+            model.addAttribute("thesis", thesis);
+            return "admin/thesis_list_detail";  // Matches HTML filename
+        } else {
+            return "error/404";  // A fallback error page
+        }
+    }
     // Show form to edit an existing thesis
 //    @GetMapping("/thesis/edit/{id}")
 //    public String editThesis(@PathVariable Long id, Model model) {
