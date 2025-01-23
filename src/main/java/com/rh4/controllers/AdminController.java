@@ -1151,11 +1151,13 @@ public class AdminController {
         List<Branch> branches = fieldService.getBranches();
         List<Domain> domains = fieldService.getDomains();
         List<Degree> degrees = fieldService.getDegrees();
+//        List<Intern> intern = internService.getInternBy();
         model = countNotifications(model);
         mv.addObject("colleges", colleges);
         mv.addObject("branches", branches);
         mv.addObject("domains", domains);
         mv.addObject("degrees", degrees);
+//        mv.addObject("interns", intern);
         mv.addObject("admin", adminName(session));
         mv.setViewName("admin/add_fields");
         return mv;
