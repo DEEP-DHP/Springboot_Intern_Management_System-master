@@ -17,8 +17,8 @@ public class Thesis {
     @Column(name = "title")
     private String title;
 
-    @Column(name = "intern_name")
-    private String intern_name;
+    @Column(name = "internname")
+    private String internname;  // Ensure database column matches case-sensitive name
 
     @Column(name = "contactNo")
     private String contactNo;
@@ -32,9 +32,6 @@ public class Thesis {
     @Column(name = "type")
     private String type;
 
-//    @Column(name = "")
-//    private String project;
-
     @CreationTimestamp
     @Column(name = "issueDate")
     private Date issueDate;
@@ -42,11 +39,14 @@ public class Thesis {
     @Column(name = "returnDate")
     private Date returnDate;
 
-    public Thesis() { super();}
-    public Thesis(long id, String title, String intern_name, String contactNo, String department, String purpose, String type, Date issueDate, Date returnDate) {
+    // Default constructor
+    public Thesis() {}
+
+    // Parameterized constructor
+    public Thesis(long id, String title, String internname, String contactNo, String department, String purpose, String type, Date issueDate, Date returnDate) {
         this.id = id;
         this.title = title;
-        this.intern_name = intern_name;
+        this.internname = internname;
         this.contactNo = contactNo;
         this.department = department;
         this.purpose = purpose;
@@ -55,6 +55,7 @@ public class Thesis {
         this.returnDate = returnDate;
     }
 
+    // Getters and Setters
     public long getId() {
         return id;
     }
@@ -71,12 +72,12 @@ public class Thesis {
         this.title = title;
     }
 
-    public String getintern_name() {
-        return intern_name;
+    public String getInternname() {
+        return internname;
     }
 
-    public void setintern_name(String intern_name) {
-        this.intern_name = intern_name;
+    public void setInternname(String internname) {
+        this.internname = internname;
     }
 
     public String getContactNo() {
