@@ -130,15 +130,19 @@
               </thead>
               <tbody>
               <tr th:each="thesis : ${thesisList}">
-                <td><a th:href="@{'/bisag/admin/thesis/' + ${thesis.id}}"><span th:text="${thesis.id}"></span></a></td>
-                <td th:text="${thesis.firstName}"></td>
-                <td th:text="${thesis.lastName}"></td>
+                <td>
+                  <a th:href="@{/bisag/admin/thesis_list_detail/{id}(id=${thesis.id})}">
+                    <span th:text="${thesis.id}"></span>
+                  </a>
+                </td>
+                <td th:text="${thesis.title}"></td>
+                <td th:text="${thesis.internname}"></td>
                 <td th:text="${thesis.contactNo}"></td>
-                <td th:text="${thesis.email}"></td>
-                <td th:text="${thesis.collegeName}"></td>
-                <td th:text="${thesis.isActive}"></td>
-                <td th:text="${thesis.isActive}"></td>
-                <td th:text="${thesis.isActive}"></td>
+                <td th:text="${thesis.department}"></td>
+                <td th:text="${thesis.purpose}"></td>
+                <td th:text="${thesis.type}"></td>
+                <td th:text="${thesis.issueDate}"></td>
+                <td th:text="${thesis.returnDate}"></td>
 
               </tr>
               </tbody>
