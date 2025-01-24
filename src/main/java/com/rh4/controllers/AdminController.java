@@ -1570,24 +1570,36 @@ public class AdminController {
 
     @GetMapping("/generate_intern_report")
     public ModelAndView generateInternReport(Model model) {
-        ModelAndView mv = new ModelAndView("/admin/generate_intern_report");
+        ModelAndView mv = new ModelAndView("admin/generate_intern_report");
+
         List<College> college = fieldService.getColleges();
         List<Branch> branch = fieldService.getBranches();
         List<Domain> domain = fieldService.getDomains();
         List<Guide> guide = guideService.getGuide();
         List<Degree> degree = fieldService.getDegrees();
         List<GroupEntity> groupEntities = groupService.getGroups();
-//        List<ProjectDefinition> projectDefinitions = groupService.getGroups();
-        // List<Cancelled> cancelled = cancelledService.getCancelledIntern();
+
+        // Fetch interns from intern service with null handling
+        List<Intern> interns = internService.getAllInterns();
+        if (interns == null || interns.isEmpty()) {
+            System.out.println("Intern list is empty or null");
+        }
+        mv.addObject("interns", interns);
+
+        // Fetch distinct project definition names
+        List<String> projectDefinitions = internService.getDistinctProjectDefinitions();
+
+        // Pass the list to the view
+        mv.addObject("project_definition_name", projectDefinitions);
+
         model = countNotifications(model);
         mv.addObject("colleges", college);
         mv.addObject("branches", branch);
         mv.addObject("domains", domain);
         mv.addObject("guides", guide);
         mv.addObject("degrees", degree);
-//        mv.addObject("groups", groupEntities);
         mv.addObject("admin", adminName(session));
-        // mv.addObject("cancelled",cancelled);
+
         return mv;
     }
 
