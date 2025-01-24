@@ -51,4 +51,6 @@ public interface InternRepo extends JpaRepository<Intern, String> {
 	@Query("UPDATE Intern i SET i.profilePicture = :profilePicture WHERE i.internId = :internId")
 	void updateProfilePicture(@Param("internId") String internId, @Param("profilePicture") byte[] profilePicture);
 
+	@Query("SELECT DISTINCT i.projectDefinitionName FROM Intern i")
+	List<String> findDistinctProjectDefinitionNames(); // Custom query to fetch distinct project definition names
 }
