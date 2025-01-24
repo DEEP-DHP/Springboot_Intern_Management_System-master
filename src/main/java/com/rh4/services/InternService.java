@@ -66,6 +66,19 @@ public class InternService {
 	{
 		return internRepo.findAll();
 	}
+
+	//it will fetch the intern IDs
+	public List<Intern> getAllInterns() {
+		List<Intern> interns = internRepo.findAll();
+		System.out.println("Fetched interns: " + interns.size()); // Print size to verify data
+		return interns;
+	}
+
+	// Fetch distinct project definitions from the Intern table
+	public List<String> getDistinctProjectDefinitions() {
+		return internRepo.findDistinctProjectDefinitionNames(); // Custom query to fetch distinct values
+	}
+
 	public void addIntern(Intern intern)
 	{
 		String encryptedPassword = passwordEncoder().encode(intern.getPassword());
