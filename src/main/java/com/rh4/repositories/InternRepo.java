@@ -47,10 +47,19 @@ public interface InternRepo extends JpaRepository<Intern, String> {
 	List<Intern> getPendingInternsFilter(String college, String branch, Optional<Guide> guide, String domain,
 			Date startDate, Date endDate);
 
+//	@Query("from InternApplication where status = 'rejected'")
+//	public List<InternApplication> getInternRejectedStatus();
+
+	@Query("SELECT i FROM InternApplication i WHERE i.status = 'rejected'")
+	List<InternApplication> getInternRejectedStatus();
+
 	@Modifying
 	@Query("UPDATE Intern i SET i.profilePicture = :profilePicture WHERE i.internId = :internId")
 	void updateProfilePicture(@Param("internId") String internId, @Param("profilePicture") byte[] profilePicture);
 
 	@Query("SELECT DISTINCT i.projectDefinitionName FROM Intern i")
 	List<String> findDistinctProjectDefinitionNames(); // Custom query to fetch distinct project definition names
+
+	@Query("SELECT DISTINCT i.gender FROM Intern i")
+	List<String> findDistinctGenders();
 }

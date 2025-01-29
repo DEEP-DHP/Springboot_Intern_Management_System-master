@@ -31,4 +31,3 @@ public interface UserRepo extends CrudRepository<MyUser,Long>{
 	@Query("DELETE FROM MyUser u WHERE u.username = :email AND u.role = :role ")
 	public void deleteByUsername(@Param("email") String email,@Param("role") String role);
 }
-
