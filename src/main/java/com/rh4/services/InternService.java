@@ -62,6 +62,11 @@ public class InternService {
 	{
 		return internApplicationRepo.getInternApprovedStatus();
 	}
+
+	// Update the return type to List<InternApplication> or another appropriate entity
+	public List<InternApplication> getRejectedInterns() {
+		return internRepo.getInternRejectedStatus(); // Fetch rejected interns from logs
+	}
 	public List<Intern> getInterns()
 	{
 		return internRepo.findAll();
@@ -153,6 +158,10 @@ public class InternService {
 
 	public List<Intern> getCurrentInterns() {
 		return internRepo.getCurrentInterns();
+	}
+
+	public List<String> getDistinctGenders() {
+		return internRepo.findDistinctGenders();
 	}
 
 	public List<Intern> getFilteredInterns(String college, String branch, Optional<Guide> guide, String domain,
