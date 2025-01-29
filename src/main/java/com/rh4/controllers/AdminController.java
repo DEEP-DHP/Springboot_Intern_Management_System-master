@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import com.rh4.models.ProjectDefinition;
+import com.rh4.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -18,23 +19,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import com.rh4.entities.*;
 import com.rh4.models.ReportFilter;
-import com.rh4.repositories.AdminRepo;
-import com.rh4.repositories.CancelledRepo;
-import com.rh4.repositories.GroupRepo;
-import com.rh4.repositories.InternApplicationRepo;
-import com.rh4.repositories.InternRepo;
-import com.rh4.repositories.UserRepo;
 import com.rh4.services.*;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -80,6 +71,10 @@ public class AdminController {
     private DataExportService dataExportService;
     @Autowired
     private ThesisService thesisService;
+    @Autowired
+    private LogService logService;
+    @Autowired
+    private InternApplicationService internApplicationService;
 
     @Value("${app.storage.base-dir}")
     private String baseDir;
@@ -87,6 +82,8 @@ public class AdminController {
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     @Autowired
     private GroupEntity groupEntity;
+    @Autowired
+    private LogRepo logRepo;
 
     public static String encodePassword(String rawPassword) {
         return passwordEncoder.encode(rawPassword);
@@ -232,6 +229,23 @@ public class AdminController {
 
         return model;
     }
+
+    // Method to reject a student and log the action
+//    public void rejectStudent(String firstName, String lastName, String contactNo, String email,
+//                              String collegeName, String branch, int semester, String degree,
+//                              String domain, String reason) {
+//        logService.saveLog(firstName, lastName, contactNo, email, collegeName, branch,
+//                semester, degree, domain, "Rejected", reason);
+//    }
+//
+//    // Method to fail a student and log the action
+//    public void failStudent(String firstName, String lastName, String contactNo, String email,
+//                            String collegeName, String branch, int semester, String degree,
+//                            String domain, String reason) {
+//        logService.saveLog(firstName, lastName, contactNo, email, collegeName, branch,
+//                semester, degree, domain, "Failed", reason);
+//    }
+
     // Admin Dashboard
 
     @GetMapping("/admin_dashboard")
@@ -1032,6 +1046,18 @@ public class AdminController {
         return mv;
     }
 
+//    // Method to reject an intern and log the rejection
+//    @PutMapping("/rejectIntern/{internId}")
+//    public String rejectIntern(@PathVariable Long internId) {
+//        // Call the service method through the injected service instance (not statically)
+//        internApplicationService.updateStatusToRejected(internId);
+//
+//        // Alternatively, call the log service directly if needed
+//        // logService.logRejectedIntern(internApplication);
+//
+//        return "Intern has been rejected and logged successfully.";
+//    }
+
     @PostMapping("/intern_application/approved_intern/update")
     public String approvedInterns(@RequestParam long id, InternApplication internApplication, MultipartHttpServletRequest req) throws IllegalStateException, IOException, Exception {
         Optional<InternApplication> intern = internService.getInternApplication(id);
@@ -1151,13 +1177,11 @@ public class AdminController {
         List<Branch> branches = fieldService.getBranches();
         List<Domain> domains = fieldService.getDomains();
         List<Degree> degrees = fieldService.getDegrees();
-//        List<Intern> intern = internService.getInternBy();
         model = countNotifications(model);
         mv.addObject("colleges", colleges);
         mv.addObject("branches", branches);
         mv.addObject("domains", domains);
         mv.addObject("degrees", degrees);
-//        mv.addObject("interns", intern);
         mv.addObject("admin", adminName(session));
         mv.setViewName("admin/add_fields");
         return mv;
@@ -1489,6 +1513,42 @@ public class AdminController {
     }
 
 
+
+//    @GetMapping("/admin_weekly_report_details/{groupId}/{weekNo}")
+//    public ModelAndView changeWeeklyReportSubmission(
+//            @PathVariable("groupId") String groupId,
+//            @PathVariable("weekNo") int weekNo,
+//            Model model) {
+//        ModelAndView mv = new ModelAndView("/admin/admin_weekly_report_details");
+//        model = countNotifications(model);
+//
+//        Admin admin = getSignedInAdmin();
+//        GroupEntity group = groupService.getGroup(groupId);
+//
+//        if (group != null) {
+//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found" + groupId);
+//        }
+//
+//        WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
+//
+//        if (report != null) {
+//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Weekly Report not found for group:" + groupId);
+//        }
+//
+//        MyUser user = myUserService.getUserByUsername(admin.getEmailId());
+//        if (user.getRole().equals("ADMIN")) {
+//            String name = admin.getName();
+//            mv.addObject("replacedBy", name);
+//        } else if (user.getRole().equals("INTERN")) {
+//            Intern intern = internService.getInternByUsername(user.getUsername());
+//            mv.addObject("replacedBy", intern.getFirstName() + intern.getLastName());
+//        }
+//
+//        mv.addObject("report", report);
+//        mv.addObject("group", group);
+//
+//        return mv;
+//    }
     @GetMapping("/cancellation_requests")
     public ModelAndView cancellationRequests(Model model) {
         ModelAndView mv = new ModelAndView("/admin/cancellation_requests");
@@ -1578,26 +1638,25 @@ public class AdminController {
         List<Guide> guide = guideService.getGuide();
         List<Degree> degree = fieldService.getDegrees();
         List<GroupEntity> groupEntities = groupService.getGroups();
+        List<String> projectDefinitions = internService.getDistinctProjectDefinitions();
+        List<Intern> interns = internService.getAllInterns();
+        // Fetch distinct genders
+        List<String> genders = internService.getDistinctGenders();
 
         // Fetch interns from intern service with null handling
-        List<Intern> interns = internService.getAllInterns();
         if (interns == null || interns.isEmpty()) {
             System.out.println("Intern list is empty or null");
         }
-        mv.addObject("interns", interns);
-
-        // Fetch distinct project definition names
-        List<String> projectDefinitions = internService.getDistinctProjectDefinitions();
-
-        // Pass the list to the view
-        mv.addObject("project_definition_name", projectDefinitions);
 
         model = countNotifications(model);
+        mv.addObject("interns", interns);
+        mv.addObject("project_definition_name", projectDefinitions);
         mv.addObject("colleges", college);
         mv.addObject("branches", branch);
         mv.addObject("domains", domain);
         mv.addObject("guides", guide);
         mv.addObject("degrees", degree);
+        mv.addObject("genders", genders);
         mv.addObject("admin", adminName(session));
 
         return mv;
@@ -1722,4 +1781,27 @@ public class AdminController {
 //        thesisService.deleteThesis(id);
 //        return "redirect:/admin/thesis";
 //    }
+
+    //LOGS-----------------------------------------------------------------------------------------
+    // Endpoint to view logs
+//    @GetMapping("/logs")
+//    public String viewLogs(Model model) {
+//        List<Log> logs = logService.getAllLogs();
+//        model.addAttribute("logs", logs);
+//        return "admin/logs"; // This ensures Thymeleaf looks inside templates/admin/logs.html
+//    }
+
+    // If the service returns a List of InternApplication
+//    @PostMapping("/rejectIntern/{id}")
+//    public String rejectIntern(@PathVariable Long id) {
+//        internApplicationService.updateStatusToRejected(id);
+//        return "redirect:/admin/logs";
+//    }
+
+    @GetMapping("/logs")
+    public String showRejectedInterns(Model model) {
+        List<InternApplication> rejectedInterns = internApplicationService.getRejectedInterns();
+        model.addAttribute("rejectedInterns", rejectedInterns);
+        return "admin/logs";
+    }
 }
