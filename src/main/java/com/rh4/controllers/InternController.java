@@ -202,7 +202,7 @@ public class InternController {
         mv.addObject("intern", intern);
         mv.addObject("internApplication", internApplication);
         String internFullName = intern.getFirstName() + " " + intern.getLastName();
-        logService.saveLog(intern.getInternId(), "Accessed Dashboard", internFullName + " visited their dashboard.");        return mv;
+        logService.saveLog(intern.getInternId(), "Intern Accessed Dashboard", internFullName + " visited their dashboard.");        return mv;
     }
 
     @PostMapping("/requestCancellation")

@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import com.rh4.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,12 +30,6 @@ import com.rh4.entities.Intern;
 import com.rh4.entities.MyUser;
 import com.rh4.entities.WeeklyReport;
 import com.rh4.repositories.GroupRepo;
-import com.rh4.services.AdminService;
-import com.rh4.services.GroupService;
-import com.rh4.services.GuideService;
-import com.rh4.services.InternService;
-import com.rh4.services.MyUserService;
-import com.rh4.services.WeeklyReportService;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -58,6 +53,8 @@ public class GuideController {
     private GroupRepo groupRepo;
     @Autowired
     private MyUserService myUserService;
+    @Autowired
+    private LogService logService;
     Intern internFromUploadFileMethod;
     int CurrentWeekNo;
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -79,7 +76,6 @@ public class GuideController {
 
     @GetMapping("/guide_dashboard")
     public ModelAndView guide_dashboard(HttpSession session, Model model) {
-
         ModelAndView mv = new ModelAndView("guide/guide_dashboard");
 
         Guide guide = getSignedInGuide();
@@ -95,8 +91,12 @@ public class GuideController {
         // Add the username to the ModelAndView
         mv.addObject("username", username);
 
-        // Add intern details to the ModelAndView
+        // Add guide details to the ModelAndView
         mv.addObject("guide", guide);
+
+        // Ensure guide ID is passed as a String
+        logService.saveLog(String.valueOf(guide.getGuideId()), "Guide Accessed Dashboard",
+                "Guide " + guide.getName() + " visited their dashboard.");
 
         return mv;
     }
@@ -148,9 +148,10 @@ public class GuideController {
         Optional<Guide> existingGuide = guideService.getGuide(guide.getGuideId());
 
         if (existingGuide.isPresent()) {
-
-            String currentPassword = existingGuide.get().getPassword();
             Guide updatedGuide = existingGuide.get();
+            String guideName = updatedGuide.getName(); // Fetch the existing guide's name
+
+            // Update the guide details
             updatedGuide.setName(guide.getName());
             updatedGuide.setLocation(guide.getLocation());
             updatedGuide.setFloor(guide.getFloor());
@@ -158,10 +159,13 @@ public class GuideController {
             updatedGuide.setContactNo(guide.getContactNo());
             updatedGuide.setEmailId(guide.getEmailId());
 
-            // Save the updated admin entity
+            // Save the updated guide entity
             guideService.updateGuide(updatedGuide, existingGuide);
 
+            logService.saveLog(String.valueOf(updatedGuide.getGuideId()), "Guide Profile Updated",
+                    "Guide " + guideName + " updated their profile.");
         }
+
         return "redirect:/logout";
     }
 
@@ -179,11 +183,20 @@ public class GuideController {
     public String pendingFromGuide(@RequestParam("gpendingAns") String gpendingAns, @RequestParam("groupId") String groupId) {
 
         GroupEntity group = groupService.getGroup(groupId);
+        Guide guide = group.getGuide(); // Fetch guide object
+        String guideId = String.valueOf(guide.getGuideId()); // Convert to String
+        String guideName = guide.getName(); // Fetch guide name
+
         if (gpendingAns.equals("approve")) {
             group.setProjectDefinitionStatus("gapproved");
+            logService.saveLog(guideId, "Project Definition Approved",
+                    "Guide " + guideName + " approved a project definition for Group ID: " + groupId);
         } else {
             group.setProjectDefinitionStatus("pending");
+            logService.saveLog(guideId, "Project Definition Pending",
+                    "Guide " + guideName + " set project definition to pending for Group ID: " + groupId);
         }
+
         groupRepo.save(group);
         return "redirect:/bisag/guide/guide_pending_def_approvals";
     }
@@ -232,22 +245,29 @@ public class GuideController {
     }
 
     @PostMapping("/guide_weekly_report_details/{groupid}/changed_report")
-    public String chanegWeeklyReportSubmission(@PathVariable("groupid") String groupId, @RequestParam("weekNo") int weekNo, MultipartHttpServletRequest req) throws IllegalStateException, IOException, Exception {
+    public String chanegWeeklyReportSubmission(@PathVariable("groupid") String groupId,
+                                               @RequestParam("weekNo") int weekNo,
+                                               MultipartHttpServletRequest req)
+            throws IllegalStateException, IOException, Exception {
+
         GroupEntity group = groupService.getGroup(groupId);
-        Guide guide = getSignedInGuide();
+        Guide guide = getSignedInGuide(); // Get the currently signed-in guide
         WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
         CurrentWeekNo = weekNo;
-//			report.setSubmittedPdf(changeWeeklyReport(req.getFile("weeklyReportSubmission"), group));
+
         MyUser user = myUserService.getUserByUsername(guide.getEmailId());
         report.setReplacedBy(user);
         Date currentDate = new Date();
+
         // Check if the deadline is greater than or equal to the reportSubmittedDate
         if (report.getDeadline().compareTo(currentDate) >= 0) {
-            // If the deadline is greater than or equal to the reportSubmittedDate, set the status to "submitted"
             report.setStatus("submitted");
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Weekly Report Submitted",
+                    "Guide " + guide.getName() + " submitted a weekly report for Group ID: " + groupId + ", Week No: " + weekNo);
         } else {
-            // If the deadline is less than the reportSubmittedDate, set the status to "late submitted"
             report.setStatus("late submitted");
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Weekly Report Late Submitted",
+                    "Guide " + guide.getName() + " submitted a late weekly report for Group ID: " + groupId + ", Week No: " + weekNo);
         }
 
         weeklyReportService.addReport(report);
@@ -265,14 +285,22 @@ public class GuideController {
     }
 
     @PostMapping("/guide_pending_final_reports/ans")
-    public String guidePendingFinalReports(@RequestParam("gpendingAns") String gpendingAns, @RequestParam("groupId") String groupId) {
+    public String guidePendingFinalReports(@RequestParam("gpendingAns") String gpendingAns,
+                                           @RequestParam("groupId") String groupId) {
 
         GroupEntity group = groupService.getGroup(groupId);
+        Guide guide = getSignedInGuide(); // Get the currently signed-in guide
+
         if (gpendingAns.equals("approve")) {
-            group.setFinalReportStatus("gapproved");
+            group.setFinalReportStatus("approved");
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Final Report Approved",
+                    "Guide " + guide.getName() + " approved the final report for Group ID: " + groupId);
         } else {
             group.setFinalReportStatus("pending");
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Final Report Approval Pending",
+                    "Guide " + guide.getName() + " marked the final report as pending for Group ID: " + groupId);
         }
+
         groupRepo.save(group);
         return "redirect:/bisag/guide/guide_pending_final_reports";
     }
@@ -314,9 +342,16 @@ public class GuideController {
 
     @PostMapping("/change_password")
     public String changePassword(@RequestParam("newPassword") String newPassword) {
-        Guide guide = getSignedInGuide();
+        Guide guide = getSignedInGuide(); // Get the currently signed-in guide
+
+        // Change the guide's password
         guideService.changePassword(guide, newPassword);
-        return "redirect:/logout";
+
+        // Log the password change event
+        logService.saveLog(String.valueOf(guide.getGuideId()), "Password Changed",
+                "Guide " + guide.getName() + " changed their password.");
+
+        return "redirect:/logout"; // Redirect to logout after password change
     }
 
 }

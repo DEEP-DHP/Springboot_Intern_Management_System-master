@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -249,7 +250,7 @@ public class AdminController {
     // Admin Dashboard
 
     @GetMapping("/admin_dashboard")
-    public ModelAndView admin_dashboar(Model model) {
+    public ModelAndView admin_dashboard(Model model) {
 
         ModelAndView mv = new ModelAndView("admin/admin_dashboard");
 
@@ -259,17 +260,26 @@ public class AdminController {
         // Use the adminService to get the Admin object based on the username
         Admin admin = adminService.getAdminByUsername(username);
 
-        // Set the "id" and "username" attributes in the session
-        session.setAttribute("id", admin.getAdminId());
-        session.setAttribute("username", username);
+        if (admin != null) {
+            // Set the "id" and "username" attributes in the session
+            session.setAttribute("id", admin.getAdminId());
+            session.setAttribute("username", username);
 
-        model = countNotifications(model);
+            // Log the admin dashboard visit
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Admin Dashboard Accessed",
+                    "Admin " + admin.getName() + " accessed the dashboard.");
 
-        long countInterns = internService.countInterns();
-        model.addAttribute("countInterns", countInterns);
-        // Add the username to the ModelAndView
-        mv.addObject("username", username);
-        mv.addObject("admin", admin);
+            model = countNotifications(model);
+
+            long countInterns = internService.countInterns();
+            model.addAttribute("countInterns", countInterns);
+
+            // Add the username to the ModelAndView
+            mv.addObject("username", username);
+            mv.addObject("admin", admin);
+        } else {
+            System.out.println("Error: Admin not found for logging!");
+        }
 
         return mv;
     }
@@ -287,33 +297,73 @@ public class AdminController {
     public String registerIntern(@ModelAttribute("intern") Intern intern) {
         intern.setInternId(generateInternId());
         internService.registerIntern(intern);
+
+        String adminUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // Fetch admin details using the username
+        Admin admin = adminService.getAdminByUsername(adminUsername);
+
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Intern Registered",
+                    "Admin " + admin.getName() + " registered a new intern with ID: " + intern.getInternId());
+        } else {
+            System.out.println("Error: Admin not found for logging!");
+        }
+
         return "redirect:/bisag";
     }
 
     @GetMapping("/intern/{id}")
     public ModelAndView internDetails(@PathVariable("id") String id, Model model) {
         ModelAndView mv = new ModelAndView();
+
         Optional<Intern> intern = internService.getIntern(id);
         model = countNotifications(model);
+
         mv.addObject("intern", intern);
+
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
         List<Branch> branches = fieldService.getBranches();
         List<GroupEntity> groups = groupService.getGroups();
+
         mv.addObject("colleges", colleges);
         mv.addObject("domains", domains);
         mv.addObject("branches", branches);
         mv.addObject("groups", groups);
+
         mv.setViewName("admin/intern_detail");
+
+        // Log the action of viewing intern details
+        Admin admin = getSignedInAdmin(); // Assuming there's a method to get the logged-in admin
+        if (admin != null && intern.isPresent()) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Intern Details",
+                    "Admin " + admin.getName() + " viewed the details of intern ID: " + id + ", Name: " + intern.get().getFirstName() + " " + intern.get().getLastName());
+        } else {
+            System.out.println("Error: Admin or Intern not found for logging!");
+        }
+
         return mv;
     }
 
     @GetMapping("/update_admin/{id}")
     public ModelAndView updateAdmin(@PathVariable("id") long id, Model model) {
         ModelAndView mv = new ModelAndView("super_admin/update_admin");
+
         Optional<Admin> admin = adminService.getAdmin(id);
         mv.addObject("admin", admin.orElse(new Admin()));
+
         model = countNotifications(model);
+
+        // Log the action of updating admin details
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming there's a method to get the logged-in admin
+        if (signedInAdmin != null && admin.isPresent()) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "Updating Admin Details",
+                    "Admin " + signedInAdmin.getName() + " is updating the details of admin ID: " + id + ", Name: " + admin.get().getName());
+        } else {
+            System.out.println("Error: Signed-in admin or target admin not found for logging!");
+        }
+
         return mv;
     }
 
@@ -330,6 +380,15 @@ public class AdminController {
             updatedAdmin.setContactNo(admin.getContactNo());
             updatedAdmin.setEmailId(admin.getEmailId());
 
+            // Log the action of updating admin details
+            Admin signedInAdmin = getSignedInAdmin(); // Assuming there's a method to get the logged-in admin
+            if (signedInAdmin != null) {
+                logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "Updating Admin Details",
+                        "Admin " + signedInAdmin.getName() + " updated the details of admin ID: " + id + ", Name: " + updatedAdmin.getName());
+            } else {
+                System.out.println("Error: Signed-in admin not found for logging!");
+            }
+
             // Save the updated admin entity
             adminService.updateAdmin(updatedAdmin, existingAdmin);
         }
@@ -340,10 +399,21 @@ public class AdminController {
     @GetMapping("/intern_application")
     public ModelAndView internApplication(Model model) {
         ModelAndView mv = new ModelAndView("admin/intern_application");
+
+        // Log the action when an admin accesses the intern application page
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming there's a method to get the logged-in admin
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Intern Applications",
+                    "Admin " + signedInAdmin.getName() + " accessed the intern application page.");
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
         List<InternApplication> interns = internService.getInternApplication();
         model = countNotifications(model);
         mv.addObject("interns", interns);
         mv.addObject("admin", adminName(session));
+
         return mv;
     }
 
@@ -351,15 +421,30 @@ public class AdminController {
     public ModelAndView internApplication(@PathVariable("id") long id, Model model) {
         System.out.println("id" + id);
         ModelAndView mv = new ModelAndView();
+
+        // Fetch the intern application based on the ID
         Optional<InternApplication> intern = internService.getInternApplication(id);
+
+        // Log the action when an admin views the detailed intern application page
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming there's a method to get the logged-in admin
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Intern Application Details",
+                    "Admin " + signedInAdmin.getName() + " viewed the details of Intern Application with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
+        // Adding attributes to the ModelAndView for rendering the page
         mv.addObject("intern", intern);
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
         List<Branch> branches = fieldService.getBranches();
         model = countNotifications(model);
+
         mv.addObject("colleges", colleges);
         mv.addObject("domains", domains);
         mv.addObject("branches", branches);
+
         mv.setViewName("admin/intern_application_detail");
         return mv;
     }
@@ -368,6 +453,17 @@ public class AdminController {
     public ModelAndView internApplicationDocs(@PathVariable("id") long id, Model model) {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id); // Implement this service method
         System.out.println("ID: " + id);
+
+        // Log the action of viewing the intern application documents
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Intern Application Documents",
+                    "Admin " + signedInAdmin.getName() + " viewed the documents for Intern Application with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
+        // Check if the intern application exists
         if (optionalApplication.isPresent()) {
             InternApplication application = optionalApplication.get(); // Retrieve the InternApplication object
             model.addAttribute("id", id);
@@ -379,6 +475,7 @@ public class AdminController {
             model.addAttribute("error", "Intern Application not found");
         }
 
+        // Return the view with the model and data
         ModelAndView mv = new ModelAndView();
         mv.setViewName("admin/intern_application_docs");
         return mv;
@@ -388,8 +485,19 @@ public class AdminController {
     public ModelAndView internDocs(@PathVariable("id") String id, Model model) {
         Optional<Intern> optionalApplication = internService.getIntern(id); // Implement this service method
         System.out.println("ID: " + id);
+
+        // Log the action of viewing the intern's documents
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Intern Documents",
+                    "Admin " + signedInAdmin.getName() + " viewed the documents for Intern with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
+        // Check if the intern exists
         if (optionalApplication.isPresent()) {
-            Intern application = optionalApplication.get(); // Retrieve the InternApplication object
+            Intern application = optionalApplication.get(); // Retrieve the Intern object
             model.addAttribute("id", id);
             model.addAttribute("intern", application);
             model.addAttribute("passportSizeImage", application.getPassportSizeImage());
@@ -403,6 +511,7 @@ public class AdminController {
             model.addAttribute("error", "Intern Application not found");
         }
 
+        // Return the view with the model and data
         ModelAndView mv = new ModelAndView();
         mv.setViewName("admin/intern_docs");
         return mv;
@@ -411,6 +520,15 @@ public class AdminController {
     @GetMapping("/documents/passport/{id}")
     public ResponseEntity<byte[]> getPassportSizeImageForInternApplication(@PathVariable("id") long id) {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
+
+        // Log the action of viewing the passport size image for the intern
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Passport Size Image",
+                    "Admin " + signedInAdmin.getName() + " viewed the passport size image for Intern Application with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
 
         if (optionalApplication.isPresent()) {
             InternApplication application = optionalApplication.get();
@@ -433,6 +551,15 @@ public class AdminController {
     public ResponseEntity<byte[]> getPassportSizeImageForIntern(@PathVariable("id") String id) {
         Optional<Intern> optionalApplication = internService.getIntern(id);
 
+        // Log the action of viewing the passport size image for the intern
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Passport Size Image",
+                    "Admin " + signedInAdmin.getName() + " viewed the passport size image for Intern with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
 
@@ -453,6 +580,15 @@ public class AdminController {
     @GetMapping("/documents/icard/{id}")
     public ResponseEntity<byte[]> getICardImageForInternApplication(@PathVariable("id") long id) {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
+
+        // Log the action of viewing the college I-card image for the intern application
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View College I-card Image",
+                    "Admin " + signedInAdmin.getName() + " viewed the college I-card image for Intern Application with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
 
         if (optionalApplication.isPresent()) {
             InternApplication application = optionalApplication.get();
@@ -475,6 +611,15 @@ public class AdminController {
     public ResponseEntity<byte[]> getICardImageForIntern(@PathVariable("id") String id) {
         Optional<Intern> optionalApplication = internService.getIntern(id);
 
+        // Log the action of viewing the college I-card image for the intern
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View College I-card Image",
+                    "Admin " + signedInAdmin.getName() + " viewed the college I-card image for Intern with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
 
@@ -495,6 +640,15 @@ public class AdminController {
     @GetMapping("/documents/noc/{id}")
     public ResponseEntity<byte[]> getNocPdfForInternApplication(@PathVariable("id") long id) {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
+
+        // Log the action of viewing the NOC PDF for the intern application
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View NOC PDF",
+                    "Admin " + signedInAdmin.getName() + " viewed the NOC PDF for Intern Application with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
 
         if (optionalApplication.isPresent()) {
             InternApplication application = optionalApplication.get();
@@ -517,6 +671,15 @@ public class AdminController {
     public ResponseEntity<byte[]> getNocPdfForIntern(@PathVariable("id") String id) {
         Optional<Intern> optionalApplication = internService.getIntern(id);
 
+        // Log the action of viewing the NOC PDF for the intern
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View NOC PDF",
+                    "Admin " + signedInAdmin.getName() + " viewed the NOC PDF for Intern with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
 
@@ -538,6 +701,15 @@ public class AdminController {
     public ResponseEntity<byte[]> getResumePdfForInternApplication(@PathVariable("id") long id) {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
 
+        // Log the action of viewing the Resume PDF for the intern application
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Resume PDF",
+                    "Admin " + signedInAdmin.getName() + " viewed the Resume PDF for Intern Application with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
         if (optionalApplication.isPresent()) {
             InternApplication application = optionalApplication.get();
 
@@ -558,6 +730,15 @@ public class AdminController {
     @GetMapping("/intern/documents/resume/{id}")
     public ResponseEntity<byte[]> getResumePdfForIntern(@PathVariable("id") String id) {
         Optional<Intern> optionalApplication = internService.getIntern(id);
+
+        // Log the action of viewing the Resume PDF for the intern
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Resume PDF",
+                    "Admin " + signedInAdmin.getName() + " viewed the Resume PDF for Intern with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
 
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
@@ -642,6 +823,15 @@ public class AdminController {
     @PostMapping("/documents/passport/{id}")
     public String updatePassportSizeImage(@PathVariable("id") long id, @RequestParam("file") MultipartFile file) throws IOException {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
+        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "Update Passport Size Image",
+                    "Admin " + signedInAdmin.getName() + " updated the passport size image for Intern Application with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
         if (optionalApplication.isPresent()) {
             InternApplication application = optionalApplication.get();
             String storageDir = baseDir + application.getEmail() + "/";
@@ -664,6 +854,15 @@ public class AdminController {
     @PostMapping("/documents/icard/{id}")
     public String updateICardImage(@PathVariable("id") long id, @RequestParam("file") MultipartFile file) throws IOException {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
+        Admin signedInAdmin = getSignedInAdmin();
+
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "Update I-Card Image",
+                    "Admin " + signedInAdmin.getName() + " updated the college I-Card image for Intern Application with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
         if (optionalApplication.isPresent()) {
             InternApplication application = optionalApplication.get();
             String storageDir = baseDir + application.getEmail() + "/";
@@ -686,6 +885,15 @@ public class AdminController {
     @PostMapping("/documents/noc/{id}")
     public String updateNocPdf(@PathVariable("id") long id, @RequestParam("file") MultipartFile file) throws IOException {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
+        Admin signedInAdmin = getSignedInAdmin();
+
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "Update NOC PDF",
+                    "Admin " + signedInAdmin.getName() + " updated the NOC PDF for Intern Application with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
         if (optionalApplication.isPresent()) {
             InternApplication application = optionalApplication.get();
             String storageDir = baseDir + application.getEmail() + "/";
@@ -708,9 +916,17 @@ public class AdminController {
     @PostMapping("/documents/resume/{id}")
     public String updateResumePdf(@PathVariable("id") long id, @RequestParam("file") MultipartFile file) throws IOException {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
+        Admin signedInAdmin = getSignedInAdmin();
+
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "Update Resume PDF",
+                    "Admin " + signedInAdmin.getName() + " updated the Resume PDF for Intern Application with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
         if (optionalApplication.isPresent()) {
             InternApplication application = optionalApplication.get();
-
             String storageDir = baseDir + application.getEmail() + "/";
             String oldFilePath = storageDir + "resumePdf.pdf";
 
@@ -733,6 +949,15 @@ public class AdminController {
     @PostMapping("/intern/documents/passport/{id}")
     public String updatePassportSizeImageForIntern(@PathVariable("id") String id, @RequestParam("file") MultipartFile file) throws IOException {
         Optional<Intern> optionalApplication = internService.getIntern(id);
+        Admin signedInAdmin = getSignedInAdmin();
+
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "Update Passport Size Image",
+                    "Admin " + signedInAdmin.getName() + " updated the passport size image for Intern with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
             String storageDir = baseDir + application.getEmail() + "/";
@@ -755,6 +980,15 @@ public class AdminController {
     @PostMapping("/intern/documents/icard/{id}")
     public String updateICardImageForIntern(@PathVariable("id") String id, @RequestParam("file") MultipartFile file) throws IOException {
         Optional<Intern> optionalApplication = internService.getIntern(id);
+        Admin signedInAdmin = getSignedInAdmin();
+
+        if (signedInAdmin != null) {
+            logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "Update I-Card Image",
+                    "Admin " + signedInAdmin.getName() + " updated the college I-Card image for Intern with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in admin not found for logging!");
+        }
+
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
             String storageDir = baseDir + application.getEmail() + "/";
@@ -900,28 +1134,37 @@ public class AdminController {
     public String internApplicationSubmission(@RequestParam String message, @RequestParam long id,
                                               @RequestParam String status, @RequestParam String finalStatus) {
         System.out.println("id: " + id + ", status: " + status);
-        // Long ID = Long.parseLong(id);
+
         Optional<InternApplication> intern = internService.getInternApplication(id);
-        intern.get().setStatus(status);
-        intern.get().setFinalStatus(finalStatus);
-        internService.addInternApplication(intern.get());
-        if (status.equals("rejected")) {
-            emailService.sendSimpleEmail(intern.get().getEmail(),
-                    "Notification: Rejection of BISAG Internship Application\r\n" + "\r\n" + "Dear "
-                            + intern.get().getFirstName() + ",\r\n" + "\r\n"
-                            + "We appreciate your interest in the BISAG internship program and the effort you put into your application. After careful consideration, we regret to inform you that your application has not been successful on this occasion.\r\n"
-                            + "\r\n"
-                            + "Please know that the decision was a difficult one, and we had many qualified candidates. We want to thank you for your interest in joining our team and for taking the time to apply for the internship position.\r\n"
-                            + "\r\n"
-                            + "We encourage you to continue pursuing your goals, and we wish you the best in your future endeavors. If you have any feedback or questions about the decision, you may reach out to [Contact Person/Department].\r\n"
-                            + "\r\n"
-                            + "Thank you again for considering BISAG for your internship opportunity. We appreciate your understanding.\r\n"
-                            + "\r\n" + "Best regards,\r\n" + "\r\n" + "Your Colleague,\r\n"
-                            + "Internship Coordinator\r\n" + "BISAG INTERNSHIP PROGRAM\r\n" + "1231231231",
-                    "BISAG INTERNSHIP RESULT");
-        } else
-            emailService.sendSimpleEmail(intern.get().getEmail(), message + "your unique id is " + intern.get().getId(),
-                    "BISAG INTERNSHIP RESULT");
+
+        if (intern.isPresent()) {
+            intern.get().setStatus(status);
+            intern.get().setFinalStatus(finalStatus);
+            internService.addInternApplication(intern.get());
+
+            // Now directly passing the long ID to the saveLog method
+            logService.saveLog(String.valueOf(id), "Updated application status for intern", "Status Change");
+
+            // Send email notifications based on status
+            if (status.equals("rejected")) {
+                emailService.sendSimpleEmail(intern.get().getEmail(),
+                        "Notification: Rejection of BISAG Internship Application\r\n" + "\r\n" + "Dear "
+                                + intern.get().getFirstName() + ",\r\n" + "\r\n"
+                                + "We appreciate your interest in the BISAG internship program and the effort you put into your application. After careful consideration, we regret to inform you that your application has not been successful on this occasion.\r\n"
+                                + "\r\n"
+                                + "Please know that the decision was a difficult one, and we had many qualified candidates. We want to thank you for your interest in joining our team and for taking the time to apply for the internship position.\r\n"
+                                + "\r\n"
+                                + "We encourage you to continue pursuing your goals, and we wish you the best in your future endeavors. If you have any feedback or questions about the decision, you may reach out to [Contact Person/Department].\r\n"
+                                + "\r\n"
+                                + "Thank you again for considering BISAG for your internship opportunity. We appreciate your understanding.\r\n"
+                                + "\r\n" + "Best regards,\r\n" + "\r\n" + "Your Colleague,\r\n"
+                                + "Internship Coordinator\r\n" + "BISAG INTERNSHIP PROGRAM\r\n" + "1231231231",
+                        "BISAG INTERNSHIP RESULT");
+            } else {
+                emailService.sendSimpleEmail(intern.get().getEmail(), message + " your unique id is " + intern.get().getId(),
+                        "BISAG INTERNSHIP RESULT");
+            }
+        }
         return "redirect:/bisag/admin/intern_application";
     }
 
@@ -947,13 +1190,20 @@ public class AdminController {
             intern.get().setSemester(internApplication.getSemester());
             intern.get().setJoiningDate(internApplication.getJoiningDate());
             intern.get().setCompletionDate(internApplication.getCompletionDate());
+
+            // Log the activity with updated logService format
+            logService.saveLog(String.valueOf(id), "Updated intern application details", "InternApplication Update");
         } else {
             intern.get().setIsActive(false);
             Cancelled cancelledEntry = new Cancelled();
             cancelledEntry.setTableName("InternApplication");
             cancelledEntry.setCancelId(Long.toString(intern.get().getId()));
             cancelledRepo.save(cancelledEntry);
+
+            // Log the activity with updated logService format
+            logService.saveLog(String.valueOf(id), "Cancelled intern application", "InternApplication Cancellation");
         }
+
         intern.get().setUpdatedAt(LocalDateTime.now());
         internService.addInternApplication(intern.get());
         return "redirect:/bisag/admin/intern_application/" + id;
@@ -964,7 +1214,6 @@ public class AdminController {
     public String updateIntern(@RequestParam String id, Intern internApplication, @RequestParam("groupId") String groupId, MultipartHttpServletRequest req) throws IllegalStateException, IOException, Exception {
         Optional<Intern> intern = internService.getIntern(id);
 
-
         if (groupId.equals("createOwnGroup")) {
             String generatedId = generateGroupId();
             GroupEntity group = new GroupEntity();
@@ -974,6 +1223,7 @@ public class AdminController {
         } else {
             intern.get().setGroup(groupService.getGroup(groupId));
         }
+
         if (intern.get().getIsActive()) {
             intern.get().setFirstName(internApplication.getFirstName());
             intern.get().setLastName(internApplication.getLastName());
@@ -1002,6 +1252,9 @@ public class AdminController {
             intern.get().setDegree(internApplication.getDegree());
             intern.get().setAggregatePercentage(internApplication.getAggregatePercentage());
             intern.get().setUsedResource(internApplication.getUsedResource());
+
+            // Log the activity with updated logService format
+            logService.saveLog(id, "Updated intern details", "Intern Update");
         }
 
         if (!internApplication.getIsActive()) {
@@ -1011,7 +1264,11 @@ public class AdminController {
             cancelledEntry.setTableName("intern");
             cancelledEntry.setCancelId(intern.get().getInternId());
             cancelledRepo.save(cancelledEntry);
+
+            // Log the activity with updated logService format
+            logService.saveLog(id, "Cancelled intern", "Intern Cancellation");
         }
+
         intern.get().setUpdatedAt(LocalDateTime.now());
         internRepo.save(intern.get());
         return "redirect:/bisag/admin/intern/" + id;
@@ -1804,8 +2061,7 @@ public class AdminController {
         model.addAttribute("rejectedInterns", rejectedInterns);
         return "admin/logs";
     }
-
-    // ✅ View Intern Activity Logs (Admin Only)
+    
     @GetMapping("/activity_logs")
     public String getInternActivityLogs(Model model) {
         List<Log> logs = logService.getAllLogs();
@@ -1817,20 +2073,17 @@ public class AdminController {
         return "admin/activity_logs";
     }
 
-    // ✅ Helper Method to Log Intern Actions
     public void logInternAction(String internId, String action, String details) {
         logService.saveLog(internId, action, details);
     }
 
-    // ✅ Example Usage: Log When Intern Submits a Report
     public void submitReport(String internId, String reportId) {
-        // Your logic for report submission
+
         logInternAction(internId, "Submitted Weekly Report", "Report ID: " + reportId);
     }
 
-    // ✅ Example Usage: Log When Intern Updates Profile
     public void updateProfile(String internId, String newEmail, String newPhone) {
-        // Your logic for updating profile
+
         logInternAction(internId, "Updated Profile", "Changed Email: " + newEmail + ", Phone: " + newPhone);
     }
 }
