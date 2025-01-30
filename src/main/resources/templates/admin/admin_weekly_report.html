@@ -58,19 +58,40 @@
     <div th:replace="fragments/asideFragment :: aside"></div>
 
     <main id="main" class="main">
-    
-    	<div class="pagetitle">
-			<h1>Manage Weekly Reports</h1>
-			<nav>
-				<ol class="breadcrumb">
-					<li class="breadcrumb-item"><a href="index.html">Reports</a></li>
-					<li class="breadcrumb-item active">Manage Weekly Reports</li>
-				</ol>
-			</nav>
-			<input type="text" class="mb-3 mt-2 pr-5" id="searchInput"
-				placeholder="Start typing...">
-		</div>
-    	
+
+        <div class="pagetitle">
+            <h1>Manage Weekly Reports</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/bisag/admin/admin_weekly_report">Reports</a></li>
+                    <li class="breadcrumb-item active">Manage Weekly Reports</li>
+                </ol>
+            </nav>
+
+            <!-- Search Input -->
+            <input type="text" class="mb-3 mt-2 pr-5" id="searchInput" placeholder="Start typing...">
+
+            <!-- Date Filter -->
+            <div class="container mt-2">
+                <form method="GET" action="admin_weekly_report">
+                    <label for="dateFilter"><b>Filter by Date:</b></label>
+                    <input type="date" id="dateFilter" name="date" class="form-control w-25 d-inline-block ml-2" th:value="${selectedDate}">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- JavaScript for Date Filtering -->
+        <script>
+            function filterByDate() {
+                var selectedDate = document.getElementById("dateFilter").value;
+                if (selectedDate) {
+                    window.location.href = "/admin/weeklyReports?date=" + selectedDate;
+                } else {
+                    window.location.href = "/admin/weeklyReports";
+                }
+            }
+        </script>
         <ul class="nav nav-tabs nav-justified">
             <li class="nav-item"><a class="nav-link active" id="tab1" href="javascript:void(0)"
                     onclick="switchTab('form1', 'tab1')">Weekly Report</a></li>
