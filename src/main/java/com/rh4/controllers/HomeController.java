@@ -1,10 +1,7 @@
 package com.rh4.controllers;
 
 import com.rh4.repositories.*;
-import com.rh4.services.AdminService;
-import com.rh4.services.EmailSenderService;
-import com.rh4.services.FieldService;
-import com.rh4.services.InternService;
+import com.rh4.services.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -52,6 +49,10 @@ public class HomeController {
     private UserRepo userRepo;
     @Autowired
     private FieldService fieldService;
+    @Autowired
+    private LogService logService;
+    @Autowired
+    private InternController internController;
 
     public HomeController(InternApplicationRepo internApplicationRepo, EmailSenderService emailService) {
         this.internApplicationRepo = internApplicationRepo;
@@ -214,10 +215,22 @@ public class HomeController {
 
     @GetMapping("/logout")
     public String logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-        // Perform any additional logout logic if needed
+        // Fetch internId from the session
+        String internId = (String) request.getSession().getAttribute("id");
+
+        if (internId != null) {
+            // Fetch intern details using internId from internService
+            Intern intern = internService.getIntern(internId).orElseThrow(() -> new RuntimeException("Intern not found"));            if (intern != null) {
+                // Log intern's logout action
+                logService.saveLog(intern.getInternId(), "Logged Out", "Intern " + intern.getFirstName() + " " + intern.getLastName() + " logged out.");
+            }
+        }
+
+        // Perform logout logic
         if (authentication != null) {
             new SecurityContextLogoutHandler().logout(request, response, authentication);
         }
+
         return "redirect:/login?logout"; // Redirect to the login page with a logout parameter
     }
 
