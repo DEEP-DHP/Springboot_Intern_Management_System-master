@@ -89,7 +89,7 @@ tr.hover-element th div.dropdown .rounded button.btn-primary:hover {
 			<h1>Group Details</h1>
 			<nav>
 				<ol class="breadcrumb">
-					<li class="breadcrumb-item"><a href="index.html">Intern Groups</a></li>
+					<li class="breadcrumb-item"><a href="/bisag/guide/intern_groups">Intern Groups</a></li>
 					<li class="breadcrumb-item active">Group Details</li>
 				</ol>
 			</nav>
@@ -113,9 +113,7 @@ tr.hover-element th div.dropdown .rounded button.btn-primary:hover {
 							<tr class="hover-element">
 								<th><i class="fa-solid fa-chevron-down"></i></th>
 								<th>Group: <span th:text="${group.groupId}"></span></th>
-								<th>Domain: <span th:each="intern : ${interns}"
-									th:if="${intern.group.groupId == groups.Id}"
-									th:text="${intern.domain}"></span></th>
+								<th>Domain: <span th:text="${group.domain}"></span></th>
 								<th>Guide: <span th:text="${group.guide.name}"></span></th>
 								<th>
 									<div>
