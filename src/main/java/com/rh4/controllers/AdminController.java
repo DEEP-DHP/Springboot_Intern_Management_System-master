@@ -1804,4 +1804,33 @@ public class AdminController {
         model.addAttribute("rejectedInterns", rejectedInterns);
         return "admin/logs";
     }
+
+    // ✅ View Intern Activity Logs (Admin Only)
+    @GetMapping("/activity_logs")
+    public String getInternActivityLogs(Model model) {
+        List<Log> logs = logService.getAllLogs();
+        if (logs == null) {
+            logs = new ArrayList<>();  // Ensure it's not null
+        }
+        System.out.println("Logs fetched: " + logs.size()); // Debugging
+        model.addAttribute("logs", logs);
+        return "admin/activity_logs";
+    }
+
+    // ✅ Helper Method to Log Intern Actions
+    public void logInternAction(String internId, String action, String details) {
+        logService.saveLog(internId, action, details);
+    }
+
+    // ✅ Example Usage: Log When Intern Submits a Report
+    public void submitReport(String internId, String reportId) {
+        // Your logic for report submission
+        logInternAction(internId, "Submitted Weekly Report", "Report ID: " + reportId);
+    }
+
+    // ✅ Example Usage: Log When Intern Updates Profile
+    public void updateProfile(String internId, String newEmail, String newPhone) {
+        // Your logic for updating profile
+        logInternAction(internId, "Updated Profile", "Changed Email: " + newEmail + ", Phone: " + newPhone);
+    }
 }

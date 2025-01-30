@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import com.rh4.services.*;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,11 +45,6 @@ import com.rh4.entities.MyUser;
 import com.rh4.entities.WeeklyReport;
 import com.rh4.models.ProjectDefinition;
 import com.rh4.repositories.GroupRepo;
-import com.rh4.services.AdminService;
-import com.rh4.services.GuideService;
-import com.rh4.services.InternService;
-import com.rh4.services.MyUserService;
-import com.rh4.services.WeeklyReportService;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -76,6 +72,8 @@ public class InternController {
     HttpSession session;
     @Autowired
     GroupRepo groupRepo;
+    @Autowired
+    LogService logService;
     boolean WEEKLYREPORTDISABLE;
     int CurrentWeekNo;
 
@@ -203,8 +201,8 @@ public class InternController {
         // Add intern details to the ModelAndView
         mv.addObject("intern", intern);
         mv.addObject("internApplication", internApplication);
-
-        return mv;
+        String internFullName = intern.getFirstName() + " " + intern.getLastName();
+        logService.saveLog(intern.getInternId(), "Accessed Dashboard", internFullName + " visited their dashboard.");        return mv;
     }
 
     @PostMapping("/requestCancellation")
@@ -212,6 +210,7 @@ public class InternController {
         Intern intern = getSignedInIntern();
         intern.setCancellationStatus("requested");
         internService.updateCancellationStatus(intern);
+        logService.saveLog(intern.getInternId(), "Cancellation Request Submitted", "Cancellation Request Submitted successfully.");
         return "redirect:/bisag/intern/intern_dashboard";
     }
 
@@ -268,6 +267,7 @@ public class InternController {
         group.setProjectDefinitionDocument(projectDefinitionDocument.getBytes());
         group.setProjectDefinitionStatus("gpending");
         groupRepo.save(group);
+        logService.saveLog(intern.getInternId(), "Project Definition Submitted", "Project Definition Submitted successfully.");
         return "redirect:/bisag/intern/project_definition";
     }
 
@@ -366,6 +366,8 @@ public class InternController {
             // submitted"
             weeklyReport.setStatus("late submitted");
         }
+        logService.saveLog(intern.getInternId(), "Submitted Weekly Report", "Report submitted successfully.");
+
         weeklyReportService.addReport(weeklyReport);
         return "redirect:/bisag/intern/weekly_report_submission";
     }
@@ -437,6 +439,7 @@ public class InternController {
         }
 
         weeklyReportService.addReport(report);
+        logService.saveLog(intern.getInternId(), "Weekly Report Changed", "Weekly Report changed successfully.");
         return "redirect:/bisag/intern/change_weekly_report/" + weekNo;
     }
 
@@ -493,6 +496,7 @@ public class InternController {
         intern.setSecurityForm(securityForm.getBytes());
         intern.setRegistrationForm(registrationForm.getBytes());
         internService.registerIntern(intern);
+        logService.saveLog(intern.getInternId(), "Submitted forms", "Forms Submitted successfully.");
         return "redirect:/bisag/intern/submit_forms";
     }
 
@@ -702,12 +706,14 @@ public class InternController {
         group.setFinalReport(finalReport.getBytes());
         group.setFinalReportStatus("gpending");
         groupRepo.save(group);
+        logService.saveLog(intern.getInternId(), "Final Report Submitted", "Final Report Submitted successfully.");
         return "redirect:/bisag/intern/final_report_submission";
     }
 
     @PostMapping("/change_password")
     public String changePassword(@RequestParam("newPassword") String newPassword) {
         Intern intern = getSignedInIntern();
+        logService.saveLog(intern.getInternId(), "Changed Password", "Password Changed successfully.");
         internService.changePassword(intern, newPassword);
         return "redirect:/logout";
     }
@@ -726,8 +732,10 @@ public class InternController {
         try {
             byte[] profilePictureBytes = profilePicture.getBytes();
             internService.updateInternProfilePicture(internId, profilePictureBytes);
+            logService.saveLog(internId, "Updated Profile Picture", "Intern updated profile picture successfully.");
             return "redirect:/bisag/intern/intern_dashboard";
         } catch (IOException e) {
+            logService.saveLog(internId, "Failed Profile Picture Update", "Error occurred while updating profile picture.");
             return "redirect:/bisag/intern/intern_dashboard";
         }
     }
