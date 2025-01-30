@@ -16,7 +16,7 @@ public class InternApplicationService {
     private InternApplicationRepo internApplicationRepo;
 
     @Autowired
-    private LogService logService;  // Inject LogService
+    private LogService logService;
 
     public void updateStatusToRejected(Long internId) {
         Optional<InternApplication> optionalIntern = internApplicationRepo.findById(internId);
@@ -27,7 +27,7 @@ public class InternApplicationService {
             internApplicationRepo.save(intern);
 
             // Move data to log table
-            logService.saveRejectedIntern(intern);
+//            logService.saveRejectedIntern(intern);
         }
     }
 

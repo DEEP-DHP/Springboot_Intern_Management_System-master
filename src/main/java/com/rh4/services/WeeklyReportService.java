@@ -1,5 +1,8 @@
 package com.rh4.services;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,5 +53,8 @@ public class WeeklyReportService {
 	public WeeklyReport getReportByInternIdAndWeekNo(String internId, int weekNo) {
 		return weeklyReportRepo.findByInternInternIdAndWeekNo(internId, weekNo);
 	}
-	
+
+	public List<WeeklyReport> getReportsByDate(Date date) {
+		return weeklyReportRepo.findByReportSubmittedDate(date);
+	}
 }
