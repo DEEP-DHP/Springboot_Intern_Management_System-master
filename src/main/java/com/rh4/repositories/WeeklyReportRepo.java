@@ -1,5 +1,7 @@
 package com.rh4.repositories;
 
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,4 +30,7 @@ public interface WeeklyReportRepo extends JpaRepository<WeeklyReport, Long> {
     WeeklyReport findByWeekNoAndGroup(int weekNo, GroupEntity group);
 
     WeeklyReport findByInternInternIdAndWeekNo(String internId, int weekNo);
+
+    List<WeeklyReport> findByReportSubmittedDate(Date reportSubmittedDate);
+
 }

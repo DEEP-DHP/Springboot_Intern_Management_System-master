@@ -15,7 +15,7 @@ public interface InternApplicationRepo extends JpaRepository<InternApplication, 
 	public List<InternApplication> getInternApprovedStatus();
 
 	//Method to fetch rejected interns
-	@Query("from InternApplication where status='rejected'")
+	@Query("from InternApplication where status='rejected' or finalStatus = 'failed'")
 	public List<InternApplication> getInternRejectedStatus();
 
 	public long countByStatus(String string);
