@@ -1142,7 +1142,6 @@ public class AdminController {
             intern.get().setFinalStatus(finalStatus);
             internService.addInternApplication(intern.get());
 
-            // Now directly passing the long ID to the saveLog method
             logService.saveLog(String.valueOf(id), "Updated application status for intern", "Status Change");
 
             // Send email notifications based on status
@@ -1191,7 +1190,6 @@ public class AdminController {
             intern.get().setJoiningDate(internApplication.getJoiningDate());
             intern.get().setCompletionDate(internApplication.getCompletionDate());
 
-            // Log the activity with updated logService format
             logService.saveLog(String.valueOf(id), "Updated intern application details", "InternApplication Update");
         } else {
             intern.get().setIsActive(false);
@@ -1200,7 +1198,6 @@ public class AdminController {
             cancelledEntry.setCancelId(Long.toString(intern.get().getId()));
             cancelledRepo.save(cancelledEntry);
 
-            // Log the activity with updated logService format
             logService.saveLog(String.valueOf(id), "Cancelled intern application", "InternApplication Cancellation");
         }
 
@@ -1253,7 +1250,6 @@ public class AdminController {
             intern.get().setAggregatePercentage(internApplication.getAggregatePercentage());
             intern.get().setUsedResource(internApplication.getUsedResource());
 
-            // Log the activity with updated logService format
             logService.saveLog(id, "Updated intern details", "Intern Update");
         }
 
@@ -1265,7 +1261,6 @@ public class AdminController {
             cancelledEntry.setCancelId(intern.get().getInternId());
             cancelledRepo.save(cancelledEntry);
 
-            // Log the activity with updated logService format
             logService.saveLog(id, "Cancelled intern", "Intern Cancellation");
         }
 
@@ -1280,26 +1275,63 @@ public class AdminController {
         ModelAndView mv = new ModelAndView();
         List<InternApplication> intern = internService.getApprovedInterns();
         model = countNotifications(model);
+
         mv.addObject("interns", intern);
         mv.setViewName("admin/approved_interns");
         mv.addObject("admin", adminName(session));
+
+        String username = (String) session.getAttribute("username");
+
+        Admin admin = adminService.getAdminByUsername(username);
+
+        if (admin != null) {
+
+            session.setAttribute("id", admin.getAdminId());
+
+            logService.saveLog(String.valueOf(admin.getAdminId()),
+                    "View Shortlisted Intern Applications",
+                    "Admin " + admin.getName() + " accessed the shortlisted intern applications page.");
+        } else {
+            System.out.println("Error: Admin not found for logging!");
+        }
+
         return mv;
     }
 
     @GetMapping("/intern_application/approved_intern/{id}")
     public ModelAndView approvedInterns(@PathVariable("id") long id, Model model) {
-        System.out.println("approved id" + id);
+        System.out.println("approved id: " + id);
         ModelAndView mv = new ModelAndView();
+
         Optional<InternApplication> intern = internService.getInternApplication(id);
         mv.addObject("intern", intern);
+
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
         List<Branch> branches = fieldService.getBranches();
+
         model = countNotifications(model);
         mv.addObject("colleges", colleges);
         mv.addObject("domains", domains);
         mv.addObject("branches", branches);
         mv.setViewName("admin/approved_intern_application_detail");
+
+        String username = (String) session.getAttribute("username");
+
+        Admin admin = adminService.getAdminByUsername(username);
+
+        if (admin != null) {
+
+            session.setAttribute("id", admin.getAdminId());
+
+            // Log the action
+            logService.saveLog(String.valueOf(admin.getAdminId()),
+                    "View Shortlisted Intern Application Details",
+                    "Admin " + admin.getName() + " accessed the details of shortlisted intern with ID: " + id);
+        } else {
+            System.out.println("Error: Admin not found for logging!");
+        }
+
         return mv;
     }
 
@@ -1316,10 +1348,11 @@ public class AdminController {
 //    }
 
     @PostMapping("/intern_application/approved_intern/update")
-    public String approvedInterns(@RequestParam long id, InternApplication internApplication, MultipartHttpServletRequest req) throws IllegalStateException, IOException, Exception {
+    public String approvedInterns(@RequestParam long id, InternApplication internApplication, MultipartHttpServletRequest req)
+            throws IllegalStateException, IOException, Exception {
         Optional<InternApplication> intern = internService.getInternApplication(id);
 
-        if (internApplication.getIsActive() == true) {
+        if (internApplication.getIsActive()) {
             intern.get().setFirstName(internApplication.getFirstName());
             intern.get().setLastName(internApplication.getLastName());
             intern.get().setContactNo(internApplication.getContactNo());
@@ -1340,14 +1373,21 @@ public class AdminController {
         }
 
         internService.addInternApplication(intern.get());
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Update Approved Intern",
+                    "Admin " + admin.getName() + " updated details of approved intern with ID: " + id);
+        }
+
         return "redirect:/bisag/admin/intern_application/approved_interns";
     }
 
     @PostMapping("/intern_application/approved_intern/ans")
-    public String approvedInterns(@RequestParam String message, @RequestParam long id,
-                                  @RequestParam String finalStatus) {
-        System.out.println("id" + id + finalStatus);
-        // Long ID = Long.parseLong(id);
+    public String approvedInterns(@RequestParam String message, @RequestParam long id, @RequestParam String finalStatus) {
+        System.out.println("id: " + id + ", finalStatus: " + finalStatus);
+
         Optional<InternApplication> intern = internService.getInternApplication(id);
         intern.get().setFinalStatus(finalStatus);
         internService.addInternApplication(intern.get());
@@ -1355,11 +1395,18 @@ public class AdminController {
         if (finalStatus.equals("failed")) {
             emailService.sendSimpleEmail(intern.get().getEmail(), "You are Failed", "BISAG INTERNSHIP RESULT");
         } else {
-            String finalmessage = message + "\n" + "username: " + intern.get().getFirstName()
-                    + intern.get().getLastName() + "\n Password: " + intern.get().getFirstName() + "_"
-                    + intern.get().getId();
-            emailService.sendSimpleEmail(intern.get().getEmail(), finalmessage, "BISAG INTERNSHIP RESULT");
+            String finalMessage = message + "\n" + "Username: " + intern.get().getFirstName() +
+                    intern.get().getLastName() + "\n Password: " + intern.get().getFirstName() + "_" + intern.get().getId();
+            emailService.sendSimpleEmail(intern.get().getEmail(), finalMessage, "BISAG INTERNSHIP RESULT");
         }
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Updated Final Status",
+                    "Admin with ID: " + admin.getAdminId() + " updated final status of intern with ID: " + id + " to " + finalStatus);
+        }
+
         return "redirect:/bisag/admin/intern_application/approved_interns";
     }
 
@@ -1371,6 +1418,14 @@ public class AdminController {
         model = countNotifications(model);
         mv.setViewName("admin/new_interns");
         mv.addObject("admin", adminName(session));
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed New Interns",
+                    "Admin " + admin.getName() + " accessed the new interns page.");
+        }
+
         return mv;
     }
 
@@ -1384,6 +1439,14 @@ public class AdminController {
         mv.addObject("admin", adminName(session));
         model = countNotifications(model);
         mv.setViewName("admin/create_group");
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Group Creation",
+                    "Admin " + admin.getName() + " accessed the group creation page.");
+        }
+
         return mv;
     }
 
@@ -1399,7 +1462,6 @@ public class AdminController {
         group.setGroupId(id);
         groupService.registerGroup(group);
 
-        // register those intern
         for (Long internId : selectedInterns) {
             Optional<InternApplication> internApplicationOptional = internService.getInternApplication(internId);
 
@@ -1408,7 +1470,6 @@ public class AdminController {
                 internApplication.setGroupCreated(true);
                 internService.addInternApplication(internApplication);
 
-                // Create an Intern object using a constructor or a factory method
                 Intern intern = new Intern(internApplication.getFirstName(), internApplication.getLastName(),
                         internApplication.getContactNo(), internApplication.getEmail(),
                         internApplication.getCollegeName(), internApplication.getJoiningDate(),
@@ -1419,8 +1480,16 @@ public class AdminController {
 
                 intern.setInternId(generateInternId());
                 internService.addIntern(intern);
-            }
 
+                // Log action for each intern registration
+                String username = (String) session.getAttribute("username");
+                Admin admin = adminService.getAdminByUsername(username);
+                if (admin != null) {
+                    logService.saveLog(String.valueOf(admin.getAdminId()), "Created Group and Registered Intern",
+                            "Admin " + admin.getName() + " created a group and registered intern "
+                                    + internApplication.getFirstName() + " " + internApplication.getLastName());
+                }
+            }
         }
         return "redirect:/bisag/admin/create_group";
     }
@@ -1441,31 +1510,70 @@ public class AdminController {
         mv.addObject("degrees", degrees);
         mv.addObject("admin", adminName(session));
         mv.setViewName("admin/add_fields");
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Add Fields",
+                    "Admin " + admin.getName() + " accessed the add fields page.");
+        }
+
         return mv;
     }
 
     @PostMapping("/add_college")
     public String addCollege(College college, Model model) {
         fieldService.addCollege(college);
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Added College",
+                    "Admin " + admin.getName() + " added a new college: " + college.getName());
+        }
+
         return "redirect:/bisag/admin/add_fields";
     }
-
 
     @PostMapping("/add_domain")
     public String addDomain(Domain domain, Model model) {
         fieldService.addDomain(domain);
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Added Domain",
+                    "Admin " + admin.getName() + " added a new domain: " + domain.getName());
+        }
+
         return "redirect:/bisag/admin/add_fields";
     }
 
     @PostMapping("/add_branch")
     public String addBranch(Branch branch, Model model) {
         fieldService.addBranch(branch);
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Added Branch",
+                    "Admin " + admin.getName() + " added a new branch: " + branch.getName());
+        }
+
         return "redirect:/bisag/admin/add_fields";
     }
 
     @PostMapping("/add_degree")
     public String addDegree(Degree degree, Model model) {
         fieldService.addDegree(degree);
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Added Degree",
+                    "Admin " + admin.getName() + " added a new degree: " + degree.getName());
+        }
+
         return "redirect:/bisag/admin/add_fields";
     }
 
@@ -1510,12 +1618,17 @@ public class AdminController {
         Optional<College> existingCollege = fieldService.getCollege(id);
         System.out.println("In college update section");
         if (existingCollege.isPresent()) {
-            // If the college exists, update its properties
             College updatedCollege = existingCollege.get();
             updatedCollege.setName(college.getName());
             updatedCollege.setLocation(college.getLocation());
-            // Save the updated College entity
             fieldService.updateCollege(updatedCollege);
+
+            String username = (String) session.getAttribute("username");
+            Admin admin = adminService.getAdminByUsername(username);
+            if (admin != null) {
+                logService.saveLog(String.valueOf(admin.getAdminId()), "Updated College",
+                        "Admin " + admin.getName() + " updated college: " + updatedCollege.getName());
+            }
         }
         return "redirect:/bisag/admin/add_fields";
     }
@@ -1525,11 +1638,18 @@ public class AdminController {
         Optional<Branch> existingBranch = fieldService.getBranch(id);
 
         if (existingBranch.isPresent()) {
-            // If the college exists, update its properties
+
             Branch updatedBranch = existingBranch.get();
             updatedBranch.setName(branch.getName());
-            // Save the updated College entity
+
             fieldService.updateBranch(updatedBranch);
+
+            String username = (String) session.getAttribute("username");
+            Admin admin = adminService.getAdminByUsername(username);
+            if (admin != null) {
+                logService.saveLog(String.valueOf(admin.getAdminId()), "Updated Branch",
+                        "Admin " + admin.getName() + " updated branch: " + updatedBranch.getName());
+            }
         }
         return "redirect:/bisag/admin/add_fields";
     }
@@ -1542,19 +1662,32 @@ public class AdminController {
             Degree updatedDegree = existingDegree.get();
             updatedDegree.setName(degree.getName());
             fieldService.updateDegree(updatedDegree);
+
+            String username = (String) session.getAttribute("username");
+            Admin admin = adminService.getAdminByUsername(username);
+            if (admin != null) {
+                logService.saveLog(String.valueOf(admin.getAdminId()), "Updated Degree",
+                        "Admin " + admin.getName() + " updated degree: " + updatedDegree.getName());
+            }
         }
         return "redirect:/bisag/admin/add_fields";
     }
 
     @PostMapping("/update_domain/{id}")
-    public String updateBranch(@ModelAttribute("domain") Domain domain, @PathVariable("id") long id) {
+    public String updateDomain(@ModelAttribute("domain") Domain domain, @PathVariable("id") long id) {
         Optional<Domain> existingDomain = fieldService.getDomain(id);
 
         if (existingDomain.isPresent()) {
-            // If the college exists, update its properties
             Domain updatedDomain = existingDomain.get();
             updatedDomain.setName(domain.getName());
             fieldService.updateDomain(updatedDomain);
+
+            String username = (String) session.getAttribute("username");
+            Admin admin = adminService.getAdminByUsername(username);
+            if (admin != null) {
+                logService.saveLog(String.valueOf(admin.getAdminId()), "Updated Domain",
+                        "Admin " + admin.getName() + " updated domain: " + updatedDomain.getName());
+            }
         }
         return "redirect:/bisag/admin/add_fields";
     }
@@ -1566,6 +1699,14 @@ public class AdminController {
     @GetMapping("/register_guide")
     public ModelAndView registerGuide(Model model) {
         ModelAndView mv = new ModelAndView("admin/guide_registration");
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Visited Guide Registration Page",
+                    "Admin " + admin.getName() + " visited the guide registration page.");
+        }
+
         model = countNotifications(model);
         mv.addObject("admin", adminName(session));
         return mv;
@@ -1573,7 +1714,10 @@ public class AdminController {
 
     @PostMapping("/register_guide")
     public String registerGuide(@ModelAttribute("guide") Guide guide) {
+        // Register the guide
         guideService.registerGuide(guide);
+
+        // Send notification email to the guide
         emailService.sendSimpleEmail(guide.getEmailId(), "Notification: Appointment as Administrator\r\n" + "\r\n"
                         + "Dear " + guide.getName() + "\r\n" + "\r\n"
                         + "I trust this email finds you well. We are pleased to inform you that you have been appointed as an administrator within our organization, effective immediately. Your dedication and contributions to the team have not gone unnoticed, and we believe that your new role will bring value to our operations.\r\n"
@@ -1590,6 +1734,13 @@ public class AdminController {
                         + "\r\n" + "Best regards,\r\n" + "\r\n" + "Your Colleague,\r\n" + "Administrator\r\n" + "1231231231",
                 "BISAG ADMINISTRATIVE OFFICE");
 
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Registered Guide",
+                    "Admin " + admin.getName() + " registered guide " + guide.getName() + " as an administrator.");
+        }
+
         return "redirect:/bisag/admin/guide_list";
     }
 
@@ -1601,6 +1752,14 @@ public class AdminController {
         model = countNotifications(model);
         mv.addObject("guides", guides);
         mv.addObject("admin", adminName(session));
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Guide List",
+                    "Admin " + admin.getName() + " viewed the guide list.");
+        }
+
         return mv;
     }
 
@@ -1612,6 +1771,14 @@ public class AdminController {
         model = countNotifications(model);
         mv.addObject("guide", guide);
         mv.setViewName("admin/guide_list_detail");
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Guide Details",
+                    "Admin " + admin.getName() + " viewed details of guide with ID: " + id);
+        }
+
         return mv;
     }
 
@@ -1621,6 +1788,14 @@ public class AdminController {
         Optional<Guide> guide = guideService.getGuide(id);
         model = countNotifications(model);
         mv.addObject("guide", guide.orElse(new Guide()));
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Guide Update Page",
+                    "Admin " + admin.getName() + " accessed the update page for guide with ID: " + id);
+        }
+
         return mv;
     }
 
@@ -1641,17 +1816,30 @@ public class AdminController {
             if (!currentPassword.equals(encodePassword(guide.getPassword())) && guide.getPassword() != "") {
                 updatedGuide.setPassword(encodePassword(guide.getPassword()));
             }
-            // Save the updated admin entity
             guideService.updateGuide(updatedGuide, existingGuide);
 
+            String username = (String) session.getAttribute("username");
+            Admin admin = adminService.getAdminByUsername(username);
+            if (admin != null) {
+                logService.saveLog(String.valueOf(admin.getAdminId()), "Updated Guide Information",
+                        "Admin " + admin.getName() + " updated the guide information with ID: " + id);
+            }
         }
         return "redirect:/bisag/admin/guide_list";
     }
 
     // Delete Guide
     @PostMapping("/guide_list/delete/{id}")
-    public String deleteAdmin(@PathVariable("id") long id) {
+    public String deleteGuide(@PathVariable("id") long id) {
         guideService.deleteGuide(id);
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Deleted Guide",
+                    "Admin " + admin.getName() + " deleted the guide with ID: " + id);
+        }
+
         return "redirect:/bisag/admin/guide_list";
     }
 
@@ -1692,6 +1880,15 @@ public class AdminController {
     public String assignGuide(@RequestParam("guideid") long guideid, @RequestParam("groupId") String groupId) {
         System.out.println("guide id: " + guideid);
         groupService.assignGuide(groupId, guideid);
+
+        // Log the assignment action
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Assigned Guide to Group",
+                    "Admin " + admin.getName() + " assigned guide with ID: " + guideid + " to group with ID: " + groupId);
+        }
+
         return "redirect:/bisag/admin/allocate_guide";
     }
 
@@ -1701,6 +1898,14 @@ public class AdminController {
         ModelAndView mv = new ModelAndView("/admin/admin_pending_def_approvals");
         List<GroupEntity> groups = groupService.getAPendingGroups();
         model = countNotifications(model);
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Pending Project Definitions",
+                    "Admin " + admin.getName() + " accessed the pending project definition approvals page.");
+        }
+
         mv.addObject("groups", groups);
         mv.addObject("admin", adminName(session));
         return mv;
@@ -1708,7 +1913,9 @@ public class AdminController {
 
     @PostMapping("/admin_pending_def_approvals/{groupId}")
     public String pendingFromAdmin(@RequestParam("apendingAns") String apendingAns,
-                                   @PathVariable("groupId") String groupId, @RequestParam("projectDefinition") String projectDefinition, @RequestParam("description") String description) {
+                                   @PathVariable("groupId") String groupId,
+                                   @RequestParam("projectDefinition") String projectDefinition,
+                                   @RequestParam("description") String description) {
 
         GroupEntity group = groupService.getGroup(groupId);
         if (group != null) {
@@ -1722,6 +1929,14 @@ public class AdminController {
                     intern.setProjectDefinitionName(group.getProjectDefinition());
                     internRepo.save(intern);
                 }
+
+                String username = (String) session.getAttribute("username");
+                Admin admin = adminService.getAdminByUsername(username);
+                if (admin != null) {
+                    logService.saveLog(String.valueOf(admin.getAdminId()), "Project Definition Approved",
+                            "Admin " + admin.getName() + " approved project definition for group with ID: " + groupId);
+                }
+
             } else {
                 group.setProjectDefinitionStatus("pending");
             }
@@ -1742,6 +1957,14 @@ public class AdminController {
         mv.addObject("groups", groups);
         mv.addObject("reports", reports);
         mv.addObject("admin", adminName(session));
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Weekly Reports",
+                    "Admin " + admin.getName() + " accessed the weekly reports page.");
+        }
+
         return mv;
     }
 
@@ -1753,16 +1976,20 @@ public class AdminController {
         GroupEntity group = groupService.getGroup(groupId);
         WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
         MyUser user = myUserService.getUserByUsername(admin.getEmailId());
-        if (user.getRole().equals("ADMIN")) {
 
+        if (user.getRole().equals("ADMIN")) {
             String name = admin.getName();
             mv.addObject("replacedBy", name);
 
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Weekly Report Details",
+                    "Admin " + admin.getName() + " accessed weekly report details for group " + groupId + " and week " + weekNo);
         } else if (user.getRole().equals("INTERN")) {
             Intern intern = internService.getInternByUsername(user.getUsername());
             mv.addObject("replacedBy", intern.getFirstName() + intern.getLastName());
         } else {
+            // Handle other roles if needed
         }
+
         mv.addObject("report", report);
         mv.addObject("group", group);
 
@@ -1806,21 +2033,29 @@ public class AdminController {
 //
 //        return mv;
 //    }
-    @GetMapping("/cancellation_requests")
-    public ModelAndView cancellationRequests(Model model) {
-        ModelAndView mv = new ModelAndView("/admin/cancellation_requests");
-        List<Intern> requestedInterns = internService.getInternsByCancellationStatus("requested");
-        model = countNotifications(model);
-        // Add the list of requested interns to the ModelAndView
-        mv.addObject("requestedInterns", requestedInterns);
-        mv.addObject("admin", adminName(session));
+@GetMapping("/cancellation_requests")
+public ModelAndView cancellationRequests(Model model) {
+    ModelAndView mv = new ModelAndView("/admin/cancellation_requests");
+    List<Intern> requestedInterns = internService.getInternsByCancellationStatus("requested");
+    model = countNotifications(model);
 
-        return mv;
-    }
+    Admin admin = getSignedInAdmin();
+    logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Cancellation Requests",
+            "Admin " + admin.getName() + " viewed cancellation requests.");
+
+    mv.addObject("requestedInterns", requestedInterns);
+    mv.addObject("admin", adminName(session));
+
+    return mv;
+}
 
     @PostMapping("/cancellation_requests/ans")
     public String pendingCancellationsFromAdmin(@RequestParam("cancelAns") String cancelAns,
                                                 @RequestParam("internId") String internId) {
+
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Responded to Cancellation Request",
+                "Admin " + admin.getName() + " responded to cancellation request for intern ID " + internId + " with answer: " + cancelAns);
 
         adminService.cancelIntern(cancelAns, internId);
 
@@ -1835,6 +2070,11 @@ public class AdminController {
         List<Intern> interns = internService.getInterns();
         List<GroupEntity> groups = groupService.getAllocatedGroups();
         model = countNotifications(model);
+
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Queried Guide",
+                "Admin " + admin.getName() + " queried a guide.");
+
         mv.addObject("groups", groups);
         mv.addObject("interns", interns);
         mv.addObject("admins", admins);
@@ -1848,6 +2088,11 @@ public class AdminController {
         ModelAndView mv = new ModelAndView("/admin/admin_pending_final_reports");
         List<GroupEntity> groups = groupService.getAPendingFinalReports();
         model = countNotifications(model);
+
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Pending Final Reports",
+                "Admin " + admin.getName() + " viewed pending final reports.");
+
         mv.addObject("groups", groups);
         mv.addObject("admin", adminName(session));
         return mv;
@@ -1857,12 +2102,18 @@ public class AdminController {
     public String adminPendingFinalReports(@RequestParam("apendingAns") String apendingAns,
                                            @RequestParam("groupId") String groupId) {
         GroupEntity group = groupService.getGroup(groupId);
+
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Responded to Final Report",
+                "Admin " + admin.getName() + " responded to final report for group ID " + groupId + " with answer: " + apendingAns);
+
         if (apendingAns.equals("approve")) {
             group.setFinalReportStatus("approved");
         } else {
             group.setFinalReportStatus("pending");
         }
         groupRepo.save(group);
+
         return "redirect:/bisag/admin/admin_pending_final_reports";
     }
 
@@ -1871,16 +2122,26 @@ public class AdminController {
         ModelAndView mv = new ModelAndView("/admin/manage_leave_applications");
         List<Intern> interns = internService.getInterns();
         model = countNotifications(model);
+
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Leave Applications",
+                "Admin " + admin.getName() + " viewed leave applications.");
+
         mv.addObject("interns", interns);
         mv.addObject("admin", adminName(session));
         return mv;
     }
 
     @GetMapping("/manage_leave_applications_details/{id}")
-    public ModelAndView manageLeaveApplicationsDetails(Model model) {
+    public ModelAndView manageLeaveApplicationsDetails(@PathVariable("id") String id, Model model) {
         ModelAndView mv = new ModelAndView("/admin/manage_leave_applications_details");
         List<Intern> interns = internService.getInterns();
         model = countNotifications(model);
+
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Leave Application Details",
+                "Admin " + admin.getName() + " viewed leave application details for intern ID " + id);
+
         mv.addObject("interns", interns);
         return mv;
     }
@@ -1897,13 +2158,11 @@ public class AdminController {
         List<GroupEntity> groupEntities = groupService.getGroups();
         List<String> projectDefinitions = internService.getDistinctProjectDefinitions();
         List<Intern> interns = internService.getAllInterns();
-        // Fetch distinct genders
         List<String> genders = internService.getDistinctGenders();
 
-        // Fetch interns from intern service with null handling
-        if (interns == null || interns.isEmpty()) {
-            System.out.println("Intern list is empty or null");
-        }
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Generate Intern Report Page",
+                "Admin " + admin.getName() + " viewed the Generate Intern Report page.");
 
         model = countNotifications(model);
         mv.addObject("interns", interns);
@@ -1926,6 +2185,14 @@ public class AdminController {
         Optional<Guide> guide;
         Domain domain;
         Degree degree;
+
+        // Log filter details before applying the filter
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Applied Report Filters",
+                "Admin " + admin.getName() + " applied the following filters: College = " + reportFilter.getCollege() + ", Branch = " + reportFilter.getBranch() +
+                        ", Guide = " + reportFilter.getGuide() + ", Domain = " + reportFilter.getDomain() + ", Degree = " + reportFilter.getDegree() +
+                        ", Date Range = " + reportFilter.getStartDate() + " to " + reportFilter.getEndDate());
+
         if (reportFilter.getBranch().equals("All")) {
             reportFilter.setBranch(null);
         } else {
@@ -1960,21 +2227,39 @@ public class AdminController {
                 reportFilter.getBranch(), guide, reportFilter.getDomain(), reportFilter.getCancelled(),
                 reportFilter.getStartDate(), reportFilter.getEndDate(), reportFilter.getCancelled());
 
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Filtered Interns for Report",
+                "Admin " + admin.getName() + " filtered " + filteredInterns.size() + " interns based on the selected criteria.");
+
         for (Intern intern : filteredInterns) {
             System.out.println(intern.getFirstName());
         }
+
+        // Exporting the report in the selected format (PDF or Excel)
         if (reportFilter.getFormat().equals("pdf")) {
             dataExportService.exportToPdf(filteredInterns, response);
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Exported Intern Report (PDF)",
+                    "Admin " + admin.getName() + " exported the intern report in PDF format.");
         } else {
             dataExportService.exportToExcel(filteredInterns, response);
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Exported Intern Report (Excel)",
+                    "Admin " + admin.getName() + " exported the intern report in Excel format.");
         }
+
         return "redirect:/bisag/admin/admin_dashboard";
     }
 
     @PostMapping("/change_password")
     public String changePassword(@RequestParam("newPassword") String newPassword) {
         Admin admin = getSignedInAdmin();
+
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Password Change Request",
+                "Admin " + admin.getName() + " requested a password change.");
+
         adminService.changePassword(admin, newPassword);
+
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Password Changed Successfully",
+                "Admin " + admin.getName() + " successfully changed their password.");
+
         return "redirect:/logout";
     }
 
@@ -1992,24 +2277,39 @@ public class AdminController {
     }
 
     // Show form to add a new thesis
+    // Show the thesis form to add a new thesis
     @GetMapping("thesis/new")
     public String showThesisForm(Model model) {
         model.addAttribute("thesis", new Thesis());
+
+        // Log the action of showing the thesis form
+        logService.saveLog("Thesis Form", "Form Access", "Admin accessed the 'Add Thesis' form.");
+
         return "admin/thesis_form"; // This refers to templates/admin/thesis_form.html
     }
 
     // Handle adding/updating a thesis record
     @PostMapping("thesis/save")
     public String saveThesis(@ModelAttribute("thesis") Thesis thesis) {
+        // Save the thesis record
         thesisService.saveThesis(thesis);
+
+        // Log the thesis save action
+        logService.saveLog(String.valueOf(thesis.getId()), "Thesis Saved",
+                "Admin added or updated a thesis with ID: " + thesis.getId());
+
         return "redirect:/bisag/admin/thesis_list";  // Redirect to thesis listing
     }
 
-    // Show all thesis--------------------
+    // Show all thesis records
     @GetMapping("/thesis_list")
     public String getThesisList(Model model) {
         List<Thesis> thesisList = thesisService.getAllTheses();
         model.addAttribute("thesisList", thesisList);
+
+        // Log the action of viewing the thesis list
+        logService.saveLog("Thesis List View", "View", "Admin viewed the list of theses.");
+
         return "admin/thesis_list";
     }
 
@@ -2019,6 +2319,8 @@ public class AdminController {
         Optional<Thesis> thesis = thesisService.getThesisById(Long.parseLong(id));
         if (thesis.isPresent()) {
             model.addAttribute("thesis", thesis);
+            logService.saveLog(id, "Thesis Details View",
+                    "Admin viewed the details of thesis with ID: " + id);
             return "admin/thesis_list_detail";  // Matches HTML filename
         } else {
             return "error/404";  // A fallback error page
@@ -2055,13 +2357,21 @@ public class AdminController {
 //        return "redirect:/admin/logs";
 //    }
 
+    // Show rejected interns in the logs
     @GetMapping("/logs")
     public String showRejectedInterns(Model model) {
         List<InternApplication> rejectedInterns = internApplicationService.getRejectedInterns();
+
+        Admin admin = getSignedInAdmin();
+        String id = String.valueOf(admin.getAdminId());
+
+        logService.saveLog(id, "Viewed Rejected Interns", "Admin " + admin.getName() + " accessed the rejected interns list.");
+
         model.addAttribute("rejectedInterns", rejectedInterns);
         return "admin/logs";
     }
-    
+
+    // Get intern activity logs
     @GetMapping("/activity_logs")
     public String getInternActivityLogs(Model model) {
         List<Log> logs = logService.getAllLogs();
@@ -2069,21 +2379,30 @@ public class AdminController {
             logs = new ArrayList<>();  // Ensure it's not null
         }
         System.out.println("Logs fetched: " + logs.size()); // Debugging
+
+        Admin admin = getSignedInAdmin();
+        String id = String.valueOf(admin.getAdminId());
+
+        logInternAction(id, "Viewed Activity Logs", "Admin " + admin.getName() + " accessed the intern activity logs.");
+
         model.addAttribute("logs", logs);
         return "admin/activity_logs";
     }
 
+    // Log intern action
     public void logInternAction(String internId, String action, String details) {
         logService.saveLog(internId, action, details);
     }
 
+    // Submit report and log the action
     public void submitReport(String internId, String reportId) {
-
+        // Log the report submission action
         logInternAction(internId, "Submitted Weekly Report", "Report ID: " + reportId);
     }
 
+    // Update intern profile and log the action
     public void updateProfile(String internId, String newEmail, String newPhone) {
-
+        // Log the profile update action
         logInternAction(internId, "Updated Profile", "Changed Email: " + newEmail + ", Phone: " + newPhone);
     }
 }
