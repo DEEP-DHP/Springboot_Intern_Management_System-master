@@ -20,6 +20,8 @@ public interface InternRepo extends JpaRepository<Intern, String> {
 
 	List<Intern> findByGroupId(long groupId);
 
+	Optional<Intern> findById(String id);  // Or the appropriate return type depending on how you're managing IDs
+
 	List<Intern> findByCancellationStatus(String cancellationStatus);
 
 	long countByCancellationStatus(String cancellationStatus);
