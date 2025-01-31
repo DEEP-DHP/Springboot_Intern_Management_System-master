@@ -182,6 +182,9 @@ public class InternService {
 		}
 	}
 
+	public Intern getInternById(String id) {
+		return internRepo.findById(id).orElse(null); // Assuming you're using a repository to fetch intern details
+	}
 	public long pendingGroupCreationCount() {
 		return internApplicationRepo.countByGroupCreated();
 	}
