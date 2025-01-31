@@ -1,8 +1,6 @@
 package com.rh4.controllers;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +17,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -84,17 +81,13 @@ public class GuideController {
         long gPendingCount = groupService.countGPendingGroups();
         mv.addObject("gPendingCount", gPendingCount);
 
-        // Set the "id" and "username" attributes in the session
         session.setAttribute("id", guide.getGuideId());
         session.setAttribute("username", username);
 
-        // Add the username to the ModelAndView
         mv.addObject("username", username);
 
-        // Add guide details to the ModelAndView
         mv.addObject("guide", guide);
 
-        // Ensure guide ID is passed as a String
         logService.saveLog(String.valueOf(guide.getGuideId()), "Guide Accessed Dashboard",
                 "Guide " + guide.getName() + " visited their dashboard.");
 
@@ -104,31 +97,46 @@ public class GuideController {
     //Intern Groups
     @GetMapping("/intern_groups")
     public ModelAndView internGroups(HttpSession session, Model model) {
-
         ModelAndView mv = new ModelAndView("/guide/intern_groups");
+
+
         Guide guide = getSignedInGuide();
+        String id = String.valueOf(guide.getGuideId());
+
+        logService.saveLog(id, "Viewed Intern Groups", "Guide: " + guide.getName() + " accessed the intern groups list.");
+
         List<GroupEntity> internGroups = guideService.getInternGroups(guide);
         List<Intern> interns = internService.getInterns();
         mv.addObject("internGroups", internGroups);
         mv.addObject("intern", interns);
         mv.addObject("guide", getSignedInGuide());
+
         return mv;
     }
 
     @GetMapping("/intern_groups/{id}")
     public ModelAndView internGroups(@PathVariable("id") String id) {
-
         ModelAndView mv = new ModelAndView("/guide/intern_groups_detail");
+
         Guide guide = getSignedInGuide();
+        String guideId = String.valueOf(guide.getGuideId());
+
+        logService.saveLog(guideId, "Viewed Intern Groups Detail", "Guide: " + guide.getName() + " accessed the intern groups detail.");
+
         List<GroupEntity> internGroups = guideService.getInternGroups(guide);
         mv.addObject("internGroups", internGroups);
         return mv;
-
     }
 
     @GetMapping("/intern/{id}")
     public ModelAndView internDetails(@PathVariable("id") String id) {
         ModelAndView mv = new ModelAndView();
+
+        Guide guide = getSignedInGuide();
+        String guideId = String.valueOf(guide.getGuideId());
+
+        logService.saveLog(guideId, "Viewed Intern Details", "Guide: " + guide.getName() + " accessed details for intern with ID: " + id);
+
         Optional<Intern> intern = internService.getIntern(id);
         mv.addObject("intern", intern);
         mv.setViewName("guide/intern_detail");
@@ -138,8 +146,14 @@ public class GuideController {
     @GetMapping("/update_guide/{id}")
     public ModelAndView updateGuide(@PathVariable("id") long id) {
         ModelAndView mv = new ModelAndView("admin/update_guide");
-        Optional<Guide> guide = guideService.getGuide(id);
-        mv.addObject("guide", guide.orElse(new Guide()));
+
+        Guide guide = getSignedInGuide();
+        String guideId = String.valueOf(guide.getGuideId());
+
+        logService.saveLog(guideId, "Updated Guide Details", "Guide: " + guide.getName() + " accessed the guide update page for guide with ID: " + id);
+
+        Optional<Guide> guideDetails = guideService.getGuide(id);
+        mv.addObject("guide", guideDetails.orElse(new Guide()));
         return mv;
     }
 
@@ -149,9 +163,8 @@ public class GuideController {
 
         if (existingGuide.isPresent()) {
             Guide updatedGuide = existingGuide.get();
-            String guideName = updatedGuide.getName(); // Fetch the existing guide's name
+            String guideName = updatedGuide.getName();
 
-            // Update the guide details
             updatedGuide.setName(guide.getName());
             updatedGuide.setLocation(guide.getLocation());
             updatedGuide.setFloor(guide.getFloor());
@@ -172,7 +185,12 @@ public class GuideController {
     @GetMapping("/guide_pending_def_approvals")
     public ModelAndView pendingFromGuide(HttpSession session, Model model) {
         ModelAndView mv = new ModelAndView("/guide/guide_pending_def_approvals");
+
         Guide guide = getSignedInGuide();
+        String guideId = String.valueOf(guide.getGuideId());
+
+        logService.saveLog(guideId, "Viewed Pending Group Approvals", "Guide: " + guide.getName() + " accessed the pending group approvals page.");
+
         List<GroupEntity> groups = groupService.getGPendingGroups(guide);
         mv.addObject("groups", groups);
         mv.addObject("guide", guide);
@@ -183,9 +201,9 @@ public class GuideController {
     public String pendingFromGuide(@RequestParam("gpendingAns") String gpendingAns, @RequestParam("groupId") String groupId) {
 
         GroupEntity group = groupService.getGroup(groupId);
-        Guide guide = group.getGuide(); // Fetch guide object
-        String guideId = String.valueOf(guide.getGuideId()); // Convert to String
-        String guideName = guide.getName(); // Fetch guide name
+        Guide guide = group.getGuide();
+        String guideId = String.valueOf(guide.getGuideId());
+        String guideName = guide.getName();
 
         if (gpendingAns.equals("approve")) {
             group.setProjectDefinitionStatus("gapproved");
@@ -204,6 +222,12 @@ public class GuideController {
     @GetMapping("/admin_pending_def_approvals")
     public ModelAndView pendingFromAdmin() {
         ModelAndView mv = new ModelAndView();
+
+        Guide guide = getSignedInGuide();
+        String guideId = String.valueOf(guide.getGuideId());
+
+        logService.saveLog(guideId, "Viewed Pending Groups for Admin Approval", "Guide: " + guide.getName() + " accessed the pending groups for admin approval.");
+
         List<GroupEntity> groups = groupService.getAPendingGroups();
         mv.addObject("groups", groups);
         return mv;
@@ -212,7 +236,12 @@ public class GuideController {
     @GetMapping("/weekly_report")
     public ModelAndView weeklyReport() {
         ModelAndView mv = new ModelAndView("/guide/weekly_report");
+
         Guide guide = getSignedInGuide();
+        String guideId = String.valueOf(guide.getGuideId());
+
+        logService.saveLog(guideId, "Viewed Weekly Reports", "Guide: " + guide.getName() + " accessed the weekly reports page.");
+
         List<GroupEntity> groups = guideService.getInternGroups(guide);
         List<WeeklyReport> reports = weeklyReportService.getReportsByGuideId(guide.getGuideId());
         mv.addObject("groups", groups);
@@ -222,21 +251,23 @@ public class GuideController {
     }
 
     @GetMapping("/guide_weekly_report_details/{groupId}/{weekNo}")
-    public ModelAndView chanegWeeklyReportSubmission(@PathVariable("groupId") String groupId, @PathVariable("weekNo") int weekNo) {
+    public ModelAndView changeWeeklyReportSubmission(@PathVariable("groupId") String groupId, @PathVariable("weekNo") int weekNo) {
         ModelAndView mv = new ModelAndView("/guide/guide_weekly_report_details");
+
         Guide guide = getSignedInGuide();
+        String guideId = String.valueOf(guide.getGuideId());
+
+        logService.saveLog(guideId, "Viewed Weekly Report Details", "Guide: " + guide.getName() + " accessed weekly report details for group ID: " + groupId + " and week number: " + weekNo);
+
         GroupEntity group = groupService.getGroup(groupId);
         WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
         MyUser user = myUserService.getUserByUsername(getSignedInGuide().getEmailId());
         if (user.getRole().equals("GUIDE")) {
-
             String name = guide.getName();
             mv.addObject("replacedBy", name);
-
         } else if (user.getRole().equals("INTERN")) {
             Intern intern = internService.getInternByUsername(user.getUsername());
             mv.addObject("replacedBy", intern.getFirstName() + intern.getLastName());
-        } else {
         }
         mv.addObject("report", report);
         mv.addObject("group", group);
@@ -277,10 +308,16 @@ public class GuideController {
     @GetMapping("/guide_pending_final_reports")
     public ModelAndView guidePendingFinalReports(HttpSession session, Model model) {
         ModelAndView mv = new ModelAndView("/guide/guide_pending_final_reports");
+
         Guide guide = getSignedInGuide();
+        String guideId = String.valueOf(guide.getGuideId());
+
+        logService.saveLog(guideId, "Viewed Pending Final Reports", "Guide: " + guide.getName() + " accessed the pending final reports list.");
+
         List<GroupEntity> groups = groupService.getGPendingFinalReports(guide);
         mv.addObject("groups", groups);
         mv.addObject("guide", getSignedInGuide());
+
         return mv;
     }
 
@@ -289,7 +326,7 @@ public class GuideController {
                                            @RequestParam("groupId") String groupId) {
 
         GroupEntity group = groupService.getGroup(groupId);
-        Guide guide = getSignedInGuide(); // Get the currently signed-in guide
+        Guide guide = getSignedInGuide();
 
         if (gpendingAns.equals("approve")) {
             group.setFinalReportStatus("approved");
@@ -344,10 +381,8 @@ public class GuideController {
     public String changePassword(@RequestParam("newPassword") String newPassword) {
         Guide guide = getSignedInGuide(); // Get the currently signed-in guide
 
-        // Change the guide's password
         guideService.changePassword(guide, newPassword);
 
-        // Log the password change event
         logService.saveLog(String.valueOf(guide.getGuideId()), "Password Changed",
                 "Guide " + guide.getName() + " changed their password.");
 

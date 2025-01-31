@@ -76,6 +76,8 @@ public class AdminController {
     private LogService logService;
     @Autowired
     private InternApplicationService internApplicationService;
+    @Autowired
+    private VerificationService verificationService;
 
     @Value("${app.storage.base-dir}")
     private String baseDir;
@@ -2323,7 +2325,7 @@ public ModelAndView cancellationRequests(Model model) {
                     "Admin viewed the details of thesis with ID: " + id);
             return "admin/thesis_list_detail";  // Matches HTML filename
         } else {
-            return "error/404";  // A fallback error page
+            return "error/404";
         }
     }
     // Show form to edit an existing thesis
@@ -2371,14 +2373,14 @@ public ModelAndView cancellationRequests(Model model) {
         return "admin/logs";
     }
 
-    // Get intern activity logs
+    // Get intern activity logs----------------------------------------------------------------
     @GetMapping("/activity_logs")
     public String getInternActivityLogs(Model model) {
         List<Log> logs = logService.getAllLogs();
         if (logs == null) {
             logs = new ArrayList<>();  // Ensure it's not null
         }
-        System.out.println("Logs fetched: " + logs.size()); // Debugging
+        System.out.println("Logs fetched: " + logs.size());
 
         Admin admin = getSignedInAdmin();
         String id = String.valueOf(admin.getAdminId());
@@ -2389,20 +2391,150 @@ public ModelAndView cancellationRequests(Model model) {
         return "admin/activity_logs";
     }
 
-    // Log intern action
     public void logInternAction(String internId, String action, String details) {
         logService.saveLog(internId, action, details);
     }
 
-    // Submit report and log the action
     public void submitReport(String internId, String reportId) {
-        // Log the report submission action
+
         logInternAction(internId, "Submitted Weekly Report", "Report ID: " + reportId);
     }
 
-    // Update intern profile and log the action
     public void updateProfile(String internId, String newEmail, String newPhone) {
-        // Log the profile update action
+
         logInternAction(internId, "Updated Profile", "Changed Email: " + newEmail + ", Phone: " + newPhone);
+    }
+
+    // ========================== COMPANY VERIFICATION REQUESTS ========================== //
+    //View all pending verification requests
+    @GetMapping("/verification_requests")
+    public ModelAndView viewVerificationRequests(HttpSession session) {
+        ModelAndView mv = new ModelAndView("admin/verification_requests");
+        List<Verification> pendingRequests = verificationService.getPendingRequests();
+        mv.addObject("requests", pendingRequests);
+        return mv;
+    }
+
+    // View details of a specific verification request
+    @GetMapping("/verify/{id}")
+    public String viewVerificationDetails(@PathVariable("id") long id, Model model) {
+
+        Optional<Verification> verification = verificationService.getVerificationById(id);
+
+        if (verification.isPresent()) {
+
+            Admin admin = getSignedInAdmin();
+            String adminId = String.valueOf(admin.getAdminId());
+            logService.saveLog(adminId, "Verification Details View",
+                    "Admin " + admin.getName() + " viewed the details of verification request with ID: " + id);
+
+            model.addAttribute("verification", verification.get());
+
+            return "admin/verification_detail";
+        } else {
+            model.addAttribute("errorMessage", "Verification request not found.");
+            return "error/404";
+        }
+    }
+
+    // Approve Verification Request
+    @PostMapping("/approve/{id}")
+    public String approveVerification(@PathVariable("id") long id,
+                                      @RequestParam(value = "remarks", required = false) String remarks,
+                                      Model model) {
+        Optional<Verification> verification = verificationService.getVerificationById(id);
+        if (verification.isPresent()) {
+            Verification v = verification.get();
+
+
+            if (remarks == null) {
+                remarks = "";
+            }
+
+            Admin admin = getSignedInAdmin();
+            if (admin != null) {
+                String adminId = String.valueOf(admin.getAdminId());
+                verificationService.approveVerification(id, adminId, remarks);
+
+                logService.saveLog(adminId, "Verification Approved",
+                        "Admin " + admin.getName() + " approved the verification request with ID: " + id);
+
+                model.addAttribute("verification", v);
+                return "admin/verification_detail";
+            } else {
+                model.addAttribute("errorMessage", "Admin not found.");
+                return "error/404";
+            }
+        } else {
+            model.addAttribute("errorMessage", "Verification request not found.");
+            return "error/404";
+        }
+    }
+
+// Reject Verification Request
+@PostMapping("/reject/{id}")
+public String rejectVerification(@PathVariable("id") long id,
+                                 @RequestParam(value = "remarks", required = false) String remarks,
+                                 Model model) {
+    Optional<Verification> verification = verificationService.getVerificationById(id);
+    if (verification.isPresent()) {
+        Verification v = verification.get();
+
+        if (remarks == null) {
+            remarks = "";
+        }
+
+        Admin admin = getSignedInAdmin();
+        if (admin != null) {
+            String adminId = String.valueOf(admin.getAdminId());
+            verificationService.rejectVerification(id, adminId, remarks);
+
+            logService.saveLog(adminId, "Verification Rejected",
+                    "Admin " + admin.getName() + " rejected the verification request with ID: " + id);
+
+            model.addAttribute("verification", v);
+            return "admin/verification_detail";
+        } else {
+            model.addAttribute("errorMessage", "Admin not found.");
+            return "error/404";
+        }
+    } else {
+        model.addAttribute("errorMessage", "Verification request not found.");
+        return "error/404";
+    }
+}
+
+    //Form for companies to submit verification requests
+    @GetMapping("/verification_request_form")
+    public ModelAndView verificationRequestForm() {
+        return new ModelAndView("admin/verification_request_form");
+    }
+
+    //Handle company verification request submission
+    @PostMapping("/submit_verification_request")
+    public ModelAndView submitVerificationRequest(
+            @RequestParam String internId,
+            @RequestParam String companyName,
+            @RequestParam String contact,
+            @RequestParam String email) {
+
+        Verification verification = new Verification();
+        verification.setInternId(internId);
+        verification.setCompanyName(companyName);
+        verification.setContact(contact);
+        verification.setEmail(email);
+
+        verificationService.createVerificationRequest(verification);
+
+        ModelAndView mv = new ModelAndView("admin/verification_requests");
+        mv.addObject("success", true);
+        mv.addObject("requests", verificationService.getPendingRequests()); // Reload updated list
+        return mv;
+    }
+
+    //Success page after verification request submission
+    @GetMapping("/verification_success")
+    public ModelAndView verificationSuccess() {
+        return new ModelAndView("admin/verification_success");
     }
 }

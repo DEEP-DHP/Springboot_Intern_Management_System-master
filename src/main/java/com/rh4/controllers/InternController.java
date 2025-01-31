@@ -202,7 +202,8 @@ public class InternController {
         mv.addObject("intern", intern);
         mv.addObject("internApplication", internApplication);
         String internFullName = intern.getFirstName() + " " + intern.getLastName();
-        logService.saveLog(intern.getInternId(), "Intern Accessed Dashboard", internFullName + " visited their dashboard.");        return mv;
+        logService.saveLog(intern.getInternId(), "Intern Accessed Dashboard", "Intern " + internFullName + " visited their dashboard.");
+        return mv;
     }
 
     @PostMapping("/requestCancellation")
@@ -210,12 +211,21 @@ public class InternController {
         Intern intern = getSignedInIntern();
         intern.setCancellationStatus("requested");
         internService.updateCancellationStatus(intern);
-        logService.saveLog(intern.getInternId(), "Cancellation Request Submitted", "Cancellation Request Submitted successfully.");
+        String internFullName = intern.getFirstName() + " " + intern.getLastName();
+        logService.saveLog(intern.getInternId(), "Cancellation Request Submitted", "Intern " + internFullName + " submitted cancellation request.");
         return "redirect:/bisag/intern/intern_dashboard";
     }
 
     @GetMapping("/image/{id}")
     public ResponseEntity<InputStreamResource> getImage(@PathVariable String id) {
+        // Fetch intern details by their ID
+        Intern intern = internService.getInternById(id);
+        String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
+
+//        String internFullName = intern.getFirstName() + " " + intern.getLastName();
+//        logService.saveLog(internId, "Viewed Image", internFullName + " viewed the image with ID: " + id);
+
+        // Fetch the image data
         byte[] imageData = internService.getImageData(id);
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(imageData);
 
@@ -228,18 +238,23 @@ public class InternController {
     // project def approval
     @GetMapping("/project_definition")
     public ModelAndView project_definition(HttpSession session, Model model) {
-
         ModelAndView mv = new ModelAndView("/intern/project_definition");
         String username = getUsername();
         Intern intern = getSignedInIntern();
+
+        // Log the action of viewing project definition
+        String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
+        String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
+        logService.saveLog(internId, "Viewed Project Definition", internFullName + " viewed the project definition page.");
+
         if (intern.getGroupEntity() != null) {
             mv.addObject("group", intern.getGroupEntity());
         } else {
             mv.addObject("group", null); // Handle the case when no group is assigned
         }
+
         mv.addObject("intern", getSignedInIntern());
         return mv;
-
     }
 
     @PostMapping("/project_definition_submission")
@@ -302,10 +317,7 @@ public class InternController {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String formattedDate = localDate.format(formatter);
 
-            System.out.println(formattedDate); // Print the formatted date
-
             String checkWithFormattedDate = checkLastWeeklyReportSubmissionDate(nextSubmissionDate).toString();
-            System.out.println(checkWithFormattedDate);
             if (formattedDate.equals(checkWithFormattedDate)) {
                 weeklyReportDisable2 = "true";
             } else {
@@ -320,6 +332,12 @@ public class InternController {
         mv.addObject("intern", intern);
         mv.addObject("group", group);
         mv.addObject("weeklyReportDisable1", weeklyReportDisable1);
+
+        // Log the action of accessing the weekly report submission page
+        String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
+        String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
+        logService.saveLog(internId, "Accessed Weekly Report Submission", internFullName + " accessed the weekly report submission page.");
+
         return mv;
     }
 
@@ -375,21 +393,27 @@ public class InternController {
     @GetMapping("/change_weekly_report/{weekNo}")
     public ModelAndView chanegWeeklyReportSubmission(@PathVariable("weekNo") int weekNo) {
         ModelAndView mv = new ModelAndView("intern/change_weekly_report");
-        Intern inetrn = getSignedInIntern();
-        GroupEntity group = inetrn.getGroup();
+        Intern intern = getSignedInIntern();
+        GroupEntity group = intern.getGroup();
         WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
         MyUser user = myUserService.getUserByUsername(report.getReplacedBy().getUsername());
+
+        // Log the action of changing weekly report
+        String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
+        String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
+        logService.saveLog(internId, "Accessed Weekly Report Change", internFullName + " accessed the change weekly report page for week: " + weekNo);
+
         if (user.getRole().equals("GUIDE")) {
             Guide guide = guideService.getGuideByUsername(user.getUsername());
-            String status = "Your Current Weekly report is required some modifications given by guide. Please check it out.";
+            String status = "Your current weekly report is required some modifications given by guide. Please check it out.";
             mv.addObject("status", status);
             mv.addObject("replacedBy", guide.getName());
         } else if (user.getRole().equals("INTERN")) {
-            Intern intern = internService.getInternByUsername(user.getUsername());
-            mv.addObject("replacedBy", intern.getFirstName() + " " + intern.getLastName());
-            mv.addObject("status",
-                    "Your current weekly report is accepted and if any changes are required then you will be notified.");
+            Intern reportIntern = internService.getInternByUsername(user.getUsername());
+            mv.addObject("replacedBy", reportIntern.getFirstName() + " " + reportIntern.getLastName());
+            mv.addObject("status", "Your current weekly report is accepted and if any changes are required then you will be notified.");
         }
+
         mv.addObject("report", report);
         mv.addObject("group", group);
         return mv;
@@ -399,6 +423,11 @@ public class InternController {
     public ResponseEntity<byte[]> viewPdf(@PathVariable String internId, @PathVariable int weekNo) {
         WeeklyReport report = weeklyReportService.getReportByInternIdAndWeekNo(internId, weekNo);
         byte[] pdfContent = report.getSubmittedPdf();
+
+        // Log the action of viewing the PDF report
+        Intern intern = internService.getInternById(internId);
+        String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
+        logService.saveLog(internId, "Viewed Weekly Report PDF", internFullName + " viewed the PDF report for week " + weekNo);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
@@ -447,6 +476,11 @@ public class InternController {
     public ModelAndView submitForms() {
         ModelAndView mv = new ModelAndView("intern/submit_forms");
         Intern intern = getSignedInIntern();
+
+        // Log the action of accessing the submit forms page
+        String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
+        String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
+        logService.saveLog(internId, "Accessed Submit Forms", internFullName + " accessed the submit forms page.");
 
         mv.addObject("intern", intern);
         return mv;
