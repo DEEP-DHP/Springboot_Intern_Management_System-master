@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import com.rh4.models.ProjectDefinition;
@@ -31,6 +33,7 @@ import com.rh4.services.*;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Path;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.swing.*;
 
@@ -2035,6 +2038,32 @@ public class AdminController {
 //
 //        return mv;
 //    }
+@GetMapping("/admin_yearly_report")
+public String getReportsByYear(@RequestParam(value = "date", required = true) String selectedDate, Model model) {
+    int year = 0;
+    List<WeeklyReport> reports =null;
+    if(selectedDate != null && !selectedDate.isEmpty()){ LocalDate date = LocalDate.parse(selectedDate, DateTimeFormatter.ISO_DATE);
+//            reports =  weeklyReportRepo.findReportsByYear(year);
+        year = date.getYear();
+        reports =  weeklyReportService.getReportsByYear(year);
+
+        if(reports ==null || reports.isEmpty() ){
+            model.addAttribute("message", "Report not found for the year " + year);
+        }
+    }
+//        else if (selectedDate.isEmpty()) {
+//            return "report is not found!!!";
+//        }
+    else
+    {
+        reports =  weeklyReportService.getAllReports();
+    }
+    model.addAttribute("selectedDate",selectedDate);
+    model.addAttribute("year",year);
+    model.addAttribute("reports", reports);
+
+    return "admin/admin_yearly_report";
+}
 @GetMapping("/cancellation_requests")
 public ModelAndView cancellationRequests(Model model) {
     ModelAndView mv = new ModelAndView("/admin/cancellation_requests");
@@ -2437,72 +2466,59 @@ public ModelAndView cancellationRequests(Model model) {
         }
     }
 
-    // Approve Verification Request
     @PostMapping("/approve/{id}")
     public String approveVerification(@PathVariable("id") long id,
                                       @RequestParam(value = "remarks", required = false) String remarks,
-                                      Model model) {
+                                      RedirectAttributes redirectAttributes) {
         Optional<Verification> verification = verificationService.getVerificationById(id);
         if (verification.isPresent()) {
             Verification v = verification.get();
 
-
-            if (remarks == null) {
-                remarks = "";
-            }
-
+            // Get the logged-in admin's ID dynamically
             Admin admin = getSignedInAdmin();
-            if (admin != null) {
-                String adminId = String.valueOf(admin.getAdminId());
-                verificationService.approveVerification(id, adminId, remarks);
+            String adminId = String.valueOf(admin.getAdminId());
 
-                logService.saveLog(adminId, "Verification Approved",
-                        "Admin " + admin.getName() + " approved the verification request with ID: " + id);
+            verificationService.approveVerification(id, adminId, remarks);
 
-                model.addAttribute("verification", v);
-                return "admin/verification_detail";
-            } else {
-                model.addAttribute("errorMessage", "Admin not found.");
-                return "error/404";
-            }
+            // Log the approval action
+            logService.saveLog(adminId, "Verification Approved",
+                    "Admin " + admin.getName() + " approved the verification request with ID: " + id);
+
+            redirectAttributes.addFlashAttribute("successMessage", "Verification request approved successfully!");
         } else {
-            model.addAttribute("errorMessage", "Verification request not found.");
-            return "error/404";
+            redirectAttributes.addFlashAttribute("errorMessage", "Verification request not found.");
         }
+
+        // Redirect to the verification requests page
+        return "redirect:/bisag/admin/approved-verifications";
     }
 
-// Reject Verification Request
-@PostMapping("/reject/{id}")
-public String rejectVerification(@PathVariable("id") long id,
-                                 @RequestParam(value = "remarks", required = false) String remarks,
-                                 Model model) {
-    Optional<Verification> verification = verificationService.getVerificationById(id);
-    if (verification.isPresent()) {
-        Verification v = verification.get();
+    @PostMapping("/reject/{id}")
+    public String rejectVerification(@PathVariable("id") long id,
+                                     @RequestParam(value = "remarks", required = false) String remarks,
+                                     RedirectAttributes redirectAttributes) {
+        Optional<Verification> verification = verificationService.getVerificationById(id);
+        if (verification.isPresent()) {
+            Verification v = verification.get();
 
-        if (remarks == null) {
-            remarks = "";
-        }
-
-        Admin admin = getSignedInAdmin();
-        if (admin != null) {
+            // Get the logged-in admin's ID dynamically
+            Admin admin = getSignedInAdmin();
             String adminId = String.valueOf(admin.getAdminId());
+
             verificationService.rejectVerification(id, adminId, remarks);
 
+            // Log the rejection action
             logService.saveLog(adminId, "Verification Rejected",
                     "Admin " + admin.getName() + " rejected the verification request with ID: " + id);
 
-            model.addAttribute("verification", v);
-            return "admin/verification_detail";
+            redirectAttributes.addFlashAttribute("successMessage", "Verification request rejected successfully!");
         } else {
-            model.addAttribute("errorMessage", "Admin not found.");
-            return "error/404";
+            redirectAttributes.addFlashAttribute("errorMessage", "Verification request not found.");
         }
-    } else {
-        model.addAttribute("errorMessage", "Verification request not found.");
-        return "error/404";
+
+        // Redirect to the verification requests page
+        return "redirect:/bisag/admin/rejected-verifications";
     }
-}
 
     //Form for companies to submit verification requests
     @GetMapping("/verification_request_form")
@@ -2537,4 +2553,21 @@ public String rejectVerification(@PathVariable("id") long id,
     public ModelAndView verificationSuccess() {
         return new ModelAndView("admin/verification_success");
     }
+
+    // Display Approved Verifications
+    @GetMapping("/approved-verifications")
+    public String showApprovedVerifications(Model model) {
+        List<Verification> approvedVerifications = verificationService.getApprovedVerifications();
+        model.addAttribute("verifications", approvedVerifications);
+        return "admin/approved_verifications"; // HTML file for approved verifications
+    }
+
+    // Display Rejected Verifications
+    @GetMapping("/rejected-verifications")
+    public String showRejectedVerifications(Model model) {
+        List<Verification> rejectedVerifications = verificationService.getRejectedVerifications();
+        model.addAttribute("verifications", rejectedVerifications);
+        return "admin/rejected_verifications"; // HTML file for rejected verifications
+    }
+
 }
