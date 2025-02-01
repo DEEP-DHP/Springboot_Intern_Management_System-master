@@ -33,4 +33,6 @@ public interface WeeklyReportRepo extends JpaRepository<WeeklyReport, Long> {
 
     List<WeeklyReport> findByReportSubmittedDate(Date reportSubmittedDate);
 
+    @Query("SELECT w FROM WeeklyReport w WHERE YEAR(w.reportSubmittedDate) = :year")
+    List<WeeklyReport> findReportsByYear(@Param("year") int year);
 }
