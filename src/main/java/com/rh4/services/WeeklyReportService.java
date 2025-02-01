@@ -57,4 +57,8 @@ public class WeeklyReportService {
 	public List<WeeklyReport> getReportsByDate(Date date) {
 		return weeklyReportRepo.findByReportSubmittedDate(date);
 	}
+
+	public List<WeeklyReport> getReportsByYear(int year) {
+		return weeklyReportRepo.findReportsByYear(year);
+	}
 }

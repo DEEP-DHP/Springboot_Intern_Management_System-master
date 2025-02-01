@@ -20,34 +20,44 @@ public class VerificationService {
         return verificationRepo.findByStatus("PENDING");
     }
 
-    // Get verification request by ID (using Long instead of String)
-    public Optional<Verification> getVerificationById(Long id) {
-        return verificationRepo.findById(String.valueOf(id));  // Change to Long type
+    // Get all approved verification requests
+    public List<Verification> getApprovedVerifications() {
+        return verificationRepo.findByStatus("APPROVED");
     }
 
-    // Approve a verification request (using Long instead of String)
+    // Get all rejected verification requests
+    public List<Verification> getRejectedVerifications() {
+        return verificationRepo.findByStatus("REJECTED");
+    }
+
+    // Get verification request by ID
+    public Optional<Verification> getVerificationById(Long id) {
+        return verificationRepo.findById(String.valueOf(id));  // Fetching by ID
+    }
+
+    // Approve a verification request
     public Verification approveVerification(Long id, String adminId, String remarks) {
-        Optional<Verification> verification = verificationRepo.findById(String.valueOf(id));  // Change to Long type
+        Optional<Verification> verification = verificationRepo.findById(String.valueOf(id));
         if (verification.isPresent()) {
             Verification v = verification.get();
             v.setStatus("APPROVED");
             v.setAdminId(adminId);
             v.setVerifiedDate(new Date());
-            v.setRemarks(remarks);
+            v.setRemarks(remarks != null ? remarks : "");  // Make remarks optional
             return verificationRepo.save(v);
         }
         return null;
     }
 
-    // Reject a verification request (using Long instead of String)
+    // Reject a verification request
     public Verification rejectVerification(Long id, String adminId, String remarks) {
-        Optional<Verification> verification = verificationRepo.findById(String.valueOf(id));  // Change to Long type
+        Optional<Verification> verification = verificationRepo.findById(String.valueOf(id));
         if (verification.isPresent()) {
             Verification v = verification.get();
             v.setStatus("REJECTED");
             v.setAdminId(adminId);
             v.setVerifiedDate(new Date());
-            v.setRemarks(remarks);
+            v.setRemarks(remarks != null ? remarks : "");  // Make remarks optional
             return verificationRepo.save(v);
         }
         return null;
