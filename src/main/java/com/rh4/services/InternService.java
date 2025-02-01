@@ -60,6 +60,7 @@ public class InternService {
 	}
 	public List<InternApplication> getApprovedInterns()
 	{
+
 		return internApplicationRepo.getInternApprovedStatus();
 	}
 
@@ -209,5 +210,7 @@ public class InternService {
 		Intern intern = internRepo.findById(id).orElseThrow(() -> new RuntimeException("Image not found"));
 		return intern.getProfilePicture();
 	}
+
+
 
 }
