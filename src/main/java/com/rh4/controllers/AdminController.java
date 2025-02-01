@@ -81,6 +81,12 @@ public class AdminController {
     private InternApplicationService internApplicationService;
     @Autowired
     private VerificationService verificationService;
+    @Autowired
+    private AttendanceService attendanceService;
+    @Autowired
+    private ExcelService excelService;
+    @Autowired
+    private AttendanceRepo attendanceRepo;
 
     @Value("${app.storage.base-dir}")
     private String baseDir;
@@ -2570,4 +2576,41 @@ public ModelAndView cancellationRequests(Model model) {
         return "admin/rejected_verifications"; // HTML file for rejected verifications
     }
 
+    //-------------------------------------Attendance Module-------------------------------------------
+    @PostMapping("/upload_attendance")
+    public String uploadAttendance(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) {
+        if (file.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Please select a file to upload.");
+            return "redirect:/admin/attendance";
+        }
+
+        try {
+            attendanceService.processAttendanceFile(file);
+            redirectAttributes.addFlashAttribute("successMessage", "Attendance data uploaded successfully.");
+        } catch (Exception e) {
+            e.printStackTrace();  // Check the console for detailed errors
+            redirectAttributes.addFlashAttribute("errorMessage", "Failed to upload attendance data.");
+        }
+
+        return "redirect:/bisag/admin/attendance";
+    }
+
+    @GetMapping("/attendance")
+    public String getAllAttendance(Model model) {
+        List<Attendance> attendances = attendanceRepo.findAll();
+
+        // Calculate total attendance percentage for each intern
+        Map<String, Float> internTotalAttendanceMap = new HashMap<>();
+        for (Attendance attendance : attendances) {
+            String internId = attendance.getInternId();
+            if (!internTotalAttendanceMap.containsKey(internId)) {
+                float totalAttendance = attendanceService.calculateTotalAttendance(internId);
+                internTotalAttendanceMap.put(internId, totalAttendance);
+            }
+        }
+
+        model.addAttribute("attendances", attendances);
+        model.addAttribute("internTotalAttendanceMap", internTotalAttendanceMap);
+        return "admin/attendance";  // Replace with your actual view name
+    }
 }
