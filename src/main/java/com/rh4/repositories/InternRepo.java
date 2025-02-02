@@ -20,7 +20,7 @@ public interface InternRepo extends JpaRepository<Intern, String> {
 
 	List<Intern> findByGroupId(long groupId);
 
-	Optional<Intern> findById(String id);  // Or the appropriate return type depending on how you're managing IDs
+	Optional<Intern> findById(String id);
 
 	List<Intern> findByCancellationStatus(String cancellationStatus);
 
@@ -60,7 +60,7 @@ public interface InternRepo extends JpaRepository<Intern, String> {
 	void updateProfilePicture(@Param("internId") String internId, @Param("profilePicture") byte[] profilePicture);
 
 	@Query("SELECT DISTINCT i.projectDefinitionName FROM Intern i")
-	List<String> findDistinctProjectDefinitionNames(); // Custom query to fetch distinct project definition names
+	List<String> findDistinctProjectDefinitionNames();
 
 	@Query("SELECT DISTINCT i.gender FROM Intern i")
 	List<String> findDistinctGenders();
