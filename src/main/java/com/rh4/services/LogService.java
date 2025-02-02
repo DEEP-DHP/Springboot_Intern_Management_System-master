@@ -18,7 +18,7 @@ public class LogService {
     }
 
     public List<Log> getAllLogs() {
-        List<Log> logs = logRepo.findAll();  // Assuming logRepository fetches the logs from the DB
+        List<Log> logs = logRepo.findAll();
         System.out.println("Logs fetched: " + logs.size());
         return logs;
     }

@@ -27,10 +27,10 @@ public class AttendanceService {
         try (InputStream inputStream = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(inputStream)) {
 
-            Sheet sheet = workbook.getSheetAt(0);  // Read the first sheet
+            Sheet sheet = workbook.getSheetAt(0);
 
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // Skip header row
+                if (row.getRowNum() == 0) continue;
 
                 Attendance attendance = new Attendance();
                 attendance.setInternId(getStringCellValue(row.getCell(0)));
@@ -40,7 +40,6 @@ public class AttendanceService {
                 attendance.setTotalPresentDays(getNumericCellValueAsInt(row.getCell(4)));
                 attendance.setTotalAbsentDays(getNumericCellValueAsInt(row.getCell(5)));
 
-                // ✅ Calculate Attendance Percentage
                 int workingDays = attendance.getTotalWorkingDays();
                 int presentDays = attendance.getTotalPresentDays();
                 float percentage = (workingDays > 0) ? ((float) presentDays / workingDays) * 100 : 0.0F;
@@ -57,18 +56,14 @@ public class AttendanceService {
         }
     }
 
-    // ✅ Fetch All Attendance Records
     public List<Attendance> getAllAttendance() {
         return attendanceRepo.findAll();
     }
 
-    // ✅ Fetch Monthly Attendance for an Intern
     public List<Attendance> getMonthlyAttendance(String internId) {
         return attendanceRepo.findByInternIdOrderByYearAscMonthAsc(internId);
     }
 
-    // ✅ Calculate Total Attendance Percentage for an Intern
-    // Fetch Total Attendance Percentage for an Intern (Across all months)
     public float calculateTotalAttendance(String internId) {
         List<Attendance> attendances = attendanceRepo.findByInternId(internId);
 
@@ -78,16 +73,15 @@ public class AttendanceService {
         return (totalWorkingDays > 0) ? ((float) totalPresentDays / totalWorkingDays) * 100 : 0.0F;
     }
 
-    // ✅ Helper Method to Convert Excel's Numeric Date to Month Name
     private String getMonthFromCell(Cell cell) {
         if (cell == null) return "";
         try {
             if (cell.getCellType() == CellType.STRING) {
-                return cell.getStringCellValue().trim(); // If already text, return directly
+                return cell.getStringCellValue().trim();
             } else if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
                 Date date = cell.getDateCellValue();
                 SimpleDateFormat monthFormat = new SimpleDateFormat("MMMM", Locale.ENGLISH);
-                return monthFormat.format(date); // Convert to month name (e.g., "January")
+                return monthFormat.format(date);
             }
         } catch (Exception e) {
             System.out.println("Error parsing MONTH value at row: " + cell.getRowIndex() + ", col: " + cell.getColumnIndex());
@@ -95,7 +89,6 @@ public class AttendanceService {
         return "";
     }
 
-    // ✅ Keep the original `getStringCellValue()` method
     private String getStringCellValue(Cell cell) {
         if (cell == null) return "";
         if (cell.getCellType() == CellType.STRING) {

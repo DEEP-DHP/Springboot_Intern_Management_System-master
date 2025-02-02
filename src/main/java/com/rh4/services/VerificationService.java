@@ -15,27 +15,22 @@ public class VerificationService {
     @Autowired
     private VerificationRepo verificationRepo;
 
-    // Get all pending verification requests
     public List<Verification> getPendingRequests() {
         return verificationRepo.findByStatus("PENDING");
     }
 
-    // Get all approved verification requests
     public List<Verification> getApprovedVerifications() {
         return verificationRepo.findByStatus("APPROVED");
     }
 
-    // Get all rejected verification requests
     public List<Verification> getRejectedVerifications() {
         return verificationRepo.findByStatus("REJECTED");
     }
 
-    // Get verification request by ID
     public Optional<Verification> getVerificationById(Long id) {
-        return verificationRepo.findById(String.valueOf(id));  // Fetching by ID
+        return verificationRepo.findById(String.valueOf(id));
     }
 
-    // Approve a verification request
     public Verification approveVerification(Long id, String adminId, String remarks) {
         Optional<Verification> verification = verificationRepo.findById(String.valueOf(id));
         if (verification.isPresent()) {
@@ -43,7 +38,7 @@ public class VerificationService {
             v.setStatus("APPROVED");
             v.setAdminId(adminId);
             v.setVerifiedDate(new Date());
-            v.setRemarks(remarks != null ? remarks : "");  // Make remarks optional
+            v.setRemarks(remarks != null ? remarks : "");
             return verificationRepo.save(v);
         }
         return null;
@@ -57,7 +52,7 @@ public class VerificationService {
             v.setStatus("REJECTED");
             v.setAdminId(adminId);
             v.setVerifiedDate(new Date());
-            v.setRemarks(remarks != null ? remarks : "");  // Make remarks optional
+            v.setRemarks(remarks != null ? remarks : "");
             return verificationRepo.save(v);
         }
         return null;
