@@ -386,7 +386,7 @@ public class GuideController {
         logService.saveLog(String.valueOf(guide.getGuideId()), "Password Changed",
                 "Guide " + guide.getName() + " changed their password.");
 
-        return "redirect:/logout"; // Redirect to logout after password change
+        return "redirect:/logout";
     }
 
 }

@@ -265,18 +265,14 @@ public class AdminController {
 
         ModelAndView mv = new ModelAndView("admin/admin_dashboard");
 
-        // Retrieve the username from the session
         String username = (String) session.getAttribute("username");
 
-        // Use the adminService to get the Admin object based on the username
         Admin admin = adminService.getAdminByUsername(username);
 
         if (admin != null) {
-            // Set the "id" and "username" attributes in the session
             session.setAttribute("id", admin.getAdminId());
             session.setAttribute("username", username);
 
-            // Log the admin dashboard visit
             logService.saveLog(String.valueOf(admin.getAdminId()), "Admin Dashboard Accessed",
                     "Admin " + admin.getName() + " accessed the dashboard.");
 
@@ -311,7 +307,6 @@ public class AdminController {
 
         String adminUsername = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        // Fetch admin details using the username
         Admin admin = adminService.getAdminByUsername(adminUsername);
 
         if (admin != null) {
@@ -345,8 +340,7 @@ public class AdminController {
 
         mv.setViewName("admin/intern_detail");
 
-        // Log the action of viewing intern details
-        Admin admin = getSignedInAdmin(); // Assuming there's a method to get the logged-in admin
+        Admin admin = getSignedInAdmin();
         if (admin != null && intern.isPresent()) {
             logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Intern Details",
                     "Admin " + admin.getName() + " viewed the details of intern ID: " + id + ", Name: " + intern.get().getFirstName() + " " + intern.get().getLastName());
@@ -366,8 +360,7 @@ public class AdminController {
 
         model = countNotifications(model);
 
-        // Log the action of updating admin details
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming there's a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null && admin.isPresent()) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "Updating Admin Details",
                     "Admin " + signedInAdmin.getName() + " is updating the details of admin ID: " + id + ", Name: " + admin.get().getName());
@@ -391,8 +384,7 @@ public class AdminController {
             updatedAdmin.setContactNo(admin.getContactNo());
             updatedAdmin.setEmailId(admin.getEmailId());
 
-            // Log the action of updating admin details
-            Admin signedInAdmin = getSignedInAdmin(); // Assuming there's a method to get the logged-in admin
+            Admin signedInAdmin = getSignedInAdmin();
             if (signedInAdmin != null) {
                 logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "Updating Admin Details",
                         "Admin " + signedInAdmin.getName() + " updated the details of admin ID: " + id + ", Name: " + updatedAdmin.getName());
@@ -400,7 +392,6 @@ public class AdminController {
                 System.out.println("Error: Signed-in admin not found for logging!");
             }
 
-            // Save the updated admin entity
             adminService.updateAdmin(updatedAdmin, existingAdmin);
         }
         return "redirect:/logout";
@@ -411,8 +402,7 @@ public class AdminController {
     public ModelAndView internApplication(Model model) {
         ModelAndView mv = new ModelAndView("admin/intern_application");
 
-        // Log the action when an admin accesses the intern application page
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming there's a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Intern Applications",
                     "Admin " + signedInAdmin.getName() + " accessed the intern application page.");
@@ -433,11 +423,9 @@ public class AdminController {
         System.out.println("id" + id);
         ModelAndView mv = new ModelAndView();
 
-        // Fetch the intern application based on the ID
         Optional<InternApplication> intern = internService.getInternApplication(id);
 
-        // Log the action when an admin views the detailed intern application page
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming there's a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Intern Application Details",
                     "Admin " + signedInAdmin.getName() + " viewed the details of Intern Application with ID: " + id);
@@ -465,8 +453,7 @@ public class AdminController {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id); // Implement this service method
         System.out.println("ID: " + id);
 
-        // Log the action of viewing the intern application documents
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Intern Application Documents",
                     "Admin " + signedInAdmin.getName() + " viewed the documents for Intern Application with ID: " + id);
@@ -476,7 +463,7 @@ public class AdminController {
 
         // Check if the intern application exists
         if (optionalApplication.isPresent()) {
-            InternApplication application = optionalApplication.get(); // Retrieve the InternApplication object
+            InternApplication application = optionalApplication.get();
             model.addAttribute("id", id);
             model.addAttribute("passportSizeImage", application.getPassportSizeImage());
             model.addAttribute("collegeIcardImage", application.getCollegeIcardImage());
@@ -486,7 +473,6 @@ public class AdminController {
             model.addAttribute("error", "Intern Application not found");
         }
 
-        // Return the view with the model and data
         ModelAndView mv = new ModelAndView();
         mv.setViewName("admin/intern_application_docs");
         return mv;
@@ -494,11 +480,10 @@ public class AdminController {
 
     @GetMapping("/intern_docs/{id}")
     public ModelAndView internDocs(@PathVariable("id") String id, Model model) {
-        Optional<Intern> optionalApplication = internService.getIntern(id); // Implement this service method
+        Optional<Intern> optionalApplication = internService.getIntern(id);
         System.out.println("ID: " + id);
 
-        // Log the action of viewing the intern's documents
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Intern Documents",
                     "Admin " + signedInAdmin.getName() + " viewed the documents for Intern with ID: " + id);
@@ -532,8 +517,7 @@ public class AdminController {
     public ResponseEntity<byte[]> getPassportSizeImageForInternApplication(@PathVariable("id") long id) {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
 
-        // Log the action of viewing the passport size image for the intern
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Passport Size Image",
                     "Admin " + signedInAdmin.getName() + " viewed the passport size image for Intern Application with ID: " + id);
@@ -562,8 +546,7 @@ public class AdminController {
     public ResponseEntity<byte[]> getPassportSizeImageForIntern(@PathVariable("id") String id) {
         Optional<Intern> optionalApplication = internService.getIntern(id);
 
-        // Log the action of viewing the passport size image for the intern
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Passport Size Image",
                     "Admin " + signedInAdmin.getName() + " viewed the passport size image for Intern with ID: " + id);
@@ -592,8 +575,7 @@ public class AdminController {
     public ResponseEntity<byte[]> getICardImageForInternApplication(@PathVariable("id") long id) {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
 
-        // Log the action of viewing the college I-card image for the intern application
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View College I-card Image",
                     "Admin " + signedInAdmin.getName() + " viewed the college I-card image for Intern Application with ID: " + id);
@@ -622,8 +604,7 @@ public class AdminController {
     public ResponseEntity<byte[]> getICardImageForIntern(@PathVariable("id") String id) {
         Optional<Intern> optionalApplication = internService.getIntern(id);
 
-        // Log the action of viewing the college I-card image for the intern
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View College I-card Image",
                     "Admin " + signedInAdmin.getName() + " viewed the college I-card image for Intern with ID: " + id);
@@ -652,8 +633,7 @@ public class AdminController {
     public ResponseEntity<byte[]> getNocPdfForInternApplication(@PathVariable("id") long id) {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
 
-        // Log the action of viewing the NOC PDF for the intern application
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View NOC PDF",
                     "Admin " + signedInAdmin.getName() + " viewed the NOC PDF for Intern Application with ID: " + id);
@@ -682,8 +662,7 @@ public class AdminController {
     public ResponseEntity<byte[]> getNocPdfForIntern(@PathVariable("id") String id) {
         Optional<Intern> optionalApplication = internService.getIntern(id);
 
-        // Log the action of viewing the NOC PDF for the intern
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View NOC PDF",
                     "Admin " + signedInAdmin.getName() + " viewed the NOC PDF for Intern with ID: " + id);
@@ -712,8 +691,7 @@ public class AdminController {
     public ResponseEntity<byte[]> getResumePdfForInternApplication(@PathVariable("id") long id) {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
 
-        // Log the action of viewing the Resume PDF for the intern application
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Resume PDF",
                     "Admin " + signedInAdmin.getName() + " viewed the Resume PDF for Intern Application with ID: " + id);
@@ -742,8 +720,7 @@ public class AdminController {
     public ResponseEntity<byte[]> getResumePdfForIntern(@PathVariable("id") String id) {
         Optional<Intern> optionalApplication = internService.getIntern(id);
 
-        // Log the action of viewing the Resume PDF for the intern
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "View Resume PDF",
                     "Admin " + signedInAdmin.getName() + " viewed the Resume PDF for Intern with ID: " + id);
@@ -1725,7 +1702,6 @@ public class AdminController {
 
     @PostMapping("/register_guide")
     public String registerGuide(@ModelAttribute("guide") Guide guide) {
-        // Register the guide
         guideService.registerGuide(guide);
 
         // Send notification email to the guide
@@ -1892,7 +1868,6 @@ public class AdminController {
         System.out.println("guide id: " + guideid);
         groupService.assignGuide(groupId, guideid);
 
-        // Log the assignment action
         String username = (String) session.getAttribute("username");
         Admin admin = adminService.getAdminByUsername(username);
         if (admin != null) {
@@ -1953,7 +1928,7 @@ public class AdminController {
             }
             groupRepo.save(group);
         } else {
-            // Handle the case where the group is null, perhaps by logging an error or returning an error response
+
         }
         return "redirect:/bisag/admin/admin_pending_def_approvals";
     }
@@ -1998,7 +1973,7 @@ public class AdminController {
             Intern intern = internService.getInternByUsername(user.getUsername());
             mv.addObject("replacedBy", intern.getFirstName() + intern.getLastName());
         } else {
-            // Handle other roles if needed
+
         }
 
         mv.addObject("report", report);
@@ -2314,28 +2289,25 @@ public ModelAndView cancellationRequests(Model model) {
     }
 
     // Show form to add a new thesis
-    // Show the thesis form to add a new thesis
     @GetMapping("thesis/new")
     public String showThesisForm(Model model) {
         model.addAttribute("thesis", new Thesis());
 
-        // Log the action of showing the thesis form
         logService.saveLog("Thesis Form", "Form Access", "Admin accessed the 'Add Thesis' form.");
 
-        return "admin/thesis_form"; // This refers to templates/admin/thesis_form.html
+        return "admin/thesis_form";
     }
 
     // Handle adding/updating a thesis record
     @PostMapping("thesis/save")
     public String saveThesis(@ModelAttribute("thesis") Thesis thesis) {
-        // Save the thesis record
+
         thesisService.saveThesis(thesis);
 
-        // Log the thesis save action
         logService.saveLog(String.valueOf(thesis.getId()), "Thesis Saved",
                 "Admin added or updated a thesis with ID: " + thesis.getId());
 
-        return "redirect:/bisag/admin/thesis_list";  // Redirect to thesis listing
+        return "redirect:/bisag/admin/thesis_list";
     }
 
     // Show all thesis records
@@ -2358,7 +2330,7 @@ public ModelAndView cancellationRequests(Model model) {
             model.addAttribute("thesis", thesis);
             logService.saveLog(id, "Thesis Details View",
                     "Admin viewed the details of thesis with ID: " + id);
-            return "admin/thesis_list_detail";  // Matches HTML filename
+            return "admin/thesis_list_detail";
         } else {
             return "error/404";
         }
@@ -2447,6 +2419,13 @@ public ModelAndView cancellationRequests(Model model) {
         ModelAndView mv = new ModelAndView("admin/verification_requests");
         List<Verification> pendingRequests = verificationService.getPendingRequests();
         mv.addObject("requests", pendingRequests);
+
+        Admin admin = getSignedInAdmin();
+        String id = String.valueOf(admin.getAdminId());
+
+        logService.saveLog(id, "Viewed Verification Requests",
+                "Admin " + admin.getName() + " accessed the list of pending verification requests.");
+
         return mv;
     }
 
@@ -2480,13 +2459,11 @@ public ModelAndView cancellationRequests(Model model) {
         if (verification.isPresent()) {
             Verification v = verification.get();
 
-            // Get the logged-in admin's ID dynamically
             Admin admin = getSignedInAdmin();
             String adminId = String.valueOf(admin.getAdminId());
 
             verificationService.approveVerification(id, adminId, remarks);
 
-            // Log the approval action
             logService.saveLog(adminId, "Verification Approved",
                     "Admin " + admin.getName() + " approved the verification request with ID: " + id);
 
@@ -2495,7 +2472,6 @@ public ModelAndView cancellationRequests(Model model) {
             redirectAttributes.addFlashAttribute("errorMessage", "Verification request not found.");
         }
 
-        // Redirect to the verification requests page
         return "redirect:/bisag/admin/approved-verifications";
     }
 
@@ -2507,13 +2483,11 @@ public ModelAndView cancellationRequests(Model model) {
         if (verification.isPresent()) {
             Verification v = verification.get();
 
-            // Get the logged-in admin's ID dynamically
             Admin admin = getSignedInAdmin();
             String adminId = String.valueOf(admin.getAdminId());
 
             verificationService.rejectVerification(id, adminId, remarks);
 
-            // Log the rejection action
             logService.saveLog(adminId, "Verification Rejected",
                     "Admin " + admin.getName() + " rejected the verification request with ID: " + id);
 
@@ -2522,13 +2496,17 @@ public ModelAndView cancellationRequests(Model model) {
             redirectAttributes.addFlashAttribute("errorMessage", "Verification request not found.");
         }
 
-        // Redirect to the verification requests page
         return "redirect:/bisag/admin/rejected-verifications";
     }
 
     //Form for companies to submit verification requests
     @GetMapping("/verification_request_form")
     public ModelAndView verificationRequestForm() {
+        Admin admin = getSignedInAdmin();
+        String id = String.valueOf(admin.getAdminId());
+
+        logService.saveLog(id, "Viewed Verification Request Form", "Admin " + admin.getName() + " accessed the verification request form.");
+
         return new ModelAndView("admin/verification_request_form");
     }
 
@@ -2548,15 +2526,27 @@ public ModelAndView cancellationRequests(Model model) {
 
         verificationService.createVerificationRequest(verification);
 
+        Admin admin = getSignedInAdmin();
+        String id = String.valueOf(admin.getAdminId());
+
+        logService.saveLog(id, "Submitted Verification Request",
+                "Admin " + admin.getName() + " submitted a verification request for Intern ID: " + internId);
+
         ModelAndView mv = new ModelAndView("admin/verification_requests");
         mv.addObject("success", true);
-        mv.addObject("requests", verificationService.getPendingRequests()); // Reload updated list
+        mv.addObject("requests", verificationService.getPendingRequests());
         return mv;
     }
 
-    //Success page after verification request submission
+    // Success page after verification request submission
     @GetMapping("/verification_success")
     public ModelAndView verificationSuccess() {
+        Admin admin = getSignedInAdmin();
+        String id = String.valueOf(admin.getAdminId());
+
+        logService.saveLog(id, "Viewed Verification Success Page",
+                "Admin " + admin.getName() + " accessed the verification success page.");
+
         return new ModelAndView("admin/verification_success");
     }
 
@@ -2565,7 +2555,14 @@ public ModelAndView cancellationRequests(Model model) {
     public String showApprovedVerifications(Model model) {
         List<Verification> approvedVerifications = verificationService.getApprovedVerifications();
         model.addAttribute("verifications", approvedVerifications);
-        return "admin/approved_verifications"; // HTML file for approved verifications
+
+        Admin admin = getSignedInAdmin();
+        String id = String.valueOf(admin.getAdminId());
+
+        logService.saveLog(id, "Viewed Approved Verifications",
+                "Admin " + admin.getName() + " viewed the list of approved verifications.");
+
+        return "admin/approved_verifications";
     }
 
     // Display Rejected Verifications
@@ -2573,7 +2570,14 @@ public ModelAndView cancellationRequests(Model model) {
     public String showRejectedVerifications(Model model) {
         List<Verification> rejectedVerifications = verificationService.getRejectedVerifications();
         model.addAttribute("verifications", rejectedVerifications);
-        return "admin/rejected_verifications"; // HTML file for rejected verifications
+
+        Admin admin = getSignedInAdmin();
+        String id = String.valueOf(admin.getAdminId());
+
+        logService.saveLog(id, "Viewed Rejected Verifications",
+                "Admin " + admin.getName() + " viewed the list of rejected verifications.");
+
+        return "admin/rejected_verifications";
     }
 
     //-------------------------------------Attendance Module-------------------------------------------
@@ -2586,9 +2590,15 @@ public ModelAndView cancellationRequests(Model model) {
 
         try {
             attendanceService.processAttendanceFile(file);
+
+            Admin admin = getSignedInAdmin();
+            String id = String.valueOf(admin.getAdminId());
+            logService.saveLog(id, "Uploaded Attendance Data",
+                    "Admin " + admin.getName() + " uploaded a new attendance file.");
+
             redirectAttributes.addFlashAttribute("successMessage", "Attendance data uploaded successfully.");
         } catch (Exception e) {
-            e.printStackTrace();  // Check the console for detailed errors
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage", "Failed to upload attendance data.");
         }
 
@@ -2599,7 +2609,7 @@ public ModelAndView cancellationRequests(Model model) {
     public String getAllAttendance(Model model) {
         List<Attendance> attendances = attendanceRepo.findAll();
 
-        // Calculate total attendance percentage for each intern
+        //  total attendance percentage for each intern
         Map<String, Float> internTotalAttendanceMap = new HashMap<>();
         for (Attendance attendance : attendances) {
             String internId = attendance.getInternId();
@@ -2611,6 +2621,12 @@ public ModelAndView cancellationRequests(Model model) {
 
         model.addAttribute("attendances", attendances);
         model.addAttribute("internTotalAttendanceMap", internTotalAttendanceMap);
-        return "admin/attendance";  // Replace with your actual view name
+
+        Admin admin = getSignedInAdmin();
+        String id = String.valueOf(admin.getAdminId());
+        logService.saveLog(id, "Viewed Attendance Data",
+                "Admin " + admin.getName() + " accessed the attendance records.");
+
+        return "admin/attendance";
     }
 }

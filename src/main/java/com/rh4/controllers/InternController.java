@@ -162,7 +162,7 @@ public class InternController {
     }
 
     public Date addDaysToYoungestCompletionDate() {
-        Date youngestCompletionDate = youngestCompletionDate(); // Assuming this method returns a Date object
+        Date youngestCompletionDate = youngestCompletionDate();
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(youngestCompletionDate);
         calendar.add(Calendar.DAY_OF_MONTH, 7); // Add 7 days
@@ -184,21 +184,19 @@ public class InternController {
             int internCountGroupWise = interns.size();
             mv.addObject("internCountGroupWise", internCountGroupWise);
         } else {
-            mv.addObject("group", null); // Handle the case when no group is assigned
+            mv.addObject("group", null);
         }
 
         if (intern.getProfilePicture() != null) {
             String encodedImage = Base64.encodeBase64String(intern.getProfilePicture());
             model.addAttribute("encodedProfilePicture", encodedImage);
         }
-        // Set the "id" and "username" attributes in the session
+
         session.setAttribute("id", intern.getInternId());
         session.setAttribute("username", username);
 
-        // Add the username to the ModelAndView
         mv.addObject("username", username);
 
-        // Add intern details to the ModelAndView
         mv.addObject("intern", intern);
         mv.addObject("internApplication", internApplication);
         String internFullName = intern.getFirstName() + " " + intern.getLastName();
@@ -231,7 +229,7 @@ public class InternController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=image.jpg")
-                .contentType(MediaType.IMAGE_JPEG) // Change this based on your image type
+                .contentType(MediaType.IMAGE_JPEG)
                 .body(new InputStreamResource(byteArrayInputStream));
     }
 
@@ -242,7 +240,6 @@ public class InternController {
         String username = getUsername();
         Intern intern = getSignedInIntern();
 
-        // Log the action of viewing project definition
         String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
         String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
         logService.saveLog(internId, "Viewed Project Definition", internFullName + " viewed the project definition page.");
@@ -250,7 +247,7 @@ public class InternController {
         if (intern.getGroupEntity() != null) {
             mv.addObject("group", intern.getGroupEntity());
         } else {
-            mv.addObject("group", null); // Handle the case when no group is assigned
+            mv.addObject("group", null);
         }
 
         mv.addObject("intern", getSignedInIntern());
@@ -333,7 +330,6 @@ public class InternController {
         mv.addObject("group", group);
         mv.addObject("weeklyReportDisable1", weeklyReportDisable1);
 
-        // Log the action of accessing the weekly report submission page
         String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
         String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
         logService.saveLog(internId, "Accessed Weekly Report Submission", internFullName + " accessed the weekly report submission page.");
@@ -374,13 +370,11 @@ public class InternController {
         weeklyReport.setDeadline(updatedNextSubmissionDate);
         MyUser user = myUserService.getUserByUsername(intern.getEmail());
         weeklyReport.setReplacedBy(user);
-        // Check if the deadline is greater than or equal to the reportSubmittedDate
+
         if (weeklyReport.getDeadline().compareTo(currentDate) >= 0) {
-            // If the deadline is greater than or equal to the reportSubmittedDate, set the
             // status to "submitted"
             weeklyReport.setStatus("submitted");
         } else {
-            // If the deadline is less than the reportSubmittedDate, set the status to "late
             // submitted"
             weeklyReport.setStatus("late submitted");
         }
@@ -540,19 +534,16 @@ public class InternController {
 
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
-
             byte[] pdf = application.getIcardForm();
 
             if (pdf != null) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_PDF)
-                        .body(pdf);
-            } else {
-                return ResponseEntity.notFound().build();
+                // Log the action
+                logService.saveLog(id, "Viewed I-Card Form",
+                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their I-Card form.");
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
             }
-        } else {
-            return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/documents/security/{id}")
@@ -561,19 +552,15 @@ public class InternController {
 
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
-
             byte[] pdf = application.getSecurityForm();
 
             if (pdf != null) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_PDF)
-                        .body(pdf);
-            } else {
-                return ResponseEntity.notFound().build();
+                logService.saveLog(id, "Viewed Security Form",
+                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their security form.");
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
             }
-        } else {
-            return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/documents/registration/{id}")
@@ -582,19 +569,15 @@ public class InternController {
 
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
-
             byte[] pdf = application.getRegistrationForm();
 
             if (pdf != null) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_PDF)
-                        .body(pdf);
-            } else {
-                return ResponseEntity.notFound().build();
+                logService.saveLog(id, "Viewed Registration Form",
+                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their registration form.");
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
             }
-        } else {
-            return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/documents/resume/{id}")
@@ -603,19 +586,15 @@ public class InternController {
 
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
-
             byte[] pdf = application.getResumePdf();
 
             if (pdf != null) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_PDF)
-                        .body(pdf);
-            } else {
-                return ResponseEntity.notFound().build();
+                logService.saveLog(id, "Viewed Resume",
+                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their resume.");
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
             }
-        } else {
-            return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/documents/noc/{id}")
@@ -624,19 +603,15 @@ public class InternController {
 
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
-
             byte[] pdf = application.getNocPdf();
 
             if (pdf != null) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_PDF)
-                        .body(pdf);
-            } else {
-                return ResponseEntity.notFound().build();
+                logService.saveLog(id, "Viewed NOC Form",
+                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their NOC form.");
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
             }
-        } else {
-            return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/documents/icard/{id}")
@@ -645,19 +620,15 @@ public class InternController {
 
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
-
             byte[] image = application.getCollegeIcardImage();
 
             if (image != null) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.IMAGE_JPEG)
-                        .body(image);
-            } else {
-                return ResponseEntity.notFound().build();
+                logService.saveLog(id, "Viewed College I-Card",
+                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their college I-Card.");
+                return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
             }
-        } else {
-            return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/documents/passport/{id}")
@@ -666,10 +637,13 @@ public class InternController {
 
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
-
             byte[] image = application.getPassportSizeImage();
 
             if (image != null) {
+                // Log the intern action
+                logService.saveLog(id, "Viewed Passport Image",
+                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their passport-size image.");
+
                 return ResponseEntity.ok()
                         .contentType(MediaType.IMAGE_JPEG)
                         .body(image);
@@ -687,40 +661,46 @@ public class InternController {
         List<Admin> admins = adminService.getAdmin();
         List<Guide> guides = guideService.getGuide();
         Intern intern = getSignedInIntern();
-        if (intern.getGroupEntity() != null) {
-            mv.addObject("group", intern.getGroupEntity());
-        } else {
-            mv.addObject("group", null); // Handle the case when no group is assigned
-        }
-        mv.addObject("admins", admins);
-        mv.addObject("guides", guides);
-        mv.addObject("intern", getSignedInIntern());
-        return mv;
-    }
 
-    @GetMapping("/final_report_submission")
-    public ModelAndView finalReportSubmission(HttpSession session, Model model) {
-
-        ModelAndView mv = new ModelAndView("/intern/final_report_submission");
-        String username = getUsername();
-        Intern intern = getSignedInIntern();
         if (intern.getGroupEntity() != null) {
             mv.addObject("group", intern.getGroupEntity());
         } else {
             mv.addObject("group", null);
         }
-        Date deadlineOfFinalReport = addDaysToYoungestCompletionDate();
-        String submitDisable;
-        if (deadlineOfFinalReport.after(new Date())) {
-            submitDisable = "false";
+
+        mv.addObject("admins", admins);
+        mv.addObject("guides", guides);
+        mv.addObject("intern", intern);
+
+        logService.saveLog(intern.getInternId(), "Viewed Query Page",
+                "Intern " + intern.getFirstName() + " " + intern.getLastName() + " accessed the query page.");
+
+        return mv;
+    }
+
+    @GetMapping("/final_report_submission")
+    public ModelAndView finalReportSubmission(HttpSession session, Model model) {
+        ModelAndView mv = new ModelAndView("/intern/final_report_submission");
+
+        Intern intern = getSignedInIntern();
+
+        if (intern.getGroupEntity() != null) {
+            mv.addObject("group", intern.getGroupEntity());
         } else {
-            submitDisable = "true";
+            mv.addObject("group", null);
         }
+
+        Date deadlineOfFinalReport = addDaysToYoungestCompletionDate();
+        String submitDisable = deadlineOfFinalReport.after(new Date()) ? "false" : "true";
+
         mv.addObject("intern", intern);
         mv.addObject("deadline", deadlineOfFinalReport);
         mv.addObject("submitDisable", submitDisable);
-        return mv;
 
+        logService.saveLog(intern.getInternId(), "Viewed Final Report Submission Page",
+                "Intern " + intern.getFirstName() + " " + intern.getLastName() + " accessed the final report submission page.");
+
+        return mv;
     }
 
     @PostMapping("/final_report_submission")
@@ -754,8 +734,13 @@ public class InternController {
 
     @GetMapping("/apply_leave")
     public ModelAndView applyLeave() {
+        Intern intern = getSignedInIntern();
         ModelAndView mv = new ModelAndView("intern/apply_leave");
-        mv.addObject("intern", getSignedInIntern());
+        mv.addObject("intern", intern);
+
+        logService.saveLog(intern.getInternId(), "Viewed Leave Application Page",
+                "Intern " + intern.getFirstName() + " " + intern.getLastName() + " accessed the leave application page.");
+
         return mv;
     }
 
