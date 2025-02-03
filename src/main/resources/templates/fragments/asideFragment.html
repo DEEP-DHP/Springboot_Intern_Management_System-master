@@ -228,6 +228,30 @@
                     </ul>
                 </li>
             </ul>
+
+            <ul class="sidebar-nav" id="def-nav">
+                <li class="nav-item">
+                    <a class="nav-link collapsed" data-bs-target="#records-nav" data-bs-toggle="collapse" href="#">
+                        <i class="bi bi-menu-button-wide"></i>
+                        <span>Records</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <ul id="records-nav" class="nav-content collapse" data-bs-parent="#def-nav">
+                        <li>
+                            <a th:href="@{/bisag/admin/relieving_records}">
+                                <i class="bi bi-circle"></i><span>Record Form</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <ul id="records-nav" class="nav-content collapse" data-bs-parent="#def-nav">
+                        <li>
+                            <a th:href="@{/bisag/admin/relieving_records_list}">
+                                <i class="bi bi-circle"></i><span>Records List</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
         </li>
     </ul>
 
