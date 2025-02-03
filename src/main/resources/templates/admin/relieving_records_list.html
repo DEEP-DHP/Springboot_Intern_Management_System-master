@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interns Relieving Records</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div th:replace="fragments/headerFragment :: header"></div>
+<div th:replace="fragments/asideFragment :: aside"></div>
+
+<main id="main" class="main">
+  <div class="pagetitle">
+    <h1>Relieving Records</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a th:href="@{/bisag/admin/relieving_records}">Records</a></li>
+        <li class="breadcrumb-item active">Relieving Records List</li>
+      </ol>
+    </nav>
+  </div>
+
+  <section class="section">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">List of Relieving Records for Interns</h5>
+
+        <table class="table table-bordered">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Intern ID</th>
+            <th>Institute Name</th>
+            <th>Joining Date</th>
+            <th>Planned Date to Relieve</th>
+            <th>Passwords</th>
+            <th>Media</th>
+            <th>Status of Projects on hand</th>
+            <th>Paths/Folder arrangements for projects handled/Pending</th>
+            <th>Thesis/Hard binding Submission</th>
+            <th>Books</th>
+            <th>Subscription</th>
+            <th>Access Rights Removal</th>
+            <th>Pendrives</th>
+            <th>Unused Cd's</th>
+            <th>Backups of project</th>
+            <th>System/Laptop handover</th>
+            <th>Identity Cards</th>
+            <th>Financial/Stipend Outstanding</th>
+            <th>Briefing of Information Security responsibilities after leaving BISAG-N</th>
+            <th>Weekly Report</th>
+            <th>Attendance</th>
+
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="record : ${records}">
+            <td th:text="${record.id}"></td>
+            <td th:text="${record.internId}"></td>
+            <td th:text="${record.collegeName}"></td>
+            <td th:text="${record.joiningDate}"></td>
+            <td th:text="${record.plannedDate}"></td>
+            <td th:text="${record.password}"></td>
+            <td th:text="${record.media}"></td>
+            <td th:text="${record.status}"></td>
+            <td th:text="${record.project}"></td>
+            <td th:text="${record.thesis}"></td>
+            <td th:text="${record.others}"></td>
+            <td th:text="${record.books}"></td>
+            <td th:text="${record.subscription}"></td>
+            <td th:text="${record.accessRights}"></td>
+            <td th:text="${record.unusedCd}"></td>
+            <td th:text="${record.backupProject}"></td>
+            <td th:text="${record.system}"></td>
+            <td th:text="${record.identityCards}"></td>
+            <td th:text="${record.stipend}"></td>
+            <td th:text="${record.information}"></td>
+            <td th:text="${record.weeklyReport}"></td>
+            <td th:text="${record.attendance}"></td>
+
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>
