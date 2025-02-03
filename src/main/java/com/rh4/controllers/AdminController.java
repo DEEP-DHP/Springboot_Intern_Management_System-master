@@ -7,14 +7,15 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import com.rh4.models.ProjectDefinition;
 import com.rh4.repositories.*;
+import com.rh4.entities.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,17 +26,12 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
-import com.rh4.entities.*;
 import com.rh4.models.ReportFilter;
 import com.rh4.services.*;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Path;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import javax.swing.*;
 
 @Controller
 @RequestMapping("/bisag/admin")
@@ -87,6 +83,8 @@ public class AdminController {
     private ExcelService excelService;
     @Autowired
     private AttendanceRepo attendanceRepo;
+    @Autowired
+    private RecordService recordService;
 
     @Value("${app.storage.base-dir}")
     private String baseDir;
@@ -2629,4 +2627,91 @@ public ModelAndView cancellationRequests(Model model) {
 
         return "admin/attendance";
     }
+
+    // --------------------------------------Display all relieving records---------------------------------------------
+    // Display the form for adding a relieving record
+    @GetMapping("/relieving_records")
+    public String viewRelievingRecords(Model model) {
+        Optional<RRecord> record = recordService.getRecordById(1L); // or whatever logic you need to fetch one record
+        model.addAttribute("records", record);
+        return "admin/relieving_records";
+    }
+
+    // Handle relieving record submission
+    @PostMapping("/submit_relieving_record")
+    public String submitRelievingRecord(
+            @RequestParam String internId,
+            @RequestParam String collegeName,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate joiningDate,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate plannedDate,
+            @RequestParam String password,
+            @RequestParam String media,
+            @RequestParam String status,
+            @RequestParam String project,
+            @RequestParam String thesis,
+            @RequestParam String others,
+            @RequestParam String books,
+            @RequestParam String subscription,
+            @RequestParam String accessRights,
+            @RequestParam String pendrives,
+            @RequestParam String unusedCd,
+            @RequestParam String backupProject,
+            @RequestParam String system,
+            @RequestParam String identityCards,
+            @RequestParam String stipend,
+            @RequestParam String information,
+            @RequestParam String weeklyReport,
+            @RequestParam String attendance,
+            RedirectAttributes redirectAttributes) {
+
+        // ✅ Convert LocalDate to SQL Date
+        java.sql.Date joiningDateConverted = java.sql.Date.valueOf(joiningDate);
+        java.sql.Date plannedDateConverted = java.sql.Date.valueOf(plannedDate);
+
+        // ✅ Create new record and set values
+        RRecord record = new RRecord();
+        record.setInternId(internId);
+        record.setCollegeName(collegeName);
+        record.setJoiningDate(joiningDateConverted);
+        record.setPlannedDate(plannedDateConverted);
+        record.setPassword(password);
+        record.setMedia(media);
+        record.setStatus(status);
+        record.setProject(project);
+        record.setThesis(thesis);
+        record.setOthers(others);
+        record.setBooks(books);
+        record.setSubscription(subscription);
+        record.setAccessRights(accessRights);
+        record.setPendrives(pendrives);
+        record.setUnusedCd(unusedCd);
+        record.setBackupProject(backupProject);
+        record.setSystem(system);
+        record.setIdentityCards(identityCards);
+        record.setStipend(stipend);
+        record.setInformation(information);
+        record.setWeeklyReport(weeklyReport);
+        record.setAttendance(attendance);
+
+        // ✅ Save the record
+        recordService.saveRecord(record);
+
+        // ✅ Log admin activity
+        Admin admin = getSignedInAdmin();
+        String id = String.valueOf(admin.getAdminId());
+
+        logService.saveLog(id, "Submitted Relieving Record",
+                "Admin " + admin.getName() + " submitted a relieving record for Intern ID: " + internId);
+
+        // ✅ Flash success message & Redirect
+        redirectAttributes.addFlashAttribute("success", "Relieving record submitted successfully!");
+        return "redirect:/bisag/admin/relieving_records_list";
+    }
+    @GetMapping("/relieving_records_list")
+    public String getAllRelievingRecords(Model model) {
+        List<RRecord> records = recordService.getAllRecords(); // Fetch all records
+        model.addAttribute("records", records);
+        return "admin/relieving_records_list";
+    }
+
 }
