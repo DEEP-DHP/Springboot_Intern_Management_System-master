@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relieving Records Details</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+        crossorigin="anonymous">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    iframe {
+      width: 100%;
+      height: 300px;
+    }
+
+    #mysubmitbutton {
+      padding: 10px 15px;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<!-- Include the header fragment -->
+<div th:replace="~{fragments/headerFragment :: header}"></div>
+
+<!-- Include the aside fragment -->
+<div th:replace="~{fragments/asideFragment :: aside}"></div>
+
+<main id="main" class="main">
+  <div class="pagetitle">
+    <h1>Relieving Record Details - <span th:text="${records.get().internId}"></h1>
+  </div>
+
+  <div th:if="${records.isPresent()}">
+
+    <table class="table table-bordered">
+      <tr>
+        <th>Intern ID</th>
+        <td th:text="${records.get().internId}"></td>
+      </tr>
+      <tr>
+        <th>Institute/University Name</th>
+        <td th:text="${records.get().collegeName}">ABC</td>
+      </tr>
+      <tr>
+        <th>Joining Date</th>
+        <td th:text="${records.get().joiningDate}">John</td>
+      </tr>
+      <tr>
+        <th>Planned Date to Relieve the Intern</th>
+        <td th:text="${records.get().plannedDate}">1</td>
+      </tr>
+      <tr>
+        <th>Passwords</th>
+        <td th:text="${records.get().password}">1</td>
+      </tr>
+      <tr>
+        <th>Media</th>
+        <td th:text="${records.get().media}">1</td>
+      </tr>
+      <tr>
+        <th>Status of Projects on hand</th>
+        <td th:text="${records.get().status}">1</td>
+      </tr>
+      <tr>
+        <th>Paths/Folder arrangements for projects handled/Pending</th>
+        <td th:text="${records.get().project}">1</td>
+      </tr>
+      <tr>
+        <th>Thesis/Hard binding Submission</th>
+        <td th:text="${records.get().thesis}">1</td>
+      </tr><tr>
+      <th>Books</th>
+      <td th:text="${records.get().books}">1</td>
+    </tr><tr>
+      <th>Subscription</th>
+      <td th:text="${records.get().subscription}">1</td>
+    </tr><tr>
+      <th>Access Rights Removal</th>
+      <td th:text="${records.get().accessRights}">1</td>
+    </tr><tr>
+      <th>Pendrives</th>
+      <td th:text="${records.get().pendrives}">1</td>
+    </tr><tr>
+      <th>Unused Cd's</th>
+      <td th:text="${records.get().unusedCd}">1</td>
+    </tr><tr>
+      <th>Backups of project</th>
+      <td th:text="${records.get().backupProject}">1</td>
+    </tr><tr>
+      <th>System/Laptop handover</th>
+      <td th:text="${records.get().system}">1</td>
+    </tr><tr>
+      <th>Identity Cards</th>
+      <td th:text="${records.get().identityCards}">1</td>
+    </tr><tr>
+      <th>Financial/Stipend Outstanding</th>
+      <td th:text="${records.get().stipend}">1</td>
+    </tr><tr>
+      <th>Briefing of Information Security responsibilities after leaving BISAG-N</th>
+      <td th:text="${records.get().information}">1</td>
+    </tr><tr>
+      <th>Weekly Report</th>
+      <td th:text="${records.get().weeklyReport}">1</td>
+    </tr><tr>
+      <th>Attendance</th>
+      <td th:text="${records.get().attendance}">1</td>
+    </tr><tr>
+      <th>Any Other</th>
+      <td th:text="${records.get().others}">1</td>
+    </tr>
+      <tr class="d-none">
+        <td>
+          <input id="guideId" type="number" name="guideId"
+                 th:value="${records.isPresent() ? records.get().id : null}"
+                 hidden>
+        </td>
+      </tr>
+    </table>
+
+    <div class="text-center mb-3">
+      <button id="mysubmitbutton" type="submit">
+        <a th:href="@{/bisag/admin/relieving_records_list}" class="text-white">Back to List</a>
+      </button>
+    </div>
+
+  </div>
+
+  <div th:unless="${records.isPresent()}">
+    <!-- Handle the case when Optional is empty -->
+    <p>Record not found</p>
+  </div>
+
+  <!-- Include the footer fragment -->
+  <div th:replace="~{fragments/footerFragment :: footer}"></div>
+</main>
+</body>
+</html>

@@ -35,6 +35,24 @@
             align-items: center;
         }
     </style>
+
+    <script>
+        function checkDuplicateInternId() {
+
+            var selectedInternId = document.getElementById("interns").value;
+
+            var existingInternIds = [[${interns}]];
+
+
+            if (existingInternIds.includes(selectedInternId)) {
+                alert("This Intern ID is already in use. Please select a different Intern ID.");
+                return false; // Prevent form submission
+            }
+
+            return true;
+        }
+    </script>
+
 </head>
 
 <body>
@@ -65,24 +83,24 @@
                         <h5 class="card-title">Enter Details</h5>
 
                         <!-- Relieving Record Form -->
-                        <form th:action="@{/bisag/admin/submit_relieving_record}" method="post">
+                        <form th:action="@{/bisag/admin/submit_relieving_record}" method="post" onsubmit="return checkDuplicateInternId()">
                             <input type="hidden" name="id" th:if="${record != null}" th:value="${record.id}">
 
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-floating">
-                                        <input type="text" name="internId" class="form-control" id="internId"
-                                               placeholder="Intern ID" required
-                                               th:value="${record != null ? record.internId : ''}">
-                                        <label for="internId">Intern ID</label>
+                                        <select class="form-select" id="interns" name="interns" required>
+                                            <option th:each="intern : ${interns}" th:text="${intern.internId}" th:value="${intern.internId}"></option>
+                                        </select>
+                                        <label for="interns">Intern ID</label>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-floating">
-                                        <input type="text" name="collegeName" class="form-control" id="collegeName"
-                                               placeholder="Institute/University" required
-                                               th:value="${record != null ? record.collegeName : ''}">
-                                        <label for="collegeName">Institute/University</label>
+                                        <select class="form-select" id="college" name="college" required>
+                                            <option th:each="college : ${college}" th:text="${college.name}" th:value="${college.name}"></option>
+                                        </select>
+                                        <label for="college">Institute/University</label>
                                     </div>
                                 </div>
                             </div>
@@ -106,7 +124,6 @@
                                 </div>
                             </div>
 
-                            <!-- Radio Buttons -->
                             <div class="row">
                                 <div class="col-md-6 form-group">
                                     <label>Passwords:</label>
