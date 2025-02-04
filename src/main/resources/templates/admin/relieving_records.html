@@ -36,22 +36,59 @@
         }
     </style>
 
-    <script>
-        function checkDuplicateInternId() {
+<!--    <script>-->
+<!--        // Function to fetch Intern IDs based on selected Group ID-->
+<!--        function fetchInternsByGroupId() {-->
+<!--            var selectedGroupId = document.getElementById("groupId").value;-->
 
-            var selectedInternId = document.getElementById("interns").value;
+<!--            // Clear existing intern options-->
+<!--            var internDropdown = document.getElementById("interns");-->
+<!--            internDropdown.innerHTML = "<option value=''>Select Intern ID</option>";-->
 
-            var existingInternIds = [[${interns}]];
+<!--            if (selectedGroupId) {-->
+<!--                fetch(`/bisag/admin/getInternsByGroupId?groupId=${selectedGroupId}`)-->
+<!--                    .then(response => response.json())-->
+<!--                    .then(data => {-->
+<!--                        data.forEach(intern => {-->
+<!--                            var option = document.createElement("option");-->
+<!--                            option.value = intern.internId;-->
+<!--                            option.text = intern.internId;-->
+<!--                            internDropdown.appendChild(option);-->
+<!--                        });-->
+<!--                    })-->
+<!--                    .catch(error => console.error("Error fetching interns:", error));-->
+<!--            }-->
+<!--        }-->
 
+<!--        // Function to fetch and autofill intern details when Intern ID is selected-->
+<!--        function fetchInternDetails() {-->
+<!--            var selectedInternId = document.getElementById("interns").value;-->
 
-            if (existingInternIds.includes(selectedInternId)) {
-                alert("This Intern ID is already in use. Please select a different Intern ID.");
-                return false; // Prevent form submission
-            }
+<!--            if (selectedInternId) {-->
+<!--                fetch(`/bisag/admin/getInternDetails?internId=${selectedInternId}`)-->
+<!--                    .then(response => response.json())-->
+<!--                    .then(data => {-->
+<!--                        document.getElementById("joiningDate").value = data.joiningDate;-->
+<!--                        document.getElementById("plannedDate").value = data.plannedDate;-->
+<!--                        document.getElementById("college").value = data.college;-->
+<!--                    })-->
+<!--                    .catch(error => console.error("Error fetching intern details:", error));-->
+<!--            }-->
+<!--        }-->
 
-            return true;
-        }
-    </script>
+<!--        // Function to check for duplicate Intern IDs-->
+<!--        function checkDuplicateInternId() {-->
+<!--            var selectedInternId = document.getElementById("interns").value;-->
+
+<!--            var existingInternIds = [[${interns}]];-->
+
+<!--            if (existingInternIds.includes(selectedInternId)) {-->
+<!--                alert("This Intern ID is already in use. Please select a different Intern ID.");-->
+<!--                return false; // Prevent form submission-->
+<!--            }-->
+<!--            return true;-->
+<!--        }-->
+<!--    </script>-->
 
 </head>
 
@@ -86,24 +123,60 @@
                         <form th:action="@{/bisag/admin/submit_relieving_record}" method="post" onsubmit="return checkDuplicateInternId()">
                             <input type="hidden" name="id" th:if="${record != null}" th:value="${record.id}">
 
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="groupId" name="groupId" required onchange="fetchInternsByGroupId()">
+                                        <option value="">-- Select Group ID --</option>
+                                        <option th:each="group : ${groups}" th:text="${group.groupId}" th:value="${group.groupId}"></option>
+                                    </select>
+                                    <label for="groupId">Group ID</label>
+                                </div>
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-floating">
                                         <select class="form-select" id="interns" name="interns" required>
-                                            <option th:each="intern : ${interns}" th:text="${intern.internId}" th:value="${intern.internId}"></option>
+                                            <option value="">-- Select Intern --</option>
                                         </select>
                                         <label for="interns">Intern ID</label>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <select class="form-select" id="college" name="college" required>
-                                            <option th:each="college : ${college}" th:text="${college.name}" th:value="${college.name}"></option>
-                                        </select>
-                                        <label for="college">Institute/University</label>
-                                    </div>
-                                </div>
                             </div>
+
+                            <script>
+                                function fetchInternsByGroupId() {
+                                    const groupId = document.getElementById('groupId').value;
+                                    const internDropdown = document.getElementById('interns');
+
+                                    // Clear dropdown before fetching new data
+                                    internDropdown.innerHTML = '<option value="">-- Select Intern --</option>';
+
+                                    if (!groupId) {
+                                        return; // No selection, do nothing
+                                    }
+
+                                    fetch(`/bisag/admin/getInternsByGroup/${groupId}`)
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            if (data.length === 0) {
+                                                internDropdown.innerHTML = '<option value="">No Interns Found</option>';
+                                                return;
+                                            }
+
+                                            data.forEach(intern => {
+                                                let option = document.createElement("option");
+                                                option.value = intern.internId;
+                                                option.text = intern.name;
+                                                internDropdown.appendChild(option);
+                                            });
+                                        })
+                                        .catch(error => {
+                                            console.error("Error fetching interns:", error);
+                                            internDropdown.innerHTML = '<option value="">Error Fetching Interns</option>';
+                                        });
+                                }
+                            </script>
 
                             <div class="row">
                                 <div class="col-md-6">
@@ -304,7 +377,7 @@
                                 <div class="col-md-6 form-group">
                                     <label>Attendance:</label>
                                     <div class="radio-group">
-                                        <input type="text" name="attendance" class="form-control" id="others"
+                                        <input type="text" name="attendance" class="form-control" id="attendance"
                                                placeholder="Attendance:" required
                                                th:value="${record != null ? record.attendance : ''}">
                                     </div>
