@@ -64,4 +64,7 @@ public interface InternRepo extends JpaRepository<Intern, String> {
 
 	@Query("SELECT DISTINCT i.gender FROM Intern i")
 	List<String> findDistinctGenders();
+
+	@Query("SELECT i FROM Intern i WHERE i.group.id = :groupId")
+	List<Intern> findByGroupId(@Param("groupId") Long groupId);
 }
