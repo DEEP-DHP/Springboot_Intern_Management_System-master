@@ -141,7 +141,7 @@ public class InternService {
 		cancelledRepo.save(cancelled);
 		
 	}
-	public List<Intern> getInternsByGroupId(long groupId) {
+	public List<Intern> getInternsByGroupId(Long groupId) {
 		return internRepo.findByGroupId(groupId);
 	}
 	
