@@ -66,7 +66,7 @@ public class InternService {
 
 	// Update the return type to List<InternApplication> or another appropriate entity
 	public List<InternApplication> getRejectedInterns() {
-		return internRepo.getInternRejectedStatus(); // Fetch rejected interns from logs
+		return internRepo.getInternRejectedStatus(); // Fetch rejected interns
 	}
 	public List<Intern> getInterns()
 	{
@@ -184,7 +184,7 @@ public class InternService {
 	}
 
 	public Intern getInternById(String id) {
-		return internRepo.findById(id).orElse(null); // Assuming you're using a repository to fetch intern details
+		return internRepo.findById(id).orElse(null);
 	}
 	public long pendingGroupCreationCount() {
 		return internApplicationRepo.countByGroupCreated();

@@ -25,7 +25,11 @@ public class RecordService {
         return recordRepo.findByInternId(internId);
     }
 
-    public void saveRecord(RRecord record) {
-        recordRepo.save(record);
+    public List<RRecord> findByInternId(String internId) {
+        return recordRepo.findByInternId(internId);
+    }
+
+    public RRecord saveRecord(RRecord record) {
+        return recordRepo.save(record);
     }
 }
