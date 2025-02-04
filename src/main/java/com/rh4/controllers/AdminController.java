@@ -2289,9 +2289,10 @@ public ModelAndView cancellationRequests(Model model) {
     // Show form to add a new thesis
     @GetMapping("thesis/new")
     public String showThesisForm(Model model) {
+        Admin admin = getSignedInAdmin();
         model.addAttribute("thesis", new Thesis());
 
-        logService.saveLog("Thesis Form", "Form Access", "Admin accessed the 'Add Thesis' form.");
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Thesis Form Access", "Admin " + admin.getName() + " accessed the 'Add Thesis' form.");
 
         return "admin/thesis_form";
     }
@@ -2299,11 +2300,12 @@ public ModelAndView cancellationRequests(Model model) {
     // Handle adding/updating a thesis record
     @PostMapping("thesis/save")
     public String saveThesis(@ModelAttribute("thesis") Thesis thesis) {
+        Admin admin = getSignedInAdmin();
 
         thesisService.saveThesis(thesis);
 
-        logService.saveLog(String.valueOf(thesis.getId()), "Thesis Saved",
-                "Admin added or updated a thesis with ID: " + thesis.getId());
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Thesis Saved",
+                "Admin " + admin.getName() + " added or updated a thesis with ID: " + thesis.getId());
 
         return "redirect:/bisag/admin/thesis_list";
     }
@@ -2313,9 +2315,11 @@ public ModelAndView cancellationRequests(Model model) {
     public String getThesisList(Model model) {
         List<Thesis> thesisList = thesisService.getAllTheses();
         model.addAttribute("thesisList", thesisList);
+        Admin admin = getSignedInAdmin();
+
 
         // Log the action of viewing the thesis list
-        logService.saveLog("Thesis List View", "View", "Admin viewed the list of theses.");
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Thesis List View", "Admin " + admin.getName() + " viewed the list of thesis.");
 
         return "admin/thesis_list";
     }
@@ -2326,8 +2330,10 @@ public ModelAndView cancellationRequests(Model model) {
         Optional<Thesis> thesis = thesisService.getThesisById(Long.parseLong(id));
         if (thesis.isPresent()) {
             model.addAttribute("thesis", thesis);
-            logService.saveLog(id, "Thesis Details View",
-                    "Admin viewed the details of thesis with ID: " + id);
+            Admin admin = getSignedInAdmin();
+
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Thesis Details View",
+                    "Admin " + admin.getName() + " viewed the details of thesis with ID: " + id);
             return "admin/thesis_list_detail";
         } else {
             return "error/404";
@@ -2632,16 +2638,29 @@ public ModelAndView cancellationRequests(Model model) {
     // Display the form for adding a relieving record
     @GetMapping("/relieving_records")
     public String viewRelievingRecords(Model model) {
-        Optional<RRecord> record = recordService.getRecordById(1L); // or whatever logic you need to fetch one record
+        // ✅ Fetch all intern IDs from the Intern table
+        List<Intern> interns = internService.getAllInterns();
+        List<College> college = fieldService.getColleges();
+
+        Optional<RRecord> record = recordService.getRecordById(1L);  // Or replace with relevant logic
+
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Relieving Records",
+                "Admin " + admin.getName() + " viewed the Relieving Records page.");
+
+        model.addAttribute("interns", interns);
+        model.addAttribute("college", college);
         model.addAttribute("records", record);
+        model.addAttribute("admin", adminName(session));  // If needed for the view
+
         return "admin/relieving_records";
     }
 
     // Handle relieving record submission
     @PostMapping("/submit_relieving_record")
     public String submitRelievingRecord(
-            @RequestParam String internId,
-            @RequestParam String collegeName,
+            @RequestParam String interns,
+            @RequestParam String college,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate joiningDate,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate plannedDate,
             @RequestParam String password,
@@ -2664,14 +2683,18 @@ public ModelAndView cancellationRequests(Model model) {
             @RequestParam String attendance,
             RedirectAttributes redirectAttributes) {
 
-        // ✅ Convert LocalDate to SQL Date
+        List<RRecord> existingRecords = recordService.findByInternId(interns);
+        if (!existingRecords.isEmpty()) {  // 🔹 CORRECTED: Check if list is not empty
+            redirectAttributes.addFlashAttribute("error", "Intern already relieved!");
+            return "redirect:/bisag/admin/relieving_records_list";
+        }
+
         java.sql.Date joiningDateConverted = java.sql.Date.valueOf(joiningDate);
         java.sql.Date plannedDateConverted = java.sql.Date.valueOf(plannedDate);
 
-        // ✅ Create new record and set values
         RRecord record = new RRecord();
-        record.setInternId(internId);
-        record.setCollegeName(collegeName);
+        record.setInternId(interns);
+        record.setCollegeName(college);
         record.setJoiningDate(joiningDateConverted);
         record.setPlannedDate(plannedDateConverted);
         record.setPassword(password);
@@ -2693,25 +2716,34 @@ public ModelAndView cancellationRequests(Model model) {
         record.setWeeklyReport(weeklyReport);
         record.setAttendance(attendance);
 
-        // ✅ Save the record
         recordService.saveRecord(record);
 
-        // ✅ Log admin activity
         Admin admin = getSignedInAdmin();
         String id = String.valueOf(admin.getAdminId());
 
         logService.saveLog(id, "Submitted Relieving Record",
-                "Admin " + admin.getName() + " submitted a relieving record for Intern ID: " + internId);
+                "Admin " + admin.getName() + " submitted a relieving record for Intern ID: " + interns);
 
-        // ✅ Flash success message & Redirect
         redirectAttributes.addFlashAttribute("success", "Relieving record submitted successfully!");
         return "redirect:/bisag/admin/relieving_records_list";
     }
     @GetMapping("/relieving_records_list")
     public String getAllRelievingRecords(Model model) {
-        List<RRecord> records = recordService.getAllRecords(); // Fetch all records
+        List<RRecord> records = recordService.getAllRecords();
         model.addAttribute("records", records);
         return "admin/relieving_records_list";
     }
-
+    //Show records ID wise-------------------
+    @GetMapping("/relieving_records_detail/{id}")
+    public String getRecordsDetails(@PathVariable("id") String id, Model model) {
+        Optional<RRecord> record = recordService.getRecordById(Long.parseLong(id));
+        if (record.isPresent()) {
+            model.addAttribute("records", record);
+            logService.saveLog(id, "Relieving Records Details View",
+                    "Admin viewed the details of records with ID: " + id);
+            return "admin/relieving_records_detail";
+        } else {
+            return "error/404";
+        }
+    }
 }
