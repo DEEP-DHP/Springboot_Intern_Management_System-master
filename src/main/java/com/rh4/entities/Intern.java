@@ -120,6 +120,7 @@ public class Intern {
     private byte[] securityForm;
 
     @ManyToOne
+    @JoinColumn(name = "group_id", referencedColumnName = "id") // Reference GroupEntity primary key 'id'
     private GroupEntity group;
 
     public Intern() {
