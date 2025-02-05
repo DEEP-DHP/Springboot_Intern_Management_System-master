@@ -91,8 +91,16 @@
         <td th:text="${thesis.get().issueDate}">1</td>
       </tr>
       <tr>
-        <th>Return Date</th>
-        <td th:text="${thesis.get().returnDate}">1</td>
+        <th>Expected Date</th>
+        <td th:text="${thesis.get().expectedDate}">1</td>
+      </tr>
+      <tr>
+        <th>Actual Return Date</th>
+        <td th:text="${thesis.get().actualReturnDate}">1</td>
+      </tr>
+      <tr>
+        <th>Location of Thesis</th>
+        <td th:text="${thesis.get().location}">1</td>
       </tr>
       <tr class="d-none">
         <td>

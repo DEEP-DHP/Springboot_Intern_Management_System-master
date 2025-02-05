@@ -125,11 +125,17 @@
                 <th><i class="fa-solid fa-sort mx-2"></i>Purpose</th>
                 <th><i class="fa-solid fa-sort mx-2"></i>File Type</th>
                 <th><i class="fa-solid fa-sort mx-2"></i>Issue Date</th>
-                <th><i class="fa-solid fa-sort mx-2"></i>Return Date</th>
+                <th><i class="fa-solid fa-sort mx-2"></i>Expected Return Date</th>
+                <th><i class="fa-solid fa-sort mx-2"></i>Actual Return Date</th>
+                <th><i class="fa-solid fa-sort mx-2"></i>Location</th>
+                <th><i class="fa-solid fa-sort mx-2"></i>Update</th>
+
               </tr>
               </thead>
               <tbody>
-              <tr th:each="thesis : ${thesisList}">
+              <tr th:each="thesis : ${thesisList}"
+                  th:classappend="${#temporals.createNow().toLocalDate().isAfter(thesis.expectedDate.toLocalDate())} ? 'table-danger' : ''">
+
                 <td>
                   <a th:href="@{/bisag/admin/thesis_list_detail/{id}(id=${thesis.id})}">
                     <span th:text="${thesis.id}"></span>
@@ -142,19 +148,106 @@
                 <td th:text="${thesis.purpose}"></td>
                 <td th:text="${thesis.type}"></td>
                 <td th:text="${thesis.issueDate}"></td>
-                <td th:text="${thesis.returnDate}"></td>
-
+                <td th:text="${thesis.expectedDate}"></td> <!-- Expected return date -->
+                <td th:text="${thesis.actualReturnDate}"></td>
+                <td th:text="${thesis.location}"></td>
+                <td>
+                  <a th:href="@{/bisag/admin/thesis/update/{id}(id=${thesis.id})}" class="btn btn-primary">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </a>
+                </td>
               </tr>
               </tbody>
+<!--                <script>-->
+<!--                  function updateReturnDate(id) {-->
+<!--                    fetch(`/bisag/admin/update-return/${id}`, {-->
+<!--                      method: "POST", // Must match @PostMapping in backend-->
+<!--                      headers: {-->
+<!--                        "Content-Type": "application/json"-->
+<!--                      }-->
+<!--                    })-->
+<!--                            .then(response => {-->
+<!--                              if (!response.ok) {-->
+<!--                                throw new Error("Failed to update return date");-->
+<!--                              }-->
+<!--                              return response.json();-->
+<!--                            })-->
+<!--                            .then(data => {-->
+<!--                              alert("Actual return date updated successfully!");-->
+
+<!--                              // Update UI dynamically-->
+<!--                              document.getElementById(`location_${id}`).innerText = "Admin";-->
+<!--                            })-->
+<!--                            .catch(error => {-->
+<!--                              console.error("Error updating return date:", error);-->
+<!--                              alert("Failed to update return date");-->
+<!--                            });-->
+<!--                  }-->
+<!--                </script>-->
             </table>
           </div>
         </div>
+        <div id="updateForm" style="display: none; position: fixed; top: 20%; left: 50%; transform: translate(-50%, -20%); background: white; padding: 20px; border-radius: 5px; box-shadow: 0px 0px 10px rgba(0,0,0,0.2);">
+          <h4>Update Thesis Details</h4>
+          <input type="hidden" id="updateThesisId">
 
+          <label>Actual Return Date:</label>
+          <input type="date" id="updateActualReturnDate">
+
+          <label>Location:</label>
+          <select id="updateLocation">
+            <option value="Intern">Intern</option>
+            <option value="Admin">Admin</option>
+          </select>
+
+          <br><br>
+          <button class="btn btn-success" onclick="submitUpdateForm()">Save Changes</button>
+          <button class="btn btn-danger" onclick="closeUpdateForm()">Cancel</button>
+        </div>
+        <script>
+          function openUpdateForm(id) {
+            document.getElementById("updateThesisId").value = id;
+            document.getElementById("updateForm").style.display = "block";
+          }
+
+          function closeUpdateForm() {
+            document.getElementById("updateForm").style.display = "none";
+          }
+
+          function submitUpdateForm() {
+            let id = document.getElementById("updateThesisId").value;
+            let actualReturnDate = document.getElementById("updateActualReturnDate").value;
+            let location = document.getElementById("updateLocation").value;
+
+            if (!actualReturnDate) {
+              alert("Please select an actual return date.");
+              return;
+            }
+
+            fetch(`/bisag/admin/update-return/${id}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                actualReturnDate: actualReturnDate,
+                location: location
+              })
+            })
+                    .then(response => response.json())
+                    .then(data => {
+                      alert("Thesis updated successfully!");
+                      closeUpdateForm();
+                      location.reload();
+                    })
+                    .catch(error => {
+                      console.error("Error updating thesis:", error);
+                      alert("Failed to update thesis.");
+                    });
+          }
+        </script>
       </div>
     </div>
 
   </section>
-
 
   <!-- Include the footer fragment -->
   <div th:replace="fragments/footerFragment :: footer"></div>

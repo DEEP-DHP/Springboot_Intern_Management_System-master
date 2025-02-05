@@ -92,19 +92,23 @@
                 </div>
                 <div class="col-md-6">
                   <div class="form-floating">
-                    <input type="text" th:field="*{department}" class="form-control" id="department"
-                           placeholder="Department" required>
-                    <label for="department">Department</label>
+                    <div class="form-group">
+                      <label for="type" class="form-label">Department:</label>
+                      <select class="form-select" id="department" th:field="*{department}" required>
+                        <option value="Intern" selected>Intern</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div class="row">
                 <div class="col-md-6">
-                  <div class="form-floating">
-                    <input type="text" th:field="*{purpose}" class="form-control" id="purpose"
-                           placeholder="Purpose" required>
-                    <label for="purpose">Purpose</label>
+                  <div class="form-group">
+                    <label for="purpose" class="form-label">Purpose:</label>
+                    <select class="form-select" id="purpose" th:field="*{purpose}" required>
+                      <option value="Reference" >Reference</option>
+                    </select>
                   </div>
                 </div>
                 <div class="col-md-6">
@@ -123,13 +127,42 @@
                   <h5>Issue Duration:</h5>
                 </label>
                 <div class="col-md-6">
-                  <label for="issueDate" class="col-form-label">From:</label>
-                  <input type="date" th:field="*{issueDate}" id="issueDate" class="form-control">
+                  <label for="issueDate" class="col-form-label">Issue Date:</label>
+                  <input type="date" id="issueDate" name="issueDate" value="" min="" max="" readonly />
                 </div>
+                <script>
+                  document.addEventListener('DOMContentLoaded', function () {
+                    var today = new Date();
+                    var dateString = today.toISOString().split('T')[0];  // Get the date in YYYY-MM-DD format
+                    var issueDateField = document.getElementById('issueDate');
+
+                    // Set the issue date to today's date
+                    issueDateField.value = dateString;
+
+                    // Optional: Set min and max to today's date
+                    issueDateField.setAttribute('min', dateString);  // Prevent past date
+                    issueDateField.setAttribute('max', dateString);  // Prevent future date
+                  });
+                </script>
                 <div class="col-md-6">
-                  <label for="returnDate" class="col-form-label">To:</label>
-                  <input type="date" th:field="*{returnDate}" id="returnDate" class="form-control">
+                  <div class="form-floating">
+                    <input type="date" th:field="*{actualReturnDate}" class="form-control" id="actualReturnDate" placeholder="Actual Return Date">
+                    <label for="actualReturnDate">Actual Return Date</label>
+                  </div>
                 </div>
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input type="date" th:field="*{expectedDate}" class="form-control" id="expectedDate" placeholder="Expected Return Date" required>
+                      <label for="expectedDate">Expected Return Date</label>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <!-- Location Field (Readonly) -->
+                    <div class="form-floating">
+                      <input type="text" th:field="*{location}" class="form-control" id="location" readonly>
+                      <label for="location">Location</label>
+                    </div>
+                  </div>
               </div>
 
               <div class="text-center mt-4">
@@ -149,6 +182,13 @@
     </div>
   </section>
 
+  <script>
+    // If form submission is successful, show alert
+    const successMessage = /*[[${successMessage}]]*/ '';
+    if (successMessage) {
+      alert(successMessage);
+    }
+  </script>
   <!-- Include the footer fragment -->
   <div th:replace="fragments/footerFragment :: footer"></div>
 </main>
