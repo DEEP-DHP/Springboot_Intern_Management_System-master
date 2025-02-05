@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -16,6 +17,7 @@ import com.rh4.entities.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -2299,11 +2301,11 @@ public ModelAndView cancellationRequests(Model model) {
 
     // Handle adding/updating a thesis record
     @PostMapping("thesis/save")
-    public String saveThesis(@ModelAttribute("thesis") Thesis thesis) {
+    public String saveThesis(@ModelAttribute("thesis") Thesis thesis, RedirectAttributes redirectAttributes) {
         Admin admin = getSignedInAdmin();
 
         thesisService.saveThesis(thesis);
-
+        redirectAttributes.addFlashAttribute("successMessage", "Thesis record submitted successfully!");
         logService.saveLog(String.valueOf(admin.getAdminId()), "Thesis Saved",
                 "Admin " + admin.getName() + " added or updated a thesis with ID: " + thesis.getId());
 
@@ -2324,6 +2326,46 @@ public ModelAndView cancellationRequests(Model model) {
         return "admin/thesis_list";
     }
 
+//    @PostMapping("/update-return/{id}")
+//    public ResponseEntity<Thesis> updateReturnDate(
+//            @PathVariable Long id, @RequestBody Map<String, String> request) {
+//        try {
+//            System.out.println("Received update request for Thesis ID: " + id);
+//
+//            // Parse the date
+//            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+//            Date utilDate = dateFormat.parse(request.get("actualReturnDate"));
+//            java.sql.Date actualReturnDate = new java.sql.Date(utilDate.getTime());
+//
+//            String location = request.get("location");
+//
+//            Thesis updatedThesis = thesisService.updateReturnDate(id, actualReturnDate, location);
+//            return ResponseEntity.ok(updatedThesis);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+//        }
+//    }
+@GetMapping("/thesis/update/{id}")
+public String showUpdatePage(@PathVariable Long id, Model model) {
+    Thesis thesis = thesisService.getThesisById(id)
+            .orElseThrow(() -> new RuntimeException("Thesis not found with id: " + id)); // Safely extract Thesis
+    model.addAttribute("thesis", thesis);
+    return "admin/update_thesis";
+}
+    @PostMapping("/thesis/update/{id}")
+    public String updateThesis(@PathVariable Long id,
+                               @RequestParam String actualReturnDate,
+                               @RequestParam String location) {
+        // Convert date string to java.sql.Date
+        java.sql.Date returnDate = java.sql.Date.valueOf(actualReturnDate);
+
+        // Update the thesis details
+        thesisService.updateThesisReturnDateAndLocation(id, returnDate, location);
+
+        // Redirect back to the thesis list
+        return "redirect:/bisag/admin/thesis_list";
+    }
     //Show thesis ID wise-------------------
     @GetMapping("/thesis_list_detail/{id}")
     public String getThesisDetails(@PathVariable("id") String id, Model model) {
@@ -2514,28 +2556,49 @@ public ModelAndView cancellationRequests(Model model) {
         return new ModelAndView("admin/verification_request_form");
     }
 
+    @GetMapping("/get-intern-details/{internId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> getInternDetails(@PathVariable String internId) {
+        // Fetch intern details from the database
+        Intern intern = internService.getInternById(internId);  // Assuming internId is String (if it is Long, adjust accordingly)
+
+        if (intern != null) {
+            Map<String, String> internDetails = new HashMap<>();
+            internDetails.put("internName", intern.getFirstName()); // Ensure this returns the correct name
+            internDetails.put("internContact", intern.getContactNo()); // Ensure this returns the correct contact
+            return ResponseEntity.ok(internDetails);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+    }
     //Handle company verification request submission
     @PostMapping("/submit_verification_request")
     public ModelAndView submitVerificationRequest(
             @RequestParam String internId,
+            @RequestParam String internName,
+            @RequestParam String internContact,
             @RequestParam String companyName,
             @RequestParam String contact,
             @RequestParam String email) {
 
         Verification verification = new Verification();
-        verification.setInternId(internId);
-        verification.setCompanyName(companyName);
-        verification.setContact(contact);
-        verification.setEmail(email);
+        verification.setInternId(internId);          // Set Intern ID
+        verification.setInternName(internName);      // Set Intern Name
+        verification.setInternContact(internContact); // Set Intern Contact
+        verification.setCompanyName(companyName);    // Set Company Name
+        verification.setContact(contact);            // Set Company Contact
+        verification.setEmail(email);                // Set Company Email
 
+        // Create the verification request
         verificationService.createVerificationRequest(verification);
 
+        // Log the action
         Admin admin = getSignedInAdmin();
         String id = String.valueOf(admin.getAdminId());
-
         logService.saveLog(id, "Submitted Verification Request",
                 "Admin " + admin.getName() + " submitted a verification request for Intern ID: " + internId);
 
+        // Redirect to the verification requests page
         ModelAndView mv = new ModelAndView("admin/verification_requests");
         mv.addObject("success", true);
         mv.addObject("requests", verificationService.getPendingRequests());
