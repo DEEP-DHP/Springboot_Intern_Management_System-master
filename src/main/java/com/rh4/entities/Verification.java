@@ -40,11 +40,17 @@ public class Verification {
     @Column(name = "remarks", columnDefinition = "TEXT")
     private String remarks;
 
+    @Column(name = "internName")
+    private String internName;
+
+    @Column(name = "internContact")
+    private String internContact;
+
     public Verification() {
         super();
     }
 
-    public Verification(Long id, String internId, String companyName, String contact, String email, String status, Date requestDate, Date verifiedDate, String adminId, String remarks) {
+    public Verification(Long id, String internId, String companyName, String contact, String email, String status, Date requestDate, Date verifiedDate, String adminId, String remarks, String internName, String internContact) {
         super();
         this.id = id;
         this.internId = internId;
@@ -56,6 +62,8 @@ public class Verification {
         this.verifiedDate = verifiedDate;
         this.adminId = adminId;
         this.remarks = remarks;
+        this.internName = internName;
+        this.internContact = internContact;
     }
 
     public Long getId() { // Changed return type from String to Long
@@ -136,5 +144,21 @@ public class Verification {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+//    public String getInternName() {
+//        return internName;
+//    }
+
+    public void setInternName(String internName) {
+        this.internName = internName;
+    }
+
+//    public int getInternContact() {
+//        return internContact;
+//    }
+
+    public void setInternContact(String internContact) {
+        this.internContact = internContact;
     }
 }

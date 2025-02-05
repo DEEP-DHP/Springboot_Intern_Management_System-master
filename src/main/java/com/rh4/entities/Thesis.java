@@ -18,7 +18,7 @@ public class Thesis {
     private String title;
 
     @Column(name = "internname")
-    private String internname;  // Ensure database column matches case-sensitive name
+    private String internname;
 
     @Column(name = "contactNo")
     private String contactNo;
@@ -36,14 +36,20 @@ public class Thesis {
     @Column(name = "issueDate")
     private Date issueDate;
 
-    @Column(name = "returnDate")
-    private Date returnDate;
+    @Column(name = "actualReturnDate")
+    private Date actualReturnDate;
+
+    @Column(name = "expectedDate")  // New field for expected return date
+    private Date expectedDate;
+
+    @Column(name = "location")  // New field for location
+    private String location = "Intern";  // Default value is 'intern' when issued
 
     // Default constructor
     public Thesis() {}
 
     // Parameterized constructor
-    public Thesis(long id, String title, String internname, String contactNo, String department, String purpose, String type, Date issueDate, Date returnDate) {
+    public Thesis(long id, String title, String internname, String contactNo, String department, String purpose, String type, Date issueDate, Date actualReturnDate, Date expectedDate, String location) {
         this.id = id;
         this.title = title;
         this.internname = internname;
@@ -52,7 +58,9 @@ public class Thesis {
         this.purpose = purpose;
         this.type = type;
         this.issueDate = issueDate;
-        this.returnDate = returnDate;
+        this.actualReturnDate = actualReturnDate;
+        this.expectedDate = expectedDate;
+        this.location = location;
     }
 
     // Getters and Setters
@@ -120,11 +128,32 @@ public class Thesis {
         this.issueDate = issueDate;
     }
 
-    public Date getReturnDate() {
-        return returnDate;
+    public Date getActualReturnDate() {
+        return actualReturnDate;
     }
 
-    public void setReturnDate(Date returnDate) {
-        this.returnDate = returnDate;
+    public void setActualReturnDate(Date actualReturnDate) {
+        this.actualReturnDate = actualReturnDate;
+    }
+
+    public Date getExpectedDate() {  // Getter for expected return date
+        return expectedDate;
+    }
+
+    public void setExpectedDate(Date expectedDate) {  // Setter for expected return date
+        this.expectedDate = expectedDate;
+    }
+
+    public String getLocation() {  // Getter for location
+        return location;
+    }
+
+    public void setLocation(String location) {  // Setter for location
+        this.location = location;
+    }
+
+    // Method to update location to 'admin' when the thesis is returned
+    public void markReturned() {
+        this.location = "admin";  // Change location to 'admin' when returned
     }
 }
