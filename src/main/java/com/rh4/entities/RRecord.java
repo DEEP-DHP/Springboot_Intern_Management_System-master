@@ -15,6 +15,12 @@ public class RRecord {
     @Column(name = "intern_id")
     private String internId;
 
+    @Column(name = "groupId")
+    private String groupId;
+
+    @Column(name = "first_name")
+    private String FirstName;
+
     @Column(name = "college_name")
     private String collegeName;
 
@@ -80,9 +86,11 @@ public class RRecord {
 
     public RRecord() { super(); }
 
-    public RRecord(Long id, String internId, String collegeName, Date joiningDate, Date plannedDate, String password, String media, String project, String thesis, String others, String books, String subscription, String accessRights, String pendrives, String unusedCd, String backupProject, String system, String identityCards, String stipend, String information, String weeklyReport, String attendance) {
+    public RRecord(Long id, String internId, String FirstName, String groupId, String collegeName, Date joiningDate, Date plannedDate, String password, String media, String project, String thesis, String others, String books, String subscription, String accessRights, String pendrives, String unusedCd, String backupProject, String system, String identityCards, String stipend, String information, String weeklyReport, String attendance) {
         this.id = id;
         this.internId = internId;
+        this.FirstName = FirstName;
+        this.groupId = groupId;
         this.collegeName = collegeName;
         this.joiningDate = joiningDate;
         this.plannedDate = plannedDate;
@@ -120,6 +128,12 @@ public class RRecord {
     public void setInternId(String internId) {
         this.internId = internId;
     }
+
+    public String getFirstName() { return FirstName; }
+    public void setFirstName(String FirstName) { this.FirstName = FirstName; }
+
+    public String getGroupId() { return groupId; }
+    public void setGroupId(String groupId) { this.groupId = groupId; }
 
     public String getCollegeName() {
         return collegeName;

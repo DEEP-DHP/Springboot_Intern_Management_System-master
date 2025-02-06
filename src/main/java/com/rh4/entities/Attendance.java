@@ -36,9 +36,12 @@ public class Attendance {
     @Column(name = "upload_date")
     private Date uploadDate = new Date();
 
+    @Column(name = "totalattendance")
+    private double totalAttendance;
+
     public Attendance() {super();}
 
-    public Attendance(Long id, String internId, String month, int year, int totalWorkingDays, int totalPresentDays, int totalAbsentDays, float attendancePercentage, Date uploadDate) {
+    public Attendance(Long id, String internId, String month, int year, int totalWorkingDays, int totalPresentDays, int totalAbsentDays, float attendancePercentage, Date uploadDate, float totalAttendance) {
         super();
         this.id = id;
         this.internId = internId;
@@ -49,6 +52,7 @@ public class Attendance {
         this.totalAbsentDays = totalAbsentDays;
         this.attendancePercentage = attendancePercentage;
         this.uploadDate = uploadDate;
+        this.totalAttendance = totalAttendance;
     }
 
     public Long getId() {
@@ -121,4 +125,9 @@ public class Attendance {
     public void setUploadDate(Date uploadDate) {
         this.uploadDate = uploadDate;
     }
+    public double getTotalAttendance() {
+        return totalAttendance; }
+
+    public void setTotalAttendance(double totalAttendance) {
+        this.totalAttendance = totalAttendance; }
 }

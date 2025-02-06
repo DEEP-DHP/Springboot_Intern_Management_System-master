@@ -146,17 +146,17 @@ public class Verification {
         this.remarks = remarks;
     }
 
-//    public String getInternName() {
-//        return internName;
-//    }
+    public String getInternName() {
+        return internName;
+    }
 
     public void setInternName(String internName) {
         this.internName = internName;
     }
 
-//    public int getInternContact() {
-//        return internContact;
-//    }
+    public String getInternContact() {
+        return internContact;
+    }
 
     public void setInternContact(String internContact) {
         this.internContact = internContact;
