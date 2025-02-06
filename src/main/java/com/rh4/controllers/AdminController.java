@@ -87,6 +87,8 @@ public class AdminController {
     private AttendanceRepo attendanceRepo;
     @Autowired
     private RecordService recordService;
+    @Autowired
+    private LeaveApplicationService leaveApplicationService;
 
     @Value("${app.storage.base-dir}")
     private String baseDir;
@@ -2129,10 +2131,12 @@ public ModelAndView cancellationRequests(Model model) {
         return "redirect:/bisag/admin/admin_pending_final_reports";
     }
 
+    //-------------------------------- Leave Application Module------------------------------------
     @GetMapping("/manage_leave_applications")
-    public ModelAndView manageLeaveApplications(Model model) {
+    public ModelAndView manageLeaveApplications(Model model, HttpSession session) {
         ModelAndView mv = new ModelAndView("/admin/manage_leave_applications");
         List<Intern> interns = internService.getInterns();
+        List<LeaveApplication> leaveApplications = leaveApplicationService.getAllLeaveApplications();
         model = countNotifications(model);
 
         Admin admin = getSignedInAdmin();
@@ -2140,14 +2144,17 @@ public ModelAndView cancellationRequests(Model model) {
                 "Admin " + admin.getName() + " viewed leave applications.");
 
         mv.addObject("interns", interns);
+        mv.addObject("leaveApplications", leaveApplications);
         mv.addObject("admin", adminName(session));
+
         return mv;
     }
 
     @GetMapping("/manage_leave_applications_details/{id}")
-    public ModelAndView manageLeaveApplicationsDetails(@PathVariable("id") String id, Model model) {
+    public ModelAndView manageLeaveApplicationsDetails(@PathVariable("id") String id, Model model, HttpSession session) {
         ModelAndView mv = new ModelAndView("/admin/manage_leave_applications_details");
         List<Intern> interns = internService.getInterns();
+        List<LeaveApplication> leaveApplications = leaveApplicationService.getLeaveApplicationsByInternId(id);
         model = countNotifications(model);
 
         Admin admin = getSignedInAdmin();
@@ -2155,7 +2162,22 @@ public ModelAndView cancellationRequests(Model model) {
                 "Admin " + admin.getName() + " viewed leave application details for intern ID " + id);
 
         mv.addObject("interns", interns);
+        mv.addObject("leaveApplications", leaveApplications);
+        mv.addObject("admin", adminName(session));
+
         return mv;
+    }
+
+    @PostMapping("/approve_leave/{id}")
+    public String approveLeave(@PathVariable("id") Long id) {
+        leaveApplicationService.approveLeave(id, "admin");
+        return "redirect:/admin/manage_leave_applications";
+    }
+
+    @PostMapping("/reject_leave/{id}")
+    public String rejectLeave(@PathVariable("id") Long id) {
+        leaveApplicationService.rejectLeave(id, "admin");
+        return "redirect:/admin/manage_leave_applications";
     }
 
     @GetMapping("/generate_intern_report")
@@ -2722,8 +2744,10 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
     // Handle relieving record submission
     @PostMapping("/submit_relieving_record")
     public String submitRelievingRecord(
-            @RequestParam String interns,
-            @RequestParam String college,
+            @RequestParam String internId,
+            @RequestParam String FirstName,
+            @RequestParam String groupId,
+            @RequestParam String collegeName,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate joiningDate,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate plannedDate,
             @RequestParam String password,
@@ -2746,7 +2770,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             @RequestParam String attendance,
             RedirectAttributes redirectAttributes) {
 
-        List<RRecord> existingRecords = recordService.findByInternId(interns);
+        List<RRecord> existingRecords = recordService.findByInternId(internId);
         if (!existingRecords.isEmpty()) {  // 🔹 CORRECTED: Check if list is not empty
             redirectAttributes.addFlashAttribute("error", "Intern already relieved!");
             return "redirect:/bisag/admin/relieving_records_list";
@@ -2756,8 +2780,10 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         java.sql.Date plannedDateConverted = java.sql.Date.valueOf(plannedDate);
 
         RRecord record = new RRecord();
-        record.setInternId(interns);
-        record.setCollegeName(college);
+        record.setInternId(internId);
+        record.setFirstName(FirstName);
+        record.setGroupId(groupId);
+        record.setCollegeName(collegeName);
         record.setJoiningDate(joiningDateConverted);
         record.setPlannedDate(plannedDateConverted);
         record.setPassword(password);
@@ -2785,7 +2811,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         String id = String.valueOf(admin.getAdminId());
 
         logService.saveLog(id, "Submitted Relieving Record",
-                "Admin " + admin.getName() + " submitted a relieving record for Intern ID: " + interns);
+                "Admin " + admin.getName() + " submitted a relieving record for Intern ID: " + internId);
 
         redirectAttributes.addFlashAttribute("success", "Relieving record submitted successfully!");
         return "redirect:/bisag/admin/relieving_records_list";
@@ -2807,6 +2833,43 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             return "admin/relieving_records_detail";
         } else {
             return "error/404";
+        }
+    }
+
+    // Automcatically fetches the group id when the intern id is being selected
+    @GetMapping("/getGroupId/{internId}")
+    @ResponseBody
+    public ResponseEntity<String> getGroupId(@PathVariable String internId) {
+        Optional<Intern> intern = internService.findById(internId);
+
+        if (intern.isPresent()) {
+            return ResponseEntity.ok(String.valueOf(intern.get().getGroup().getGroupId()));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Group ID not found");
+        }
+    }
+
+    @GetMapping("/getCollegeName/{internId}")
+    @ResponseBody
+    public ResponseEntity<String> getCollegeName(@PathVariable String internId) {
+        Optional<Intern> intern = internService.findById(internId);
+
+        if (intern.isPresent() && intern.get().getCollegeName() != null) {
+            return ResponseEntity.ok(intern.get().getCollegeName());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("College not found");
+        }
+    }
+
+    @GetMapping("/getInternName/{internId}")
+    @ResponseBody
+    public ResponseEntity<String> getInternName(@PathVariable String internId) {
+        Optional<Intern> intern = internService.findById(internId);
+
+        if (intern.isPresent() && intern.get().getFirstName() != null) {
+            return ResponseEntity.ok(intern.get().getFirstName());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Intern Name not found");
         }
     }
 }

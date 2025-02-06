@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -14,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import com.rh4.entities.*;
 import com.rh4.services.*;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,13 +38,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.rh4.entities.Admin;
-import com.rh4.entities.GroupEntity;
-import com.rh4.entities.Guide;
-import com.rh4.entities.Intern;
-import com.rh4.entities.InternApplication;
-import com.rh4.entities.MyUser;
-import com.rh4.entities.WeeklyReport;
 import com.rh4.models.ProjectDefinition;
 import com.rh4.repositories.GroupRepo;
 
@@ -68,6 +63,10 @@ public class InternController {
     private AdminService adminService;
     @Autowired
     private GuideService guideService;
+    @Autowired
+    private LeaveApplicationService leaveApplicationService;
+    @Autowired
+    private AttendanceService attendanceService;
     @Autowired
     HttpSession session;
     @Autowired
@@ -736,12 +735,28 @@ public class InternController {
     public ModelAndView applyLeave() {
         Intern intern = getSignedInIntern();
         ModelAndView mv = new ModelAndView("intern/apply_leave");
+
+        // Fetch total attendance percentage for the logged-in intern
+        float totalAttendance = attendanceService.calculateTotalAttendance(intern.getInternId());
+
+        // Fetch the leave applications of the logged-in intern
+        List<LeaveApplication> leaveApplications = leaveApplicationService.getInternLeaves(intern.getInternId());
+
         mv.addObject("intern", intern);
+        mv.addObject("totalAttendance", totalAttendance); // Add attendance to the view
+        mv.addObject("leaveApplications", leaveApplications); // Add leave history
 
         logService.saveLog(intern.getInternId(), "Viewed Leave Application Page",
                 "Intern " + intern.getFirstName() + " " + intern.getLastName() + " accessed the leave application page.");
 
         return mv;
+    }
+
+    @PostMapping("/apply_leave")
+    public String applyLeave(@ModelAttribute LeaveApplication leaveApplication, Principal principal) {
+        leaveApplication.setInternId(principal.getName());
+        leaveApplicationService.applyForLeave(leaveApplication);
+        return "redirect:/intern/apply_leave";
     }
 
     @PostMapping("/{internId}/profile-picture")
