@@ -119,6 +119,8 @@
               <tr>
                 <th>ID</th>
                 <th>Intern ID</th>
+                <th>Intern Name</th>
+                <th>Group ID</th>
                 <th>Institute Name</th>
                 <th>Joining Date</th>
                 <th>Planned Date to Relieve</th>
@@ -151,6 +153,8 @@
                   </a>
                 </td>
                 <td th:text="${record.internId}"></td>
+                <td th:text="${record.firstName}"></td>
+                <td th:text="${record.groupId}"></td>
                 <td th:text="${record.collegeName}"></td>
                 <td th:text="${record.joiningDate}"></td>
                 <td th:text="${record.plannedDate}"></td>
