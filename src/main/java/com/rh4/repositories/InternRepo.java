@@ -67,4 +67,5 @@ public interface InternRepo extends JpaRepository<Intern, String> {
 
 	@Query("SELECT i FROM Intern i WHERE i.group.id = :groupId")
 	List<Intern> findByGroupId(@Param("groupId") Long groupId);
+
 }
