@@ -7,7 +7,12 @@ import org.springframework.stereotype.Service;
 
 import com.rh4.entities.*;
 import com.rh4.repositories.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Date;
 import java.util.*;
 @Service
@@ -211,6 +216,19 @@ public class InternService {
 		return intern.getProfilePicture();
 	}
 
+	public Optional<Intern> findById(String internId) {
+		return internRepo.findById(internId);
+	}
 
+	public String saveFile(MultipartFile file) {
+		try {
+			String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+			Path filePath = Paths.get("uploads/" + fileName);
+			Files.write(filePath, file.getBytes());
+			return fileName;
+		} catch (IOException e) {
+			throw new RuntimeException("⚠️ Error saving file", e);
+		}
+	}
 
 }

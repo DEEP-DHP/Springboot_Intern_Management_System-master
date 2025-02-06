@@ -10,10 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 @Service
 public class AttendanceService {
@@ -23,6 +20,7 @@ public class AttendanceService {
 
     public void processAttendanceFile(MultipartFile file) throws Exception {
         List<Attendance> attendanceList = new ArrayList<>();
+        Map<String, List<Attendance>> internAttendanceMap = new HashMap<>();
 
         try (InputStream inputStream = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(inputStream)) {
@@ -34,22 +32,34 @@ public class AttendanceService {
 
                 Attendance attendance = new Attendance();
                 attendance.setInternId(getStringCellValue(row.getCell(0)));
-                attendance.setMonth(getMonthFromCell(row.getCell(1)));  // ✅ Fix month issue
+                attendance.setMonth(getMonthFromCell(row.getCell(1)));
                 attendance.setYear(getNumericCellValueAsInt(row.getCell(2)));
                 attendance.setTotalWorkingDays(getNumericCellValueAsInt(row.getCell(3)));
                 attendance.setTotalPresentDays(getNumericCellValueAsInt(row.getCell(4)));
                 attendance.setTotalAbsentDays(getNumericCellValueAsInt(row.getCell(5)));
 
+                // Calculate attendance percentage
                 int workingDays = attendance.getTotalWorkingDays();
                 int presentDays = attendance.getTotalPresentDays();
                 float percentage = (workingDays > 0) ? ((float) presentDays / workingDays) * 100 : 0.0F;
                 attendance.setAttendancePercentage(percentage);
 
-                attendance.setUploadDate(new Date()); // Set upload date
+                attendance.setUploadDate(new Date());
+
+                // Group attendance records by intern ID for total percentage calculation
+                internAttendanceMap.computeIfAbsent(attendance.getInternId(), k -> new ArrayList<>()).add(attendance);
+
                 attendanceList.add(attendance);
             }
 
+            // Save all attendance records
             attendanceRepo.saveAll(attendanceList);
+
+            // Calculate and update total attendance for each intern
+            for (String internId : internAttendanceMap.keySet()) {
+                updateTotalAttendance(internId);
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
             throw new Exception("Error processing the Excel file.");
@@ -64,6 +74,24 @@ public class AttendanceService {
         return attendanceRepo.findByInternIdOrderByYearAscMonthAsc(internId);
     }
 
+    /**
+     * Calculate and update the total attendance percentage for an intern in the database.
+     */
+    public void updateTotalAttendance(String internId) {
+        float totalAttendancePercentage = calculateTotalAttendance(internId);
+
+        // Fetch all attendance records of the intern and update the totalattendance field
+        List<Attendance> attendances = attendanceRepo.findByInternId(internId);
+        for (Attendance attendance : attendances) {
+            attendance.setTotalAttendance(totalAttendancePercentage);
+        }
+
+        attendanceRepo.saveAll(attendances);
+    }
+
+    /**
+     * Calculate the total attendance percentage dynamically (without storing in DB).
+     */
     public float calculateTotalAttendance(String internId) {
         List<Attendance> attendances = attendanceRepo.findByInternId(internId);
 
@@ -111,19 +139,5 @@ public class AttendanceService {
             System.out.println("Error parsing INT value at row: " + cell.getRowIndex() + ", col: " + cell.getColumnIndex());
         }
         return 0;
-    }
-
-    private float getNumericCellValueAsFloat(Cell cell) {
-        if (cell == null) return 0.0F;
-        try {
-            if (cell.getCellType() == CellType.NUMERIC) {
-                return (float) cell.getNumericCellValue();
-            } else if (cell.getCellType() == CellType.STRING) {
-                return (float) Double.parseDouble(cell.getStringCellValue().trim());
-            }
-        } catch (Exception e) {
-            System.out.println("Error parsing FLOAT value at row: " + cell.getRowIndex() + ", col: " + cell.getColumnIndex());
-        }
-        return 0.0F;
     }
 }
