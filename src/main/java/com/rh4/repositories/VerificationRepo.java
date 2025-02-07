@@ -10,4 +10,5 @@ import java.util.List;
 public interface VerificationRepo extends JpaRepository<Verification, String> {
     List<Verification> findByStatus(String status);
 
+    long countByStatus(String status);
 }
