@@ -243,6 +243,13 @@ public class AdminController {
         long countGuide = guideService.countGuides();
         model.addAttribute("countGuide", countGuide);
 
+        // New notifications
+        long pendingLeaveApplicationsCount = leaveApplicationService.countPendingLeaveApplications();
+        model.addAttribute("pendingLeaveApplicationsCount", pendingLeaveApplicationsCount);
+
+        long pendingVerificationRequestsCount = verificationService.countPendingVerificationRequests();
+        model.addAttribute("pendingVerificationRequestsCount", pendingVerificationRequestsCount);
+
         return model;
     }
 
@@ -2485,14 +2492,20 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
     // ========================== COMPANY VERIFICATION REQUESTS ========================== //
     //View all pending verification requests
     @GetMapping("/verification_requests")
-    public ModelAndView viewVerificationRequests(HttpSession session) {
+    public ModelAndView viewVerificationRequests(Model model, HttpSession session) {
         ModelAndView mv = new ModelAndView("admin/verification_requests");
+
+        // Fetch pending verification requests
         List<Verification> pendingRequests = verificationService.getPendingRequests();
         mv.addObject("requests", pendingRequests);
+
+        // Integrate the notification count logic
+        model = countNotifications(model);
 
         Admin admin = getSignedInAdmin();
         String id = String.valueOf(admin.getAdminId());
 
+        // Log admin action
         logService.saveLog(id, "Viewed Verification Requests",
                 "Admin " + admin.getName() + " accessed the list of pending verification requests.");
 
@@ -2884,6 +2897,13 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         // Get the role from the session (ensure it is set during login)
         String role = (String) session.getAttribute("role");
 
+        // Integrate the notification count logic
+        model = countNotifications(model);
+
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Pending Leave Applications",
+                "Admin " + admin.getName() + " viewed pending leave applications.");
+
         model.addAttribute("pendingLeaves", pendingLeaves);
         model.addAttribute("role", role); // Pass role to Thymeleaf
 
@@ -2921,5 +2941,20 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             leaveApplicationRepo.save(leave);
         }
         return "redirect:/bisag/admin/pending_leaves";
+    }
+    //shows all the list of approved and rejected leave applications
+    @GetMapping("/leave_history")
+    public String viewLeaveHistory(Model model) {
+        List<LeaveApplication> leaveHistory = leaveApplicationRepo.findByStatusIn(Arrays.asList("Approved", "Rejected"));
+        model.addAttribute("leaveHistory", leaveHistory);
+        return "admin/leave_history"; // Thymeleaf template
+    }
+    //show leave application in detail format
+    @GetMapping("/leave_details/{id}")
+    public String viewLeaveDetails(@PathVariable Long id, Model model) {
+        LeaveApplication leave = leaveApplicationRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Leave Application Not Found"));
+        model.addAttribute("leave", leave);
+        return "admin/leave_details"; // Thymeleaf template
     }
 }

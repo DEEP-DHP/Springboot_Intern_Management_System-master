@@ -760,14 +760,27 @@ public class InternController {
         Intern intern = getSignedInIntern();
         ModelAndView mv = new ModelAndView("intern/apply_leave");
 
+        // Calculate total attendance
         float totalAttendance = attendanceService.calculateTotalAttendance(intern.getInternId());
+
+        // Fetch leave applications for the intern
         List<LeaveApplication> leaveApplications = leaveApplicationService.getInternLeaves(intern.getInternId());
 
+        // Fetch last submitted leave (if any)
+        LeaveApplication lastLeave = leaveApplicationService.getLastLeaveApplication(intern.getInternId());
+
+        // Fetch leave history for the intern
+        List<LeaveApplication> leaveHistory = leaveApplicationService.getInternLeaveHistory(intern.getInternId());
+
+        // Pass data to the template
         mv.addObject("intern", intern);
         mv.addObject("totalAttendance", totalAttendance);
         mv.addObject("leaveApplications", leaveApplications);
         mv.addObject("leaveApplication", new LeaveApplication());
+        mv.addObject("lastLeave", lastLeave);
+        mv.addObject("leaveHistory", leaveHistory);
 
+        // Log the action
         logService.saveLog(intern.getInternId(), "Viewed Leave Application Page",
                 "Intern " + intern.getFirstName() + " " + intern.getLastName() + " accessed the leave application page.");
 
