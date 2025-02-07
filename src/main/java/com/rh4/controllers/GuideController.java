@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import com.rh4.entities.*;
+import com.rh4.repositories.LeaveApplicationRepo;
 import com.rh4.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,12 +22,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.rh4.entities.Admin;
-import com.rh4.entities.GroupEntity;
-import com.rh4.entities.Guide;
-import com.rh4.entities.Intern;
-import com.rh4.entities.MyUser;
-import com.rh4.entities.WeeklyReport;
 import com.rh4.repositories.GroupRepo;
 
 import jakarta.servlet.http.HttpSession;
@@ -52,6 +48,8 @@ public class GuideController {
     private MyUserService myUserService;
     @Autowired
     private LogService logService;
+    @Autowired
+            private LeaveApplicationRepo leaveApplicationRepo;
     Intern internFromUploadFileMethod;
     int CurrentWeekNo;
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -389,4 +387,43 @@ public class GuideController {
         return "redirect:/logout";
     }
 
+    // Fetch pending leaves for guide view
+    @GetMapping("/pending_leaves")
+    public String viewPendingLeaves(Model model) {
+        List<LeaveApplication> pendingLeaves = leaveApplicationRepo.findByStatus("Pending");
+        model.addAttribute("pendingLeaves", pendingLeaves);
+        return "guide/pending_leaves"; // Thymeleaf template
+    }
+
+    // Approve leave request
+    @PostMapping("/approve_leave/{id}")
+    public String approveLeave(@PathVariable Long id) {
+        Optional<LeaveApplication> optionalLeave = leaveApplicationRepo.findById(id);
+        if (optionalLeave.isPresent()) {
+            LeaveApplication leave = optionalLeave.get();
+            leave.setGuideApproval(true);
+
+            // Check if both admin and guide have approved
+            if (leave.isAdminApproval() && leave.isGuideApproval()) {
+                leave.setStatus("Approved");
+            }
+
+            leaveApplicationRepo.save(leave);
+        }
+        return "redirect:/bisag/guide/pending_leaves";
+    }
+
+    // Reject leave request
+    @PostMapping("/reject_leave/{id}")
+    public String rejectLeave(@PathVariable Long id) {
+        Optional<LeaveApplication> optionalLeave = leaveApplicationRepo.findById(id);
+        if (optionalLeave.isPresent()) {
+            LeaveApplication leave = optionalLeave.get();
+            leave.setStatus("Rejected");
+            leave.setAdminApproval(false);
+            leave.setGuideApproval(false);
+            leaveApplicationRepo.save(leave);
+        }
+        return "redirect:/bisag/guide/pending_leaves";
+    }
 }

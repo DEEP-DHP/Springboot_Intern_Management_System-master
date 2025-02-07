@@ -89,6 +89,8 @@ public class AdminController {
     private RecordService recordService;
     @Autowired
     private LeaveApplicationService leaveApplicationService;
+    @Autowired
+    private LeaveApplicationRepo leaveApplicationRepo;
 
     @Value("${app.storage.base-dir}")
     private String baseDir;
@@ -2168,17 +2170,17 @@ public ModelAndView cancellationRequests(Model model) {
         return mv;
     }
 
-    @PostMapping("/approve_leave/{id}")
-    public String approveLeave(@PathVariable("id") Long id) {
-        leaveApplicationService.approveLeave(id, "admin");
-        return "redirect:/admin/manage_leave_applications";
-    }
-
-    @PostMapping("/reject_leave/{id}")
-    public String rejectLeave(@PathVariable("id") Long id) {
-        leaveApplicationService.rejectLeave(id, "admin");
-        return "redirect:/admin/manage_leave_applications";
-    }
+//    @PostMapping("/approve_leave/{id}")
+//    public String approveLeave(@PathVariable("id") Long id) {
+//        leaveApplicationService.approveLeave(id, "admin");
+//        return "redirect:/admin/manage_leave_applications";
+//    }
+//
+//    @PostMapping("/reject_leave/{id}")
+//    public String rejectLeave(@PathVariable("id") Long id) {
+//        leaveApplicationService.rejectLeave(id, "admin");
+//        return "redirect:/admin/manage_leave_applications";
+//    }
 
     @GetMapping("/generate_intern_report")
     public ModelAndView generateInternReport(Model model) {
@@ -2871,5 +2873,53 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Intern Name not found");
         }
+    }
+
+    //-------------------------------Leave application module-----------------------------------
+    // Fetch pending leave applications for admin view
+    @GetMapping("/pending_leaves")
+    public String viewPendingLeaves(Model model, HttpSession session) {
+        List<LeaveApplication> pendingLeaves = leaveApplicationRepo.findByStatus("Pending");
+
+        // Get the role from the session (ensure it is set during login)
+        String role = (String) session.getAttribute("role");
+
+        model.addAttribute("pendingLeaves", pendingLeaves);
+        model.addAttribute("role", role); // Pass role to Thymeleaf
+
+        return "admin/pending_leaves"; // Thymeleaf template
+    }
+
+    // Approve leave request
+    @PostMapping("/approve_leave/{id}")
+    public String approveLeave(@PathVariable Long id) {
+        Optional<LeaveApplication> optionalLeave = leaveApplicationRepo.findById(id);
+        if (optionalLeave.isPresent()) {
+            LeaveApplication leave = optionalLeave.get();
+            leave.setAdminApproval(true); // Set approval for admin
+
+            // If both admin and guide have approved, set status as "Approved"
+            if (leave.isAdminApproval() && leave.isGuideApproval()) {
+                leave.setStatus("Approved");
+            }
+
+            leaveApplicationRepo.save(leave);
+        }
+        return "redirect:/bisag/admin/pending_leaves";
+    }
+
+    // Reject leave request
+    @PostMapping("/reject_leave/{id}")
+    public String rejectLeave(@PathVariable Long id) {
+        Optional<LeaveApplication> optionalLeave = leaveApplicationRepo.findById(id);
+        if (optionalLeave.isPresent()) {
+            LeaveApplication leave = optionalLeave.get();
+            leave.setStatus("Rejected");
+            leave.setAdminApproval(false);
+            leave.setGuideApproval(false);
+
+            leaveApplicationRepo.save(leave);
+        }
+        return "redirect:/bisag/admin/pending_leaves";
     }
 }

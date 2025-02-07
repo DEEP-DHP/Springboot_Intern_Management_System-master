@@ -8,19 +8,21 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import com.rh4.entities.*;
+import com.rh4.repositories.InternRepo;
+import com.rh4.repositories.LeaveApplicationRepo;
 import com.rh4.services.*;
+import jakarta.validation.Valid;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -67,6 +69,10 @@ public class InternController {
     private LeaveApplicationService leaveApplicationService;
     @Autowired
     private AttendanceService attendanceService;
+    @Autowired
+    private LeaveApplicationRepo leaveApplicationRepo;
+    @Autowired
+    private InternRepo internRepo;
     @Autowired
     HttpSession session;
     @Autowired
@@ -166,6 +172,24 @@ public class InternController {
         calendar.setTime(youngestCompletionDate);
         calendar.add(Calendar.DAY_OF_MONTH, 7); // Add 7 days
         return calendar.getTime();
+    }
+
+    private String saveFile(MultipartFile file) {
+        try {
+            String uploadDir = "uploads/"; // Change this to your actual upload directory
+            File uploadFolder = new File(uploadDir);
+            if (!uploadFolder.exists()) {
+                uploadFolder.mkdirs(); // Create directory if it doesn't exist
+            }
+
+            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+            Path filePath = Paths.get(uploadDir + fileName);
+            Files.write(filePath, file.getBytes());
+
+            return fileName; // Return the file name to store in DB
+        } catch (IOException e) {
+            throw new RuntimeException("Error saving file: " + e.getMessage());
+        }
     }
 
     @GetMapping("/intern_dashboard")
@@ -736,15 +760,13 @@ public class InternController {
         Intern intern = getSignedInIntern();
         ModelAndView mv = new ModelAndView("intern/apply_leave");
 
-        // Fetch total attendance percentage for the logged-in intern
         float totalAttendance = attendanceService.calculateTotalAttendance(intern.getInternId());
-
-        // Fetch the leave applications of the logged-in intern
         List<LeaveApplication> leaveApplications = leaveApplicationService.getInternLeaves(intern.getInternId());
 
         mv.addObject("intern", intern);
-        mv.addObject("totalAttendance", totalAttendance); // Add attendance to the view
-        mv.addObject("leaveApplications", leaveApplications); // Add leave history
+        mv.addObject("totalAttendance", totalAttendance);
+        mv.addObject("leaveApplications", leaveApplications);
+        mv.addObject("leaveApplication", new LeaveApplication());
 
         logService.saveLog(intern.getInternId(), "Viewed Leave Application Page",
                 "Intern " + intern.getFirstName() + " " + intern.getLastName() + " accessed the leave application page.");
@@ -752,11 +774,36 @@ public class InternController {
         return mv;
     }
 
-    @PostMapping("/apply_leave")
-    public String applyLeave(@ModelAttribute LeaveApplication leaveApplication, Principal principal) {
-        leaveApplication.setInternId(principal.getName());
-        leaveApplicationService.applyForLeave(leaveApplication);
-        return "redirect:/intern/apply_leave";
+//    @PostMapping("/apply_leave")
+//    public String applyLeave(@ModelAttribute LeaveApplication leaveApplication, Principal principal) {
+//        leaveApplication.setInternId(principal.getName());
+//        leaveApplicationService.applyForLeave(leaveApplication);
+//        return "redirect:/bisag/intern/apply_leave";
+//    }
+
+    @PostMapping("/submit_leave")
+    public String submitLeave(@RequestParam("internId") String internId,
+                              @RequestParam("fromDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate fromDate,
+                              @RequestParam("toDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate toDate,
+                              @RequestParam("leaveType") String leaveType, // New field
+                              LeaveApplication leaveApplication) {
+
+        if (internId == null || internId.isEmpty()) {
+            throw new RuntimeException("Intern ID is missing!");
+        }
+
+        Intern intern = internRepo.findById(internId)
+                .orElseThrow(() -> new RuntimeException("Intern not found"));
+
+        leaveApplication.setFromDate(fromDate);
+        leaveApplication.setToDate(toDate);
+        leaveApplication.setInternId(internId);
+        leaveApplication.setLeaveType(leaveType);
+        leaveApplication.setStatus("Pending");
+        leaveApplication.setSubmittedOn(LocalDateTime.now());
+
+        leaveApplicationRepo.save(leaveApplication);
+        return "redirect:/bisag/intern/apply_leave?success=true";
     }
 
     @PostMapping("/{internId}/profile-picture")
