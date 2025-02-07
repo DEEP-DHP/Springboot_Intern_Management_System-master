@@ -6,25 +6,17 @@ import com.rh4.repositories.InternRepo;
 import com.rh4.repositories.LeaveApplicationRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class LeaveApplicationService {
 
     @Autowired
     private LeaveApplicationRepo leaveApplicationRepo;
+
     @Autowired
     private InternRepo internRepo;
 
@@ -60,23 +52,17 @@ public class LeaveApplicationService {
         return null;
     }
 
-    /**
-     * Get all leave applications
-     */
+    //Get all leave applications
     public List<LeaveApplication> getAllLeaveApplications() {
         return leaveApplicationRepo.findAll();
     }
 
-    /**
-     * Get leave applications by intern ID
-     */
+    //Get leave applications by intern ID
     public List<LeaveApplication> getLeaveApplicationsByInternId(String internId) {
         return leaveApplicationRepo.findByInternId(internId);
     }
 
-    /**
-     * Submit a new leave application
-     */
+    //Submit a new leave application
     public LeaveApplication submitLeaveApplication(LeaveApplication leaveApplication) {
         leaveApplication.setStatus("Pending"); // Default status
         leaveApplication.setGuideApproval(false);
@@ -84,9 +70,7 @@ public class LeaveApplicationService {
         return leaveApplicationRepo.save(leaveApplication);
     }
 
-    /**
-     * Approve leave (Admin or Guide)
-     */
+    //Approve leave (Admin or Guide)
     public void approveLeave(Long leaveId, String role) {
         Optional<LeaveApplication> optionalLeave = leaveApplicationRepo.findById(leaveId);
         if (optionalLeave.isPresent()) {
@@ -106,9 +90,7 @@ public class LeaveApplicationService {
         }
     }
 
-    /**
-     * Reject leave (Admin or Guide)
-     */
+    //Reject leave (Admin or Guide)
     public void rejectLeave(Long leaveId, String role) {
         Optional<LeaveApplication> optionalLeave = leaveApplicationRepo.findById(leaveId);
         if (optionalLeave.isPresent()) {
@@ -119,33 +101,29 @@ public class LeaveApplicationService {
             leaveApplicationRepo.save(leaveApplication);
         }
     }
+    // Get the last submitted leave application
+    public LeaveApplication getLastLeaveApplication(String internId) {
+        return leaveApplicationRepo.findTopByInternIdOrderBySubmittedOnDesc(internId);
+    }
 
-    public void submitLeave(String internId, LeaveApplication leaveApplication, MultipartFile proofDoc) {
+    // Get full leave history for the intern
+    public List<LeaveApplication> getInternLeaveHistory(String internId) {
+        return leaveApplicationRepo.findByInternIdOrderBySubmittedOnDesc(internId);
+    }
+
+    public long countPendingLeaveApplications() {
+        return leaveApplicationRepo.countByStatus("Pending");
+    }
+    //Submit leave without proof document
+    public void submitLeave(String internId, LeaveApplication leaveApplication) {
         Intern intern = internRepo.findById(internId)
                 .orElseThrow(() -> new RuntimeException("Intern not found"));
 
         leaveApplication.setInternId(internId);
         leaveApplication.setStatus("Pending");
 
-        // Use LocalDateTime directly
         leaveApplication.setSubmittedOn(LocalDateTime.now());
 
-        if (!proofDoc.isEmpty()) {
-            String fileName = saveFile(proofDoc);
-            leaveApplication.setProofDocument(fileName);
-        }
-
         leaveApplicationRepo.save(leaveApplication);
-    }
-
-    public String saveFile(MultipartFile file) {
-        try {
-            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-            Path filePath = Paths.get("uploads/" + fileName);
-            Files.write(filePath, file.getBytes());
-            return fileName;
-        } catch (IOException e) {
-            throw new RuntimeException("⚠️ Error saving file", e);
-        }
     }
 }

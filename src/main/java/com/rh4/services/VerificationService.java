@@ -63,4 +63,8 @@ public class VerificationService {
         verification.setStatus("PENDING");
         verificationRepo.save(verification);
     }
+
+    public long countPendingVerificationRequests() {
+        return verificationRepo.countByStatus("Pending");
+    }
 }
