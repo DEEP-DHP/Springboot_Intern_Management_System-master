@@ -1,7 +1,9 @@
 package com.rh4.entities;
 
 import jakarta.persistence.*;
+import org.springframework.format.annotation.DateTimeFormat;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -22,14 +24,16 @@ public class LeaveApplication {
     @Column(name = "body")
     private String body;
 
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     @Column(name = "fromDate")
-    private Date fromDate;
+    private LocalDate fromDate;
 
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     @Column(name = "toDate")
-    private Date toDate;
+    private LocalDate toDate;
 
-    @Column(name = "proofDocument")
-    private String proofDocument;
+//    @Column(name = "proofDocument")
+//    private String proofDocument;
 
     @Column(name = "guideApproval")
     private boolean guideApproval = false;
@@ -43,17 +47,12 @@ public class LeaveApplication {
     @Column(nullable = false)
     private LocalDateTime submittedOn;
 
-    public void updateStatus() {
-        if (guideApproval && adminApproval) {
-            this.status = "Approved";
-        } else if (!guideApproval || !adminApproval) {
-            this.status = "Rejected";
-        }
-    }
+    @Column(nullable = false)
+    private String leaveType; // "Half Day" or "Full Day"
 
     public LeaveApplication() { super();}
 
-    public LeaveApplication(Long id, String internId, String subject, String body, Date fromDate, Date toDate, String proofDocument, boolean guideApproval, boolean adminApproval, String status, LocalDateTime submittedOn) {
+    public LeaveApplication(Long id, String internId, String subject, String body, LocalDate fromDate, LocalDate toDate, boolean guideApproval, boolean adminApproval, String status, LocalDateTime submittedOn, String leaveType) {
         super();
         this.id = id;
         this.internId = internId;
@@ -61,11 +60,11 @@ public class LeaveApplication {
         this.body = body;
         this.fromDate = fromDate;
         this.toDate = toDate;
-        this.proofDocument = proofDocument;
         this.guideApproval = guideApproval;
         this.adminApproval = adminApproval;
         this.status = status;
         this.submittedOn = submittedOn;
+        this.leaveType = leaveType;
     }
 
     public Long getId() {
@@ -100,28 +99,20 @@ public class LeaveApplication {
         this.body = body;
     }
 
-    public Date getFromDate() {
+    public LocalDate getFromDate() {
         return fromDate;
     }
 
-    public void setFromDate(Date fromDate) {
+    public void setFromDate(LocalDate fromDate) {
         this.fromDate = fromDate;
     }
 
-    public Date getToDate() {
+    public LocalDate getToDate() {
         return toDate;
     }
 
-    public void setToDate(Date toDate) {
+    public void setToDate(LocalDate toDate) {
         this.toDate = toDate;
-    }
-
-    public String getProofDocument() {
-        return proofDocument;
-    }
-
-    public void setProofDocument(String proofDocument) {
-        this.proofDocument = proofDocument;
     }
 
     public boolean isGuideApproval() {
@@ -154,5 +145,21 @@ public class LeaveApplication {
 
     public void setSubmittedOn(LocalDateTime submittedOn) {
         this.submittedOn = submittedOn;
+    }
+
+    public String getLeaveType() {
+        return leaveType;
+    }
+
+    public void setLeaveType(String leaveType) {
+        this.leaveType = leaveType;
+    }
+
+    public void updateStatus() {
+        if (adminApproval && guideApproval) {
+            this.status = "Approved";
+        } else if (adminApproval || guideApproval) {
+            this.status = "Rejected";
+        }
     }
 }
