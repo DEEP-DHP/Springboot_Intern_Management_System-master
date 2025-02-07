@@ -29,12 +29,12 @@
 									<h4><span>Your Last Leave</span></h4>
 									<h5>
                                             <span class="text-success small pt-1 fw-bold">Submitted on:
-                                                <span th:text="${lastLeave != null ? #dates.format(lastLeave.submittedOn, 'dd/MM/yyyy - hh:mm a') : 'N/A'}"></span>
+<!--                                                <span th:text="${lastLeave != null ? #dates.format(lastLeave.submittedOn, 'dd/MM/yyyy - hh:mm a') : 'N/A'}"></span>-->
                                             </span>
 									</h5>
 									<h5>
                                             <span class="text-success small pt-1 fw-bold">Subject:
-                                                <span th:text="${lastLeave != null ? lastLeave.subject : 'N/A'}"></span>
+<!--                                                <span th:text="${lastLeave != null ? lastLeave.subject : 'N/A'}"></span>-->
                                             </span>
 									</h5>
 								</div>
@@ -114,11 +114,17 @@ Your Sincerely,
 							<input type="date" id="toDate" name="toDate" class="form-control" required>
 						</div>
 					</div>
-
 					<div class="form-group">
-						<label for="proofDocument" class="form-label">Proof Doc (If Any):</label>
-						<input type="file" class="form-control" id="proofDocument" name="proofDocument">
+						<label for="leaveType">Leave Type:</label>
+						<select id="leaveType" name="leaveType" class="form-control" required>
+							<option value="Full Day">Full Day</option>
+							<option value="Half Day">Half Day</option>
+						</select>
 					</div>
+<!--					<div class="form-group">-->
+<!--						<label for="proofDocument" class="form-label">Proof Doc (If Any):</label>-->
+<!--						<input type="file" class="form-control" id="proofDocument" name="proofDocument">-->
+<!--					</div>-->
 
 					<div class="form-group mt-4">
 						<p>
@@ -155,12 +161,16 @@ Your Sincerely,
 					</tr>
 					</thead>
 					<tbody>
-					<tr th:each="leave : ${leaveHistory}">
+					<tr th:each="leave : ${leaveHistory}" th:if="${leaveHistory != null and not #lists.isEmpty(leaveHistory)}">
 						<td th:text="${leave.id}"></td>
 						<td th:text="${leave.subject}"></td>
-						<td th:text="${#dates.format(leave.submittedOn, 'dd/MM/yyyy')}"></td>
-						<td th:text="${#dates.format(leave.fromDate, 'dd/MM/yyyy - hh:mm a')}"></td>
-						<td th:text="${#dates.format(leave.toDate, 'dd/MM/yyyy - hh:mm a')}"></td>
+						<td th:text="${leave.submittedOn}"></td>
+						<td th:text="${leave.fromDate}"></td>
+						<td th:text="${leave.toDate}"></td>
+
+						<!--						<td th:text="${#dates.format(leave.submittedOn, 'dd/MM/yyyy')}"></td>-->
+<!--						<td th:text="${#dates.format(leave.fromDate, 'dd/MM/yyyy - hh:mm a')}"></td>-->
+<!--						<td th:text="${#dates.format(leave.toDate, 'dd/MM/yyyy - hh:mm a')}"></td>-->
 						<td>
                                     <span th:class="${leave.status == 'Approved' ? 'text-success' : (leave.status == 'Rejected' ? 'text-danger' : 'text-warning')}"
 										  th:text="${leave.status}">
@@ -172,11 +182,8 @@ Your Sincerely,
 			</div>
 		</div>
 	</div>
-
-	<!-- Include Footer Fragment -->
 	<div th:replace="fragments/footerFragment :: footer"></div>
 </main>
-
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
