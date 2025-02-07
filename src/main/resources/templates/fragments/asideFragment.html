@@ -252,6 +252,30 @@
                     </ul>
                 </li>
             </ul>
+
+            <ul class="sidebar-nav" id="def-nav">
+                <li class="nav-item">
+                    <a class="nav-link collapsed" data-bs-target="#leave-nav" data-bs-toggle="collapse" href="#">
+                        <i class="bi bi-menu-button-wide"></i>
+                        <span>Leave Application</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <ul id="leave-nav" class="nav-content collapse" data-bs-parent="#def-nav">
+                        <li>
+                            <a th:href="@{/bisag/admin/pending_leaves}">
+                                <i class="bi bi-circle"></i><span>Pending Applications</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <ul id="leave-nav" class="nav-content collapse" data-bs-parent="#def-nav">
+                        <li>
+                            <a th:href="@{/bisag/admin/leave_history}">
+                                <i class="bi bi-circle"></i><span>Leave History</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
         </li>
     </ul>
 
