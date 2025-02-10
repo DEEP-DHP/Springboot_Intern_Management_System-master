@@ -231,4 +231,10 @@ public class InternService {
 		}
 	}
 
+	public String getInternNameById(Long internId) {
+		return internRepo.findById(String.valueOf(internId))
+				.map(Intern::getFirstName)
+				.orElse("Intern Not Found");
+	}
+
 }

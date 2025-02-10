@@ -133,5 +133,9 @@ public class GuideService {
 		user.setPassword(encryptedPassword);
 		userRepo.save(user);
 	}
+
+	public List<Guide> findAllGuides() {
+		return guideRepo.findAll();  // Fetch all guides
+	}
 	
 }

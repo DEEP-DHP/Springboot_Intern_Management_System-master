@@ -89,4 +89,8 @@ public class GroupService {
 	public List<GroupEntity> getAPendingFinalReports() {
 		return groupRepo.findByFinalReportStatus("gapproved");
 	}
+
+	public GroupEntity getGroupById(Long groupId) {
+		return groupRepo.findById(groupId).orElse(null);
+	}
 }
