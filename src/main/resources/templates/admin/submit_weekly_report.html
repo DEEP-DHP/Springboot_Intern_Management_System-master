@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submit Weekly Report</title>
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div th:replace="fragments/headerFragment :: header"></div>
+
+<div class="container mt-4">
+  <h2>Submit Weekly Report</h2>
+
+  <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+  <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+  <form th:action="@{/bisag/admin/submit_weekly_report}" method="post" enctype="multipart/form-data">
+
+    <div class="form-group">
+      <label for="groupId">Group ID:</label>
+      <select id="groupId" name="groupId" class="form-control" required>
+        <option value="" disabled selected>Select Group ID</option>
+        <option th:each="groupId : ${groupIds}" th:value="${groupId}" th:text="${groupId}"></option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="week">Week:</label>
+      <input type="text" id="week" name="week" class="form-control" placeholder="Week (e.g., Week 1, Week 2)" required>
+    </div>
+
+    <div class="form-group">
+      <label for="reportFile">Upload Report (PDF):</label>
+      <input type="file" id="reportFile" name="reportFile" class="form-control" accept="application/pdf" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit Report</button>
+  </form>
+</div>
+
+<div th:replace="fragments/footerFragment :: footer"></div>
+
+</body>
+</html>
