@@ -54,7 +54,7 @@
                         class="bi bi-circle"></i><span>Intern Applications</span></a></li>
                 <li><a
                         th:href="@{/bisag/admin/intern_application/approved_interns}"><i
-                    class="bi bi-circle"></i><span>Shortlisted Intern
+                        class="bi bi-circle"></i><span>Shortlisted Intern
 							Applications</span></a></li>
                 <li><a th:href="@{/bisag/admin/intern_application/new_interns}"><i
                         class="bi bi-circle"></i><span>Approved Interns</span></a></li>
@@ -131,6 +131,9 @@
                         <li><a th:href="@{/bisag/admin/admin_pending_final_reports}">
                             <i class="bi bi-circle"></i><span>Final Reports</span>
                         </a></li>
+                        <li><a th:href="@{/bisag/admin/admin_weekly_report_form}">
+                            <i class="bi bi-circle"></i><span>Add Report</span>
+                        </a></li>
                     </ul>
                 </li>
             </ul>
@@ -157,22 +160,22 @@
                 </li>
             </ul>
 
-    <ul class="sidebar-nav" id="def-nav">
-        <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-target="#log-nav" data-bs-toggle="collapse" href="#">
-                <i class="bi bi-menu-button-wide"></i>
-                <span>Logs</span>
-                <i class="bi bi-chevron-down ms-auto"></i>
-            </a>
-            <ul id="log-nav" class="nav-content collapse" data-bs-parent="#def-nav">
-                <li>
-                    <a th:href="@{/bisag/admin/activity_logs}">
-                        <i class="bi bi-circle"></i><span>Log Data</span>
+            <ul class="sidebar-nav" id="def-nav">
+                <li class="nav-item">
+                    <a class="nav-link collapsed" data-bs-target="#log-nav" data-bs-toggle="collapse" href="#">
+                        <i class="bi bi-menu-button-wide"></i>
+                        <span>Logs</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
                     </a>
+                    <ul id="log-nav" class="nav-content collapse" data-bs-parent="#def-nav">
+                        <li>
+                            <a th:href="@{/bisag/admin/activity_logs}">
+                                <i class="bi bi-circle"></i><span>Log Data</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             </ul>
-        </li>
-    </ul>
 
             <ul class="sidebar-nav" id="def-nav">
                 <li class="nav-item">
