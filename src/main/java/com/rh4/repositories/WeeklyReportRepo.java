@@ -24,7 +24,7 @@ public interface WeeklyReportRepo extends JpaRepository<WeeklyReport, Long> {
 
     List<WeeklyReport> findAllByGroupId(long id);
 
-    @Query("SELECT w FROM WeeklyReport w WHERE w.guide.id = :id")
+    @Query("SELECT w FROM WeeklyReport w WHERE w.guide.guideId = :id")
     List<WeeklyReport> findAllByGuideId(long id);
 
     WeeklyReport findByWeekNoAndGroup(int weekNo, GroupEntity group);
@@ -35,4 +35,7 @@ public interface WeeklyReportRepo extends JpaRepository<WeeklyReport, Long> {
 
     @Query("SELECT w FROM WeeklyReport w WHERE YEAR(w.reportSubmittedDate) = :year")
     List<WeeklyReport> findReportsByYear(@Param("year") int year);
+
+    // Fetch the latest submitted report for a given group
+    WeeklyReport findTopByGroupIdOrderByReportSubmittedDateDesc(Long groupId);
 }
