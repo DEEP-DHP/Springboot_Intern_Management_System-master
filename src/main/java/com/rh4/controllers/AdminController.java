@@ -1993,6 +1993,45 @@ public class AdminController {
         return mv;
     }
 
+    @GetMapping("/admin_weekly_report_form")
+    public ModelAndView showWeeklyReportForm(Model model) {
+        ModelAndView mv = new ModelAndView("/admin/admin_weekly_report_form");
+
+        List<GroupEntity> groups = groupService.getAllocatedGroups();
+        List<Intern> interns = internService.getAllInterns();
+
+        model.addAttribute("groups", groups);
+        model.addAttribute("interns", interns);
+        model = countNotifications(model);
+
+        mv.addObject("admin", adminName(session));
+        mv.addObject("groups", groups);
+
+        return mv;
+    }
+
+    @PostMapping("/admin_weekly_report_form")
+    public String submitWeeklyReport(@RequestParam("groupId") Long groupId,
+                                     @RequestParam("internId") Intern internId,
+                                     @RequestParam("guide") Guide guide,
+                                     @RequestParam("weekNo") int weekNo,
+                                     @RequestParam("deadline") String deadlineString,
+                                     @RequestParam("status") String status,
+                                     @RequestParam("submittedPdf") MultipartFile submittedPdf) {
+
+        // Convert String to Date
+        Date deadline = null;
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+            deadline = dateFormat.parse(deadlineString);
+        } catch (ParseException e) {
+            e.printStackTrace(); // Log error
+            return "redirect:/bisag/admin/admin_weekly_report_form?error";
+        }
+
+        weeklyReportService.submitAdminWeeklyReport(groupId, internId, guide, weekNo, deadline, status, submittedPdf);
+        return "redirect:/bisag/admin/admin_weekly_report_form?success";
+    }
 
 
 //    @GetMapping("/admin_weekly_report_details/{groupId}/{weekNo}")
@@ -2878,14 +2917,50 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
 
     @GetMapping("/getInternName/{internId}")
     @ResponseBody
-    public ResponseEntity<String> getInternName(@PathVariable String internId) {
-        Optional<Intern> intern = internService.findById(internId);
+    public ResponseEntity<Map<String, String>> fetchInternDetailsById(@PathVariable String internId) {
+        Optional<Intern> internOptional = internService.findById(internId);
 
-        if (intern.isPresent() && intern.get().getFirstName() != null) {
-            return ResponseEntity.ok(intern.get().getFirstName());
+        if (internOptional.isPresent()) {
+            Intern intern = internOptional.get();
+            Map<String, String> response = new HashMap<>();
+
+            String internName = (intern.getFirstName() != null) ? intern.getFirstName() : "N/A";
+            response.put("internName", internName);
+
+            if (intern.getGuide() != null) {
+                Long guide = intern.getGuide().getGuideId();  // Assuming getGuideId() returns Long
+                response.put("guide", (guide != null) ? String.valueOf(guide) : "N/A");
+            } else {
+                response.put("guide", "N/A");
+            }
+
+            return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Intern Name not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
+    }
+
+    @GetMapping("/getAllGuides")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, String>>> getAllGuides() {
+        List<Guide> guides = guideService.findAllGuides();  // Use the correct method
+        List<Map<String, String>> guideList = new ArrayList<>();
+
+        for (Guide guide : guides) {
+            Map<String, String> guideMap = new HashMap<>();
+            guideMap.put("id", String.valueOf(guide.getGuideId())); // Convert Long to String
+            guideMap.put("name", guide.getName()); // Fetch guide name
+            guideList.add(guideMap);
+        }
+
+        return ResponseEntity.ok(guideList);
+    }
+
+    // Fetch interns based on Group ID
+    @GetMapping("/getInternsByGroup/{groupId}")
+    public ResponseEntity<List<Intern>> getInternsByGroup(@PathVariable Long groupId) {
+        List<Intern> interns = internService.getInternsByGroupId(groupId);
+        return ResponseEntity.ok(interns);
     }
 
     //-------------------------------Leave application module-----------------------------------
