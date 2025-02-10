@@ -9,32 +9,32 @@
     <meta content="" name="description">
     <meta content="" name="keywords">
     <style>
-.lgout {
-	padding: 10px;
-	list-style-type: none;
-	border: 2px solid;
-	border-radius: 10px;
-}
+        .lgout {
+            padding: 10px;
+            list-style-type: none;
+            border: 2px solid;
+            border-radius: 10px;
+        }
 
-.g-label {
-	font-weight: 700;
-	color: grey;
-}
+        .g-label {
+            font-weight: 700;
+            color: grey;
+        }
 
-.icon {
-	font-size: 40px;
-	border: solid;
-	border-radius: 50%;
-	/* Make the border-radius 50% to create a circle */
-	width: 60px;
-	/* Adjust the width and height to fit your content */
-	height: 57px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background-color: white;
-	/* Set your desired background color */
-}
+        .icon {
+            font-size: 40px;
+            border: solid;
+            border-radius: 50%;
+            /* Make the border-radius 50% to create a circle */
+            width: 60px;
+            /* Adjust the width and height to fit your content */
+            height: 57px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            /* Set your desired background color */
+        }
 
 
     </style>
@@ -385,70 +385,70 @@
 </main>
 <!-- End #main -->
 <script th:inline="javascript">
-		function validatePasswords() {
-			var newPassword = document.getElementById('newPassword').value;
-			var renewPassword = document.getElementById('renewPassword').value;
+    function validatePasswords() {
+        var newPassword = document.getElementById('newPassword').value;
+        var renewPassword = document.getElementById('renewPassword').value;
 
-			if (newPassword !== renewPassword) {
-				alert("Passwords do not match!");
-				return false; // Prevent form submission
-			}
-			return true; // Allow form submission
-		}
+        if (newPassword !== renewPassword) {
+            alert("Passwords do not match!");
+            return false; // Prevent form submission
+        }
+        return true; // Allow form submission
+    }
 
 
 </script>
 <script>
-		function checkPasswordStrength(password) {
-			var strengthContainer = document
-					.getElementById('passwordStrengthMessage');
-			var strengthIndicator = document.getElementById('passwordStrength');
+    function checkPasswordStrength(password) {
+        var strengthContainer = document
+            .getElementById('passwordStrengthMessage');
+        var strengthIndicator = document.getElementById('passwordStrength');
 
-			if (password.length === 0) {
-				// Hide the strength indicator if password is empty
-				strengthContainer.style.display = 'none';
-			} else {
-				// Show the strength indicator
-				strengthContainer.style.display = 'block';
+        if (password.length === 0) {
+            // Hide the strength indicator if password is empty
+            strengthContainer.style.display = 'none';
+        } else {
+            // Show the strength indicator
+            strengthContainer.style.display = 'block';
 
-				// Evaluate password strength based on conditions
-				var strength = 'Weak';
-				if (password.length >= 6) {
-					if (/[a-z]/.test(password)) {
-						if (/[A-Z]/.test(password)
-								&& /\d/.test(password)
-								&& /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/
-										.test(password)) {
-							strength = 'Strong';
-						} else if (/\d/.test(password)) {
-							strength = 'Medium';
-						}
-					}
-				}
+            // Evaluate password strength based on conditions
+            var strength = 'Weak';
+            if (password.length >= 6) {
+                if (/[a-z]/.test(password)) {
+                    if (/[A-Z]/.test(password)
+                        && /\d/.test(password)
+                        && /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/
+                            .test(password)) {
+                        strength = 'Strong';
+                    } else if (/\d/.test(password)) {
+                        strength = 'Medium';
+                    }
+                }
+            }
 
-				// Update the password strength indicator
-				strengthIndicator.textContent = strength;
-			}
-		}
+            // Update the password strength indicator
+            strengthIndicator.textContent = strength;
+        }
+    }
 
-		// Initially hide the strength indicator
-		document.getElementById('passwordStrengthMessage').style.display = 'none';
+    // Initially hide the strength indicator
+    document.getElementById('passwordStrengthMessage').style.display = 'none';
 
-		function togglePasswordVisibility(inputId) {
-			var passwordInput = document.getElementById(inputId);
-			var icon = document.querySelector('#' + inputId
-					+ ' + .input-group-append i');
+    function togglePasswordVisibility(inputId) {
+        var passwordInput = document.getElementById(inputId);
+        var icon = document.querySelector('#' + inputId
+            + ' + .input-group-append i');
 
-			if (passwordInput.type === 'password') {
-				passwordInput.type = 'text';
-				icon.classList.remove('fa-eye-slash');
-				icon.classList.add('fa-eye');
-			} else {
-				passwordInput.type = 'password';
-				icon.classList.remove('fa-eye');
-				icon.classList.add('fa-eye-slash');
-			}
-		}
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        }
+    }
 
 
 </script>
