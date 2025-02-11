@@ -86,6 +86,8 @@ public class Intern {
     @Column(name = "project_definition_name")
     private String projectDefinitionName;
 
+    private boolean undertakingAccepted = false;
+
     @ManyToOne
     private Guide guide;
 
@@ -469,5 +471,13 @@ public class Intern {
 
     public Object getGroupEntity() {
         return group;
+    }
+
+    public boolean isUndertakingAccepted() {
+        return undertakingAccepted;
+    }
+
+    public void setUndertakingAccepted(boolean undertakingAccepted) {
+        this.undertakingAccepted = undertakingAccepted;
     }
 }
