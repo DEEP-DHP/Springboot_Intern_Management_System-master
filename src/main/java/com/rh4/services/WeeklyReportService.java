@@ -78,9 +78,9 @@ public class WeeklyReportService {
 		report.setIntern(internId);
 		report.setGuide(guide);
 		report.setWeekNo(weekNo);
-		report.setDeadline(deadline);  // ✅ Using 'deadline' field
+		report.setDeadline(deadline);
 		report.setStatus(status);
-		report.setReportSubmittedDate(new Date());  // ✅ Setting current date & time
+		report.setReportSubmittedDate(new Date());
 
 		try {
 			report.setSubmittedPdf(submittedPdf.getBytes());
