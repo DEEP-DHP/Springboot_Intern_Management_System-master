@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intern Undertaking Status</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<h2>Intern Undertaking Status</h2>
+
+<table border="1">
+  <thead>
+  <tr>
+    <th>Intern ID</th>
+    <th>Name</th>
+    <th>Status</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr th:each="intern : ${interns}">
+    <td th:text="${intern.id}"></td>
+    <td th:text="${intern.firstName + ' ' + intern.lastName}"></td>
+    <td>
+                    <span th:text="${intern.undertakingAccepted ? 'Accepted' : 'Pending'}"
+                          th:style="${intern.undertakingAccepted ? 'color: green;' : 'color: red;'}">
+                    </span>
+    </td>
+  </tr>
+  </tbody>
+</table>
+
+<br>
+<a href="/admin/dashboard">Back to Dashboard</a>
+</body>
+</html>

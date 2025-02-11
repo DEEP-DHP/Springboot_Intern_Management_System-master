@@ -368,10 +368,10 @@
                             if (internId) {
                                 // Fetch Intern Name based on the selected Intern ID
                                 fetch(`/bisag/admin/getInternName/${internId}`)
-                                    .then(response => response.text())
+                                    .then(response => response.json()) // ✅ Parse JSON response
                                     .then(data => {
-                                        // Set the Intern Name in the input field
-                                        document.getElementById('FirstName').value = data;
+                                        // ✅ Set the Intern Name correctly
+                                        document.getElementById('FirstName').value = data.internName;
                                     })
                                     .catch(error => {
                                         console.error("Error fetching intern name: ", error);
