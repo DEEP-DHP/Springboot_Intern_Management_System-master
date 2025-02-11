@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -16,8 +15,8 @@ import java.util.*;
 import com.rh4.entities.*;
 import com.rh4.repositories.InternRepo;
 import com.rh4.repositories.LeaveApplicationRepo;
+import com.rh4.repositories.UndertakingRepo;
 import com.rh4.services.*;
-import jakarta.validation.Valid;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,18 +28,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.rh4.models.ProjectDefinition;
 import com.rh4.repositories.GroupRepo;
 
 import jakarta.servlet.http.HttpSession;
@@ -73,6 +64,10 @@ public class InternController {
     private LeaveApplicationRepo leaveApplicationRepo;
     @Autowired
     private InternRepo internRepo;
+    @Autowired
+    private UndertakingRepo undertakingRepo;
+    @Autowired
+    private UndertakingService undertakingService;
     @Autowired
     HttpSession session;
     @Autowired
@@ -194,18 +189,30 @@ public class InternController {
 
     @GetMapping("/intern_dashboard")
     public ModelAndView intern_dashboard(HttpSession session, Model model) {
+        ModelAndView mv;
 
-        ModelAndView mv = new ModelAndView("intern/intern_dashboard");
         Intern intern = getSignedInIntern();
+        String internId = intern.getInternId();
+
+        // ✅ Store internId in session to prevent null issues
+        session.setAttribute("internId", internId);
+
+        // ✅ Check if the intern has accepted the undertaking
+        boolean hasAccepted = undertakingRepo.existsByIntern(internId);
+        if (!hasAccepted) {
+            return new ModelAndView("redirect:/bisag/intern/undertaking"); // ✅ Redirect only if not accepted
+        }
+
+        // ✅ Proceed to dashboard if undertaking is accepted
+        mv = new ModelAndView("intern/intern_dashboard");
         String username = getUsername();
         InternApplication internApplication = internService.getInternApplicationByUsername(username);
-        // Add group details to the ModelAndView
+
         if (intern.getGroupEntity() != null) {
             mv.addObject("group", intern.getGroupEntity());
             List<Intern> interns = internService.getInternsByGroupId(intern.getGroup().getId());
             mv.addObject("interns", interns);
-            int internCountGroupWise = interns.size();
-            mv.addObject("internCountGroupWise", internCountGroupWise);
+            mv.addObject("internCountGroupWise", interns.size());
         } else {
             mv.addObject("group", null);
         }
@@ -215,15 +222,15 @@ public class InternController {
             model.addAttribute("encodedProfilePicture", encodedImage);
         }
 
-        session.setAttribute("id", intern.getInternId());
+        session.setAttribute("id", internId);
         session.setAttribute("username", username);
-
         mv.addObject("username", username);
-
         mv.addObject("intern", intern);
         mv.addObject("internApplication", internApplication);
+
         String internFullName = intern.getFirstName() + " " + intern.getLastName();
-        logService.saveLog(intern.getInternId(), "Intern Accessed Dashboard", "Intern " + internFullName + " visited their dashboard.");
+        logService.saveLog(internId, "Intern Accessed Dashboard", "Intern " + internFullName + " visited their dashboard.");
+
         return mv;
     }
 
@@ -415,7 +422,6 @@ public class InternController {
         WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
         MyUser user = myUserService.getUserByUsername(report.getReplacedBy().getUsername());
 
-        // Log the action of changing weekly report
         String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
         String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
         logService.saveLog(internId, "Accessed Weekly Report Change", internFullName + " accessed the change weekly report page for week: " + weekNo);
@@ -560,7 +566,7 @@ public class InternController {
             byte[] pdf = application.getIcardForm();
 
             if (pdf != null) {
-                // Log the action
+
                 logService.saveLog(id, "Viewed I-Card Form",
                         "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their I-Card form.");
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
@@ -663,7 +669,7 @@ public class InternController {
             byte[] image = application.getPassportSizeImage();
 
             if (image != null) {
-                // Log the intern action
+
                 logService.saveLog(id, "Viewed Passport Image",
                         "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their passport-size image.");
 
@@ -760,16 +766,12 @@ public class InternController {
         Intern intern = getSignedInIntern();
         ModelAndView mv = new ModelAndView("intern/apply_leave");
 
-        // Calculate total attendance
         float totalAttendance = attendanceService.calculateTotalAttendance(intern.getInternId());
 
-        // Fetch leave applications for the intern
         List<LeaveApplication> leaveApplications = leaveApplicationService.getInternLeaves(intern.getInternId());
 
-        // Fetch last submitted leave (if any)
         LeaveApplication lastLeave = leaveApplicationService.getLastLeaveApplication(intern.getInternId());
 
-        // Fetch leave history for the intern
         List<LeaveApplication> leaveHistory = leaveApplicationService.getInternLeaveHistory(intern.getInternId());
 
         // Pass data to the template
@@ -816,6 +818,10 @@ public class InternController {
         leaveApplication.setSubmittedOn(LocalDateTime.now());
 
         leaveApplicationRepo.save(leaveApplication);
+
+        logService.saveLog(internId, "Leave Application Submitted",
+                "Intern " + intern.getFirstName() + " applied for leave from " + fromDate + " to " + toDate + " (" + leaveType + ")");
+
         return "redirect:/bisag/intern/apply_leave?success=true";
     }
 
@@ -834,4 +840,62 @@ public class InternController {
         }
     }
 
+    // ========================= Intern Undertaking Acceptance ==========================
+
+    // ✅ Check if Intern has accepted the undertaking (Once in a lifetime)
+    @GetMapping("/check-undertaking")
+    public ResponseEntity<Boolean> checkUndertaking(HttpSession session) {
+        String internId = (String) session.getAttribute("internId");
+
+        // If the intern has already accepted, return true
+        boolean hasAccepted = undertakingRepo.existsByIntern(internId);
+        return ResponseEntity.ok(hasAccepted);
+    }
+
+    // ✅ Display the Undertaking Form (Only if not accepted)
+    @GetMapping("/undertaking")
+    public ModelAndView showUndertakingForm(HttpSession session) {
+        String internId = (String) session.getAttribute("internId");
+
+        // ✅ Check if intern has already accepted the undertaking
+        boolean hasAccepted = undertakingRepo.existsByIntern(internId);
+        if (hasAccepted) {
+            return new ModelAndView("redirect:/bisag/intern/intern_dashboard"); // Redirect if already accepted
+        }
+
+        ModelAndView mv = new ModelAndView("intern/undertaking");
+        String undertakingContent = undertakingRepo.findLatestUndertakingContent(); // ✅ Fetch latest content
+
+        if (undertakingContent == null || undertakingContent.isEmpty()) {
+            undertakingContent = "No undertaking content available.";
+        }
+
+        mv.addObject("undertakingContent", undertakingContent);
+        return mv;
+    }
+
+    // ✅ Accept Undertaking (Save only if not already accepted)
+    @PostMapping("/accept-undertaking")
+    public ResponseEntity<Boolean> acceptUndertaking(HttpSession session) {
+        String internId = (String) session.getAttribute("internId");
+
+        // Check if already accepted
+        if (undertakingRepo.existsByIntern(internId)) {
+            return ResponseEntity.ok(true); // Already accepted, no need to save again
+        }
+
+        // Save new acceptance
+        Undertaking undertaking = new Undertaking();
+        undertaking.setIntern(internId);
+        undertakingRepo.save(undertaking);
+
+        return ResponseEntity.ok(true);
+    }
+
+    @GetMapping("/undertaking-content")
+    @ResponseBody
+    public String getLatestUndertakingContent() {
+        String latestContent = undertakingRepo.findLatestUndertakingContent();
+        return (latestContent != null && !latestContent.isEmpty()) ? latestContent : "No undertaking content available.";
+    }
 }

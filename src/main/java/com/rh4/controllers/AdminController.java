@@ -16,6 +16,7 @@ import com.rh4.repositories.*;
 import com.rh4.entities.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -91,6 +92,11 @@ public class AdminController {
     private LeaveApplicationService leaveApplicationService;
     @Autowired
     private LeaveApplicationRepo leaveApplicationRepo;
+    @Autowired
+    private UndertakingService undertakingService;
+    @Autowired
+    private UndertakingRepo undertakingRepo;
+
 
     @Value("${app.storage.base-dir}")
     private String baseDir;
@@ -2007,6 +2013,14 @@ public class AdminController {
         mv.addObject("admin", adminName(session));
         mv.addObject("groups", groups);
 
+        // Fetch Admin Details
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Weekly Report Form",
+                    "Admin " + admin.getName() + " accessed the weekly report submission form.");
+        }
+
         return mv;
     }
 
@@ -2029,7 +2043,16 @@ public class AdminController {
             return "redirect:/bisag/admin/admin_weekly_report_form?error";
         }
 
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+
         weeklyReportService.submitAdminWeeklyReport(groupId, internId, guide, weekNo, deadline, status, submittedPdf);
+
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Submitted Weekly Report",
+                    "Admin " + admin.getName() + " submitted a weekly report for Group ID: " + groupId + ", Week No: " + weekNo);
+        }
+
         return "redirect:/bisag/admin/admin_weekly_report_form?success";
     }
 
@@ -2072,26 +2095,31 @@ public class AdminController {
 @GetMapping("/admin_yearly_report")
 public String getReportsByYear(@RequestParam(value = "date", required = true) String selectedDate, Model model) {
     int year = 0;
-    List<WeeklyReport> reports =null;
-    if(selectedDate != null && !selectedDate.isEmpty()){ LocalDate date = LocalDate.parse(selectedDate, DateTimeFormatter.ISO_DATE);
-//            reports =  weeklyReportRepo.findReportsByYear(year);
-        year = date.getYear();
-        reports =  weeklyReportService.getReportsByYear(year);
+    List<WeeklyReport> reports = null;
 
-        if(reports ==null || reports.isEmpty() ){
+    if (selectedDate != null && !selectedDate.isEmpty()) {
+        LocalDate date = LocalDate.parse(selectedDate, DateTimeFormatter.ISO_DATE);
+        year = date.getYear();
+        reports = weeklyReportService.getReportsByYear(year);
+
+        if (reports == null || reports.isEmpty()) {
             model.addAttribute("message", "Report not found for the year " + year);
         }
+    } else {
+        reports = weeklyReportService.getAllReports();
     }
-//        else if (selectedDate.isEmpty()) {
-//            return "report is not found!!!";
-//        }
-    else
-    {
-        reports =  weeklyReportService.getAllReports();
-    }
-    model.addAttribute("selectedDate",selectedDate);
-    model.addAttribute("year",year);
+
+    model.addAttribute("selectedDate", selectedDate);
+    model.addAttribute("year", year);
     model.addAttribute("reports", reports);
+
+    String username = (String) session.getAttribute("username");
+    Admin admin = adminService.getAdminByUsername(username);
+
+    if (admin != null) {
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Yearly Reports",
+                "Admin " + admin.getName() + " accessed the yearly reports page for the year " + year);
+    }
 
     return "admin/admin_yearly_report";
 }
@@ -2187,9 +2215,14 @@ public ModelAndView cancellationRequests(Model model) {
         List<LeaveApplication> leaveApplications = leaveApplicationService.getAllLeaveApplications();
         model = countNotifications(model);
 
+        // Fetch Admin Details
         Admin admin = getSignedInAdmin();
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Leave Applications",
-                "Admin " + admin.getName() + " viewed leave applications.");
+
+        // Log Access Action
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Leave Applications",
+                    "Admin " + admin.getName() + " viewed all leave applications.");
+        }
 
         mv.addObject("interns", interns);
         mv.addObject("leaveApplications", leaveApplications);
@@ -2205,9 +2238,14 @@ public ModelAndView cancellationRequests(Model model) {
         List<LeaveApplication> leaveApplications = leaveApplicationService.getLeaveApplicationsByInternId(id);
         model = countNotifications(model);
 
+        // Fetch Admin Details
         Admin admin = getSignedInAdmin();
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Leave Application Details",
-                "Admin " + admin.getName() + " viewed leave application details for intern ID " + id);
+
+        // Log Access Action
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Leave Application Details",
+                    "Admin " + admin.getName() + " viewed leave application details for intern ID " + id);
+        }
 
         mv.addObject("interns", interns);
         mv.addObject("leaveApplications", leaveApplications);
@@ -2389,8 +2427,6 @@ public ModelAndView cancellationRequests(Model model) {
         model.addAttribute("thesisList", thesisList);
         Admin admin = getSignedInAdmin();
 
-
-        // Log the action of viewing the thesis list
         logService.saveLog(String.valueOf(admin.getAdminId()), "Thesis List View", "Admin " + admin.getName() + " viewed the list of thesis.");
 
         return "admin/thesis_list";
@@ -2419,7 +2455,7 @@ public ModelAndView cancellationRequests(Model model) {
 @GetMapping("/thesis/update/{id}")
 public String showUpdatePage(@PathVariable Long id, Model model) {
     Thesis thesis = thesisService.getThesisById(id)
-            .orElseThrow(() -> new RuntimeException("Thesis not found with id: " + id)); // Safely extract Thesis
+            .orElseThrow(() -> new RuntimeException("Thesis not found with id: " + id));
     model.addAttribute("thesis", thesis);
     return "admin/update_thesis";
 }
@@ -2427,13 +2463,10 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
     public String updateThesis(@PathVariable Long id,
                                @RequestParam String actualReturnDate,
                                @RequestParam String location) {
-        // Convert date string to java.sql.Date
         java.sql.Date returnDate = java.sql.Date.valueOf(actualReturnDate);
 
-        // Update the thesis details
         thesisService.updateThesisReturnDateAndLocation(id, returnDate, location);
 
-        // Redirect back to the thesis list
         return "redirect:/bisag/admin/thesis_list";
     }
     //Show thesis ID wise-------------------
@@ -2538,13 +2571,11 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         List<Verification> pendingRequests = verificationService.getPendingRequests();
         mv.addObject("requests", pendingRequests);
 
-        // Integrate the notification count logic
         model = countNotifications(model);
 
         Admin admin = getSignedInAdmin();
         String id = String.valueOf(admin.getAdminId());
 
-        // Log admin action
         logService.saveLog(id, "Viewed Verification Requests",
                 "Admin " + admin.getName() + " accessed the list of pending verification requests.");
 
@@ -2632,16 +2663,24 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         return new ModelAndView("admin/verification_request_form");
     }
 
+    //for verification module
     @GetMapping("/get-intern-details/{internId}")
     @ResponseBody
     public ResponseEntity<Map<String, String>> getInternDetails(@PathVariable String internId) {
-        // Fetch intern details from the database
-        Intern intern = internService.getInternById(internId);  // Assuming internId is String (if it is Long, adjust accordingly)
+        Intern intern = internService.getInternById(internId);
 
         if (intern != null) {
             Map<String, String> internDetails = new HashMap<>();
-            internDetails.put("internName", intern.getFirstName()); // Ensure this returns the correct name
-            internDetails.put("internContact", intern.getContactNo()); // Ensure this returns the correct contact
+            internDetails.put("internName", intern.getFirstName());
+            internDetails.put("internContact", intern.getContactNo());
+
+            Admin admin = getSignedInAdmin();
+
+            if (admin != null) {
+                logService.saveLog(String.valueOf(admin.getAdminId()), "Fetched Intern Details",
+                        "Admin " + admin.getName() + " fetched details for Intern ID " + internId);
+            }
+
             return ResponseEntity.ok(internDetails);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -2658,17 +2697,15 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             @RequestParam String email) {
 
         Verification verification = new Verification();
-        verification.setInternId(internId);          // Set Intern ID
-        verification.setInternName(internName);      // Set Intern Name
-        verification.setInternContact(internContact); // Set Intern Contact
-        verification.setCompanyName(companyName);    // Set Company Name
-        verification.setContact(contact);            // Set Company Contact
-        verification.setEmail(email);                // Set Company Email
+        verification.setInternId(internId);
+        verification.setInternName(internName);
+        verification.setInternContact(internContact);
+        verification.setCompanyName(companyName);
+        verification.setContact(contact);
+        verification.setEmail(email);
 
-        // Create the verification request
         verificationService.createVerificationRequest(verification);
 
-        // Log the action
         Admin admin = getSignedInAdmin();
         String id = String.valueOf(admin.getAdminId());
         logService.saveLog(id, "Submitted Verification Request",
@@ -2735,9 +2772,13 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             attendanceService.processAttendanceFile(file);
 
             Admin admin = getSignedInAdmin();
-            String id = String.valueOf(admin.getAdminId());
-            logService.saveLog(id, "Uploaded Attendance Data",
-                    "Admin " + admin.getName() + " uploaded a new attendance file.");
+
+            if (admin != null) {
+                String id = String.valueOf(admin.getAdminId());
+
+                logService.saveLog(id, "Uploaded Attendance Data",
+                        "Admin " + admin.getName() + " uploaded a new attendance file.");
+            }
 
             redirectAttributes.addFlashAttribute("successMessage", "Attendance data uploaded successfully.");
         } catch (Exception e) {
@@ -2781,7 +2822,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         List<Intern> interns = internService.getAllInterns();
         List<College> college = fieldService.getColleges();
 
-        Optional<RRecord> record = recordService.getRecordById(1L);  // Or replace with relevant logic
+        Optional<RRecord> record = recordService.getRecordById(1L);
 
         Admin admin = getSignedInAdmin();
         logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Relieving Records",
@@ -2790,7 +2831,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         model.addAttribute("interns", interns);
         model.addAttribute("college", college);
         model.addAttribute("records", record);
-        model.addAttribute("admin", adminName(session));  // If needed for the view
+        model.addAttribute("admin", adminName(session));
 
         return "admin/relieving_records";
     }
@@ -2874,6 +2915,17 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
     public String getAllRelievingRecords(Model model) {
         List<RRecord> records = recordService.getAllRecords();
         model.addAttribute("records", records);
+
+        Admin admin = getSignedInAdmin();
+
+        if (admin != null) {
+            String id = String.valueOf(admin.getAdminId());
+
+            // Log Action
+            logService.saveLog(id, "Viewed Relieving Records",
+                    "Admin " + admin.getName() + " accessed the relieving records list.");
+        }
+
         return "admin/relieving_records_list";
     }
     //Show records ID wise-------------------
@@ -2927,12 +2979,12 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             String internName = (intern.getFirstName() != null) ? intern.getFirstName() : "N/A";
             response.put("internName", internName);
 
-            if (intern.getGuide() != null) {
-                Long guide = intern.getGuide().getGuideId();  // Assuming getGuideId() returns Long
-                response.put("guide", (guide != null) ? String.valueOf(guide) : "N/A");
-            } else {
-                response.put("guide", "N/A");
-            }
+//            if (intern.getGuide() != null) {
+//                Long guide = intern.getGuide().getGuideId();  // Assuming getGuideId() returns Long
+//                response.put("guide", (guide != null) ? String.valueOf(guide) : "N/A");
+//            } else {
+//                response.put("guide", "N/A");
+//            }
 
             return ResponseEntity.ok(response);
         } else {
@@ -2972,7 +3024,6 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         // Get the role from the session (ensure it is set during login)
         String role = (String) session.getAttribute("role");
 
-        // Integrate the notification count logic
         model = countNotifications(model);
 
         Admin admin = getSignedInAdmin();
@@ -2982,7 +3033,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         model.addAttribute("pendingLeaves", pendingLeaves);
         model.addAttribute("role", role); // Pass role to Thymeleaf
 
-        return "admin/pending_leaves"; // Thymeleaf template
+        return "admin/pending_leaves";
     }
 
     // Approve leave request
@@ -2999,11 +3050,17 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             }
 
             leaveApplicationRepo.save(leave);
+
+            Admin admin = getSignedInAdmin();
+            if (admin != null) {
+                String adminId = String.valueOf(admin.getAdminId());
+                logService.saveLog(adminId, "Approved Leave Application",
+                        "Admin " + admin.getName() + " approved leave application for intern ID: " + leave.getInternId());
+            }
         }
         return "redirect:/bisag/admin/pending_leaves";
     }
 
-    // Reject leave request
     @PostMapping("/reject_leave/{id}")
     public String rejectLeave(@PathVariable Long id) {
         Optional<LeaveApplication> optionalLeave = leaveApplicationRepo.findById(id);
@@ -3012,24 +3069,89 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             leave.setStatus("Rejected");
             leave.setAdminApproval(false);
             leave.setGuideApproval(false);
-
             leaveApplicationRepo.save(leave);
+
+            Admin admin = getSignedInAdmin();
+            if (admin != null) {
+                String adminId = String.valueOf(admin.getAdminId());
+                logService.saveLog(adminId, "Rejected Leave Application",
+                        "Admin " + admin.getName() + " rejected leave application for intern ID: " + leave.getInternId());
+            }
         }
         return "redirect:/bisag/admin/pending_leaves";
     }
-    //shows all the list of approved and rejected leave applications
+
+    // View Leave History (Approved & Rejected)
     @GetMapping("/leave_history")
     public String viewLeaveHistory(Model model) {
         List<LeaveApplication> leaveHistory = leaveApplicationRepo.findByStatusIn(Arrays.asList("Approved", "Rejected"));
         model.addAttribute("leaveHistory", leaveHistory);
-        return "admin/leave_history"; // Thymeleaf template
+
+        Admin admin = getSignedInAdmin();
+        if (admin != null) {
+            String adminId = String.valueOf(admin.getAdminId());
+            logService.saveLog(adminId, "Viewed Leave History",
+                    "Admin " + admin.getName() + " viewed the leave history.");
+        }
+
+        return "admin/leave_history";
     }
-    //show leave application in detail format
+
+    // View Leave Details
     @GetMapping("/leave_details/{id}")
     public String viewLeaveDetails(@PathVariable Long id, Model model) {
         LeaveApplication leave = leaveApplicationRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Leave Application Not Found"));
         model.addAttribute("leave", leave);
-        return "admin/leave_details"; // Thymeleaf template
+
+        Admin admin = getSignedInAdmin();
+        if (admin != null) {
+            String adminId = String.valueOf(admin.getAdminId());
+            logService.saveLog(adminId, "Viewed Leave Details",
+                    "Admin " + admin.getName() + " viewed details of leave application ID: " + id);
+        }
+
+        return "admin/leave_details";
+    }
+
+    // ========================= Undertaking Form Management ==========================
+
+    // View Undertaking Forms Page
+    @GetMapping("/undertaking")
+    public String showUndertakingForm(Model model) {
+        System.out.println("Admin Undertaking page accessed"); // Debugging
+        List<Undertaking> forms = undertakingRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+        model.addAttribute("forms", forms);
+        return "admin/undertaking_form"; // Ensure the HTML file exists
+    }
+
+    // ✅ Corrected POST method to add undertaking form
+    @PostMapping("/add_undertaking")
+    public String addUndertaking(@RequestParam String rules) {
+        Undertaking undertaking = new Undertaking();
+        undertaking.setContent(rules);
+        undertaking.setCreatedAt(LocalDateTime.now());
+        undertakingRepo.save(undertaking);
+        return "redirect:/bisag/admin/undertaking"; // Redirect after form submission
+    }
+
+    // ✅ Corrected method for updating the undertaking form
+    @PostMapping("/update_undertaking/{id}")
+    public String updateUndertaking(@PathVariable Long id, @RequestParam String content) {
+        Undertaking undertaking = undertakingRepo.findById(id).orElseThrow(() -> new RuntimeException("Undertaking not found"));
+        undertaking.setContent(content);
+        undertakingRepo.save(undertaking);
+        return "redirect:/bisag/admin/undertaking"; // Redirect to avoid form resubmission issues
+    }
+    // ✅ Fetch the latest Undertaking Form content for Interns
+    @GetMapping("/undertaking-content")
+    @ResponseBody
+    public String getUndertakingContent() {
+        String latestContent = undertakingRepo.findLatestUndertakingContent();
+
+        if (latestContent == null || latestContent.isEmpty()) {
+            return "No undertaking content available."; // Avoid empty response issues
+        }
+        return latestContent;
     }
 }
