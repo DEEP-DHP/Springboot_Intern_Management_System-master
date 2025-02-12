@@ -281,6 +281,23 @@
                     </ul>
                 </li>
             </ul>
+
+            <ul class="sidebar-nav" id="def-nav">
+                <li class="nav-item">
+                    <a class="nav-link collapsed" data-bs-target="#thesiss-nav" data-bs-toggle="collapse" href="#">
+                        <i class="bi bi-menu-button-wide"></i>
+                        <span>Thesis Storage</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <ul id="thesiss-nav" class="nav-content collapse" data-bs-parent="#def-nav">
+                        <li>
+                            <a th:href="@{/bisag/admin/thesis-storage}">
+                                <i class="bi bi-circle"></i><span>Store Thesis</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
         </li>
     </ul>
 
