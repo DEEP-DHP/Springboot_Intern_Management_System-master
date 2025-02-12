@@ -26,13 +26,13 @@ public class ThesisStorageService {
         this.thesisStorageRepo = thesisStorageRepository;
     }
 
-    public ThesisStorage storeThesis(MultipartFile file, String internId) throws IOException {
+    public ThesisStorage storeThesis(MultipartFile file) throws IOException {
         String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
         Path filePath = Paths.get(storageDirectory, fileName);
         Files.write(filePath, file.getBytes());
 
         ThesisStorage thesis = new ThesisStorage();
-        thesis.setInternId(internId);
+//        thesis.setInternId(internId);
         thesis.setFileName(fileName);
         thesis.setFilePath(filePath.toString());
         thesis.setUploadDate(new Date());
