@@ -11,20 +11,22 @@ public class ThesisStorage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String internId;
+//    private String internId;
     private String fileName;
     private String thesisTitle;
     private String filePath;
     @Temporal(TemporalType.TIMESTAMP)
     private Date uploadDate;
+    private String allowedInternId;
 
-    public ThesisStorage(Long id, String internId, String fileName, String thesisTitle, String filePath, Date uploadDate) {
+    public ThesisStorage(Long id, String fileName, String thesisTitle, String filePath, Date uploadDate, String allowedInternId) {
         this.id = id;
-        this.internId = internId;
+//        this.internId = internId;
         this.fileName = fileName;
         this.thesisTitle = thesisTitle;
         this.filePath = filePath;
         this.uploadDate = uploadDate;
+        this.allowedInternId = allowedInternId;
     }
     public ThesisStorage() { super();}
 
@@ -36,13 +38,13 @@ public class ThesisStorage {
         this.id = id;
     }
 
-    public String getInternId() {
-        return internId;
-    }
-
-    public void setInternId(String internId) {
-        this.internId = internId;
-    }
+//    public String getInternId() {
+//        return internId;
+//    }
+//
+//    public void setInternId(String internId) {
+//        this.internId = internId;
+//    }
 
     public String getFileName() {
         return fileName;
@@ -74,5 +76,13 @@ public class ThesisStorage {
 
     public void setUploadDate(Date uploadDate) {
         this.uploadDate = uploadDate;
+    }
+
+    public String getAllowedInternId() {
+        return allowedInternId;
+    }
+
+    public void setAllowedInternId(String allowedInternId) {
+        this.allowedInternId = allowedInternId;
     }
 }
