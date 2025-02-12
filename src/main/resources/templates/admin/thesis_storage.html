@@ -70,10 +70,16 @@
                         <!-- Upload Form -->
                         <form th:action="@{/bisag/admin/upload-thesis}" method="post" enctype="multipart/form-data">
                             <div class="row">
+<!--                                <div class="col-md-4">-->
+<!--                                    <div class="form-floating">-->
+<!--                                        <input type="text" name="internId" class="form-control" id="internId" required>-->
+<!--                                        <label for="internId">Intern ID</label>-->
+<!--                                    </div>-->
+<!--                                </div>-->
                                 <div class="col-md-4">
                                     <div class="form-floating">
-                                        <input type="text" name="internId" class="form-control" id="internId" required>
-                                        <label for="internId">Intern ID</label>
+                                        <input type="text" name="allowedInternId" class="form-control" id="allowedInternId" required>
+                                        <label for="allowedInternId">Allowed Intern ID (Who Can Access)</label>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -85,9 +91,10 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="thesisFile" class="form-label">Upload PDF</label>
-                                        <input type="file" name="file" class="form-control" id="thesisFile" accept="application/pdf" required>
+                                        <input type="file" name="file" class="form-control" id="thesisFile" required>
                                     </div>
                                 </div>
+
                                 <div class="col-md-12 text-center">
                                     <button type="submit" class="btn btn-primary mt-3">
                                         Upload Thesis
@@ -111,7 +118,11 @@
                                 </thead>
                                 <tbody>
                                 <tr th:each="thesis : ${theses}">
-                                    <td th:text="${thesis.internId}"></td>
+                                    <td>
+                                        <span th:id="'internIdSpan_' + ${thesis.id}" th:text="${thesis.allowedInternId}"></span>
+                                        <input type="text" th:id="'internIdInput_' + ${thesis.id}" th:value="${thesis.allowedInternId}"
+                                               class="form-control d-none" />
+                                    </td>
                                     <td th:text="${thesis.thesisTitle}"></td>
                                     <td th:text="${thesis.uploadDate}"></td>
                                     <td>
@@ -120,6 +131,15 @@
                                         <button class="btn btn-secondary btn-sm"
                                                 th:attr="onclick='copyLink(\'' + @{localhost:8080/bisag/intern/view-thesis/{id}(id=${thesis.id})} + '\')'">
                                             Generate Link
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" th:id="'editBtn_' + ${thesis.id}"
+                                                th:attr="onclick='enableEditing(' + ${thesis.id} + ')'" >
+                                            Edit
+                                        </button>
+
+                                        <button class="btn btn-success btn-sm d-none" th:id="'saveBtn_' + ${thesis.id}"
+                                                th:attr="onclick='saveInternId(' + ${thesis.id} + ')'" >
+                                            Save
                                         </button>
                                     </td>
                                 </tr>
@@ -138,7 +158,39 @@
     <div th:replace="fragments/footerFragment :: footer"></div>
 </main>
 <!-- End #main -->
+<script>
+    function enableEditing(thesisId) {
+        document.getElementById('internIdSpan_' + thesisId).classList.add('d-none');
+        document.getElementById('internIdInput_' + thesisId).classList.remove('d-none');
+        document.getElementById('editBtn_' + thesisId).classList.add('d-none');
+        document.getElementById('saveBtn_' + thesisId).classList.remove('d-none');
+    }
 
+    function saveInternId(thesisId) {
+        let newInternId = document.getElementById('internIdInput_' + thesisId).value;
+
+        fetch('/bisag/admin/update-thesis-intern-id', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ thesisId: thesisId, allowedInternId: newInternId })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('internIdSpan_' + thesisId).innerText = newInternId;
+                    document.getElementById('internIdSpan_' + thesisId).classList.remove('d-none');
+                    document.getElementById('internIdInput_' + thesisId).classList.add('d-none');
+                    document.getElementById('editBtn_' + thesisId).classList.remove('d-none');
+                    document.getElementById('saveBtn_' + thesisId).classList.add('d-none');
+                } else {
+                    alert('Failed to update Intern ID');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+</script>
 <script>
     function copyLink(link) {
         navigator.clipboard.writeText(link);
