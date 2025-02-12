@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -72,6 +73,8 @@ public class InternController {
     private UndertakingService undertakingService;
     @Autowired
     private ThesisStorageService thesisStorageService;
+    @Autowired
+    private MessageService messageService;
     @Autowired
     HttpSession session;
     @Autowired
@@ -905,7 +908,7 @@ public class InternController {
 
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-View Thesis PDF_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     @GetMapping("/view-thesis/{id}")
-    public ResponseEntity<Resource> viewThesiss(@PathVariable Long id) throws IOException {
+    public ResponseEntity<Resource> viewThesis(@PathVariable Long id, Principal principal) throws IOException {
         Optional<ThesisStorage> optionalThesisStorage = thesisStorageService.getThesisById(id);
 
         if (optionalThesisStorage.isEmpty()) {
@@ -914,7 +917,25 @@ public class InternController {
 
         ThesisStorage thesisStorage = optionalThesisStorage.get();
 
-        // Check if file path is null or empty
+        // Fetch the logged-in intern's email or username from Principal
+        String emailOrUsername = principal.getName();
+
+        // Retrieve intern details from database using the email/username
+        Optional<Intern> optionalIntern = Optional.ofNullable(internService.getInternByUsername(getUsername())); // Change this based on your login system
+
+        if (optionalIntern.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // Intern not found
+        }
+
+        Intern loggedInIntern = optionalIntern.get();
+        String loggedInInternId = loggedInIntern.getInternId(); // Get the intern's actual ID
+
+        // Compare the logged-in intern ID with the allowedInternId in ThesisStorage
+        if (!loggedInInternId.equals(thesisStorage.getAllowedInternId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // Unauthorized access
+        }
+
+        // Check if file path is valid
         if (thesisStorage.getFilePath() == null || thesisStorage.getFilePath().isEmpty()) {
             System.err.println("Error: Thesis file path is null or empty for ID: " + id);
             return ResponseEntity.notFound().build();
@@ -933,5 +954,29 @@ public class InternController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filePath.getFileName() + "\"")
                 .body(resource);
+    }
+
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Messaging Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    // Intern sends a message
+    @PostMapping("/chat/send")
+    public ResponseEntity<Message> sendMessageAsIntern(
+            @RequestParam String senderId,
+            @RequestParam String receiverId,
+            @RequestParam String messageText) {
+
+        Message message = messageService.sendMessage(senderId, receiverId, messageText);
+        return ResponseEntity.ok(message);
+    }
+
+    // Intern fetches chat history with a user
+    @GetMapping("/chat/history")
+    public ResponseEntity<List<Message>> getChatHistoryAsIntern(
+            @RequestParam String senderId,
+            @RequestParam String receiverId) {
+
+        List<Message> messages = messageService.getChatHistory(senderId, receiverId);
+        return ResponseEntity.ok(messages);
     }
 }

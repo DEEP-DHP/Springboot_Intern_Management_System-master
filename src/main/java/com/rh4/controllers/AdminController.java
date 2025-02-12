@@ -103,6 +103,8 @@ public class AdminController {
     private UndertakingRepo undertakingRepo;
     @Autowired
     private ThesisStorageRepo thesisStorageRepo;
+    @Autowired
+    private MessageService messageService;
 
 
     @Value("${app.storage.base-dir}")
@@ -3162,14 +3164,15 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         return latestContent;
     }
 
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_Thesis Storage Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     private static final String STORAGE_PATH = "/Users/pateldeep/Desktop/Coding/Springboot_Intern_Management_System-master-main/src/main/resources/static/files/thesis-storage/";
 
     // ✅ Upload Thesis PDF
     @PostMapping("/upload-thesis")
-    public String uploadThesis(@RequestParam("internId") String internId,
-                               @RequestParam("thesisTitle") String thesisTitle,
+    public String uploadThesis(@RequestParam("thesisTitle") String thesisTitle,
+                               @RequestParam("allowedInternId") String allowedInternId,
                                @RequestParam("file") MultipartFile file) {
         try {
             // Ensure storage directory exists
@@ -3187,10 +3190,11 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
 
             // Save metadata to database
             ThesisStorage thesis = new ThesisStorage();
-            thesis.setInternId(internId);
+//            thesis.setInternId(internId);
             thesis.setThesisTitle(thesisTitle);
             thesis.setFilePath(filePath);
             thesis.setUploadDate(new Date());
+            thesis.setAllowedInternId(allowedInternId);  // Save allowed intern ID
             thesisStorageRepo.save(thesis);
 
             return "redirect:/bisag/admin/thesis-storage";
@@ -3239,5 +3243,49 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             return ResponseEntity.badRequest().build();
         }
     }
+    @PostMapping("/update-thesis-intern-id")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> updateThesisInternId(@RequestBody Map<String, Object> requestData) {
+        Long thesisId = Long.parseLong(requestData.get("thesisId").toString());
+        String newInternId = requestData.get("allowedInternId").toString();
 
+        Optional<ThesisStorage> thesisOptional = thesisStorageRepo.findById(thesisId);
+        if (thesisOptional.isPresent()) {
+            ThesisStorage thesisStorage = thesisOptional.get();
+            thesisStorage.setAllowedInternId(newInternId);
+            thesisStorageRepo.save(thesisStorage);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            return ResponseEntity.ok(response);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Messaging Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    // Admin sends a message
+    @PostMapping("/chat/send")
+    public ResponseEntity<Message> sendMessageAsAdmin(
+            @RequestParam String senderId,
+            @RequestParam String receiverId,
+            @RequestParam String messageText) {
+
+        Message message = messageService.sendMessage(senderId, receiverId, messageText);
+        return ResponseEntity.ok(message);
+    }
+
+    // Admin fetches chat history with a user
+    @GetMapping("/chat/history")
+    public ResponseEntity<List<Message>> getChatHistoryAsAdmin(
+            @RequestParam String senderId,
+            @RequestParam String receiverId) {
+
+        List<Message> messages = messageService.getChatHistory(senderId, receiverId);
+        return ResponseEntity.ok(messages);
+    }
 }

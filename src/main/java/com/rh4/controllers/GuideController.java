@@ -9,6 +9,7 @@ import com.rh4.entities.*;
 import com.rh4.repositories.LeaveApplicationRepo;
 import com.rh4.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -50,6 +51,8 @@ public class GuideController {
     private LogService logService;
     @Autowired
             private LeaveApplicationRepo leaveApplicationRepo;
+    @Autowired
+    private MessageService messageService;
     Intern internFromUploadFileMethod;
     int CurrentWeekNo;
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -390,25 +393,35 @@ public class GuideController {
     // Fetch pending leaves for guide view
     @GetMapping("/pending_leaves")
     public String viewPendingLeaves(Model model) {
+        Guide guide = getSignedInGuide(); // Get the currently signed-in guide
+
         List<LeaveApplication> pendingLeaves = leaveApplicationRepo.findByStatus("Pending");
         model.addAttribute("pendingLeaves", pendingLeaves);
+
+        logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed Pending Leaves",
+                "Guide " + guide.getName() + " viewed the list of pending leave applications.");
+
         return "guide/pending_leaves"; // Thymeleaf template
     }
 
     // Approve leave request
     @PostMapping("/approve_leave/{id}")
     public String approveLeave(@PathVariable Long id) {
+        Guide guide = getSignedInGuide();
+
         Optional<LeaveApplication> optionalLeave = leaveApplicationRepo.findById(id);
         if (optionalLeave.isPresent()) {
             LeaveApplication leave = optionalLeave.get();
             leave.setGuideApproval(true);
 
-            // Check if both admin and guide have approved
             if (leave.isAdminApproval() && leave.isGuideApproval()) {
                 leave.setStatus("Approved");
             }
 
             leaveApplicationRepo.save(leave);
+
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Approved Leave Request",
+                    "Guide " + guide.getName() + " approved leave request for Intern ID: " + leave.getInternId());
         }
         return "redirect:/bisag/guide/pending_leaves";
     }
@@ -416,6 +429,8 @@ public class GuideController {
     // Reject leave request
     @PostMapping("/reject_leave/{id}")
     public String rejectLeave(@PathVariable Long id) {
+        Guide guide = getSignedInGuide();
+
         Optional<LeaveApplication> optionalLeave = leaveApplicationRepo.findById(id);
         if (optionalLeave.isPresent()) {
             LeaveApplication leave = optionalLeave.get();
@@ -423,7 +438,34 @@ public class GuideController {
             leave.setAdminApproval(false);
             leave.setGuideApproval(false);
             leaveApplicationRepo.save(leave);
+
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Rejected Leave Request",
+                    "Guide " + guide.getName() + " rejected leave request for Intern ID: " + leave.getInternId());
         }
         return "redirect:/bisag/guide/pending_leaves";
+    }
+
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Messaging Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    // Guide sends a message
+    @PostMapping("/chat/send")
+    public ResponseEntity<Message> sendMessageAsGuide(
+            @RequestParam String senderId,
+            @RequestParam String receiverId,
+            @RequestParam String messageText) {
+
+        Message message = messageService.sendMessage(senderId, receiverId, messageText);
+        return ResponseEntity.ok(message);
+    }
+
+    // Guide fetches chat history with a user
+    @GetMapping("/chat/history")
+    public ResponseEntity<List<Message>> getChatHistoryAsGuide(
+            @RequestParam String senderId,
+            @RequestParam String receiverId) {
+
+        List<Message> messages = messageService.getChatHistory(senderId, receiverId);
+        return ResponseEntity.ok(messages);
     }
 }
