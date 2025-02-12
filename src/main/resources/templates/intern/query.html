@@ -1,181 +1,189 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Query</title>
-<link rel="stylesheet"
-	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-	integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
-	crossorigin="anonymous">
-<style>
-body {
-	font-family: Arial, sans-serif;
-	margin: 0;
-	padding: 20px;
-}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Chat</title>
+	<link rel="stylesheet"
+		  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+		  integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+		  crossorigin="anonymous">
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			margin: 0;
+			padding: 20px;
+		}
 
-table {
-	width: 100%;
-	border-collapse: collapse;
-	margin-bottom: 20px;
-}
+		.chat-container {
+			display: flex;
+			flex-direction: column;
+			margin: 0 4%;
+			border: 1px solid;
+			border-radius: 10px;
+			height: 400px;
+			overflow: hidden;
+		}
 
-th, td {
-	border: 1px solid #ddd;
-	padding: 8px;
-	text-align: left;
-}
+		.message-section {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			justify-content: flex-start;
+			height: 100%;
+			overflow-y: auto;
+			padding: 10px;
+		}
 
-th {
-	background-color: #f2f2f2;
-}
+		.sender, .receiver {
+			margin: 10px;
+			padding: 10px;
+			border-radius: 8px;
+			max-width: 45%;
+			word-wrap: break-word;
+		}
 
-iframe {
-	width: 100%;
-	height: 300px;
-}
+		.sender {
+			background-color: #007bff;
+			color: #fff;
+			align-self: flex-end;
+		}
 
-.status-dropdown {
-	width: 100%;
-	padding: 8px;
-}
+		.receiver {
+			background-color: #e0e0e0;
+			color: #000;
+			align-self: flex-start;
+		}
 
-#mysubmitbutton {
-	padding: 10px 15px;
-	background-color: #2196F3;
-	color: white;
-	border: none;
-	border-radius: 5px;
-	cursor: pointer;
-}
-
-.chat-container {
-	display: flex;
-	flex-direction: column;
-	margin: 0 4%;
-	border: 1px solid;
-	border-radius: 10px;
-	height: 400px; /* Set your fixed height */
-	overflow: hidden; /* Hide the overflow beyond the fixed height */
-}
-
-.message-section {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start; /* Align children (messages) to the start (left side) */
-    justify-content: flex-start; /* Align children (messages) to the start (top) */
-    height: 100%;
-    overflow-y: auto; /* Enable vertical scrolling if content overflows */
-}
-
-.sender, .receiver {
-    margin: 10px;
-    border-radius: 8px;
-    max-width: 45%;
-}
-
-.sender {
-    background-color: #007bff;
-    color: #fff;
-    align-self: flex-end; /* Align sender messages to the end (right side) */
-}
-
-.receiver {
-    background-color: #e0e0e0;
-    color: #000;
-    align-self: flex-start; /* Align receiver messages to the start (left side) */
-}
-
-
-</style>
+	</style>
 </head>
 <body>
-	<!-- Include the header fragment -->
-	<div th:replace="fragments/internHeaderFragment :: header"></div>
+<!-- Include the header fragment -->
+<div th:replace="fragments/internHeaderFragment :: header"></div>
 
-	<!-- Include the aside fragment -->
-	<div th:replace="fragments/internAsideFragment :: aside"></div>
+<!-- Include the aside fragment -->
+<div th:replace="fragments/internAsideFragment :: aside"></div>
 
-	<main id="main" class="main">
-		<div class="pagetitle">
-			<h1>Queries</h1>
-			<nav>
-				<ol class="breadcrumb">
-					<li class="breadcrumb-item"></li>
-					<li class="breadcrumb-item active">Queries</li>
-				</ol>
-			</nav>
-		</div>
-		<div class="container">
-			<div class="card">
-				<div class="card-body chat-container my-5">
-					<div class="message-section">
-						<div class="message sender">
-							<p class="mx-3">Sender's message goes here</p>
-						</div>
-						<div class="message receiver">
-							<p class="mx-3">Receiver's message goes here</p>
-						</div>
-						<div class="message sender">
-							<p class="mx-3">Another sender's message goes here</p>
-						</div>
-						<div class="message receiver">
-							<p class="mx-3">Receiver's message goes here</p>
-						</div>
-						<div class="message sender">
-							<p class="mx-3">Sender's message goes here</p>
-						</div>
-						<div class="message receiver">
-							<p class="mx-3">Receiver's message goes here</p>
-						</div>
-						<div class="message sender">
-							<p class="mx-3">Another sender's message goes here</p>
-						</div>
-						<div class="message receiver">
-							<p class="mx-3">Receiver's message goes here</p>
-						</div>
-					</div>
-					<div class="mt-4">
-						<form action="project_definition_submission" method="post"
-							enctype="multipart/form-data" class="row">
+<main id="main" class="main">
+	<div class="pagetitle">
+		<h1>Chat</h1>
+		<nav>
+			<ol class="breadcrumb">
+				<li class="breadcrumb-item"></li>
+				<li class="breadcrumb-item active">Chat</li>
+			</ol>
+		</nav>
+	</div>
 
-							<!-- First column with 8 grid units -->
-							<div class="col-md-3">
-								<select id="receiverId" name="receiverId" class="form-select">
-									<option value="">Select Receiver</option>
-									<option th:each="admin : ${admins}" th:value="${admin.adminId}"
-										th:text="${admin.name}"></option>
-									<option th:each="group : ${group}" th:value="${group.guide.guideId}"
-										th:text="${group.guide.name}"></option>
+	<div class="container">
+		<div class="card">
+			<div class="card-body chat-container my-5">
+				<div class="message-section" id="chatBox">
+					<!-- Chat messages will be appended here dynamically -->
+				</div>
+				<div class="mt-4">
+					<form id="chatForm" class="row">
+						<input type="hidden" id="senderId" name="senderId" th:value="${internId}">
 
-								</select>
+						<!-- Receiver selection -->
+						<div class="col-md-3">
+							<select id="receiverId" name="receiverId" class="form-select">
+								<option value="">Select Receiver</option>
+								<option th:each="admin : ${admins}" th:value="${admin.adminId}" th:text="${admin.name}"></option>
+								<option th:each="group : ${group}" th:value="${group.guide.guideId}" th:text="${group.guide.name}"></option>
+							</select>
+						</div>
 
+						<!-- Message input -->
+						<div class="col-md-8">
+							<div class="form-group">
+								<input id="query" name="query" placeholder="Your Message..." class="form-control" required>
 							</div>
+						</div>
 
-							<div class="col-md-8">
-								<div class="form-group">
-									<input id="query" name="query"
-										placeholder="Your Message Goes Here.........."
-										class="form-control" required></input>
-								</div>
-							</div>
-							<div class="col-md-1">
-								<div class="col-md-12 text-center">
-									<button type="submit" class="btn btn-primary">
-										<i class="fa fa-paper-plane" aria-hidden="true"></i>
-									</button>
-								</div>
-							</div>
-
-						</form>
-					</div>
+						<!-- Send button -->
+						<div class="col-md-1">
+							<button type="submit" class="btn btn-primary">
+								<i class="fa fa-paper-plane" aria-hidden="true"></i>
+							</button>
+						</div>
+					</form>
 				</div>
 			</div>
 		</div>
+	</div>
 
-		<!-- Include the footer fragment -->
-		<div th:replace="fragments/footerFragment :: footer"></div>
-	</main>
+	<!-- Include the footer fragment -->
+	<div th:replace="fragments/footerFragment :: footer"></div>
+</main>
+
+<!-- JavaScript for Fetching and Sending Messages -->
+<script>
+	document.addEventListener("DOMContentLoaded", function () {
+		const chatBox = document.getElementById("chatBox");
+		const chatForm = document.getElementById("chatForm");
+
+		// Load chat history when receiver is selected
+		document.getElementById("receiverId").addEventListener("change", function () {
+			loadChatHistory();
+		});
+
+		// Handle form submission
+		chatForm.addEventListener("submit", function (event) {
+			event.preventDefault(); // Prevent page reload
+
+			let senderId = document.getElementById("senderId").value;
+			let receiverId = document.getElementById("receiverId").value;
+			let messageText = document.getElementById("query").value;
+
+			if (!receiverId || !messageText) {
+				alert("Please select a receiver and enter a message.");
+				return;
+			}
+
+			// Send message via fetch API
+			fetch("/bisag/intern/chat/send", {
+				method: "POST",
+				headers: { "Content-Type": "application/x-www-form-urlencoded" },
+				body: new URLSearchParams({ senderId, receiverId, messageText })
+			})
+					.then(response => response.json())
+					.then(data => {
+						appendMessage(data.messageText, "sender"); // Add sent message to chat
+						document.getElementById("query").value = ""; // Clear input
+					})
+					.catch(error => console.error("Error:", error));
+		});
+
+		// Function to fetch and display chat history
+		function loadChatHistory() {
+			let senderId = document.getElementById("senderId").value;
+			let receiverId = document.getElementById("receiverId").value;
+
+			if (!receiverId) return; // Don't fetch if no receiver selected
+
+			fetch(`/bisag/intern/chat/history?senderId=${senderId}&receiverId=${receiverId}`)
+					.then(response => response.json())
+					.then(messages => {
+						chatBox.innerHTML = ""; // Clear existing messages
+						messages.forEach(msg => {
+							let messageType = msg.senderId === senderId ? "sender" : "receiver";
+							appendMessage(msg.messageText, messageType);
+						});
+					})
+					.catch(error => console.error("Error:", error));
+		}
+
+		// Function to append a message to the chat box
+		function appendMessage(text, type) {
+			let messageDiv = document.createElement("div");
+			messageDiv.classList.add("message", type);
+			messageDiv.innerHTML = `<p class="mx-3">${text}</p>`;
+			chatBox.appendChild(messageDiv);
+			chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to latest message
+		}
+	});
+</script>
+
 </body>
 </html>
