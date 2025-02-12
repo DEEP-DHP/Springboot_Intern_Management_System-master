@@ -2,7 +2,9 @@ package com.rh4.controllers;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -16,8 +18,11 @@ import com.rh4.repositories.*;
 import com.rh4.entities.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -96,6 +101,8 @@ public class AdminController {
     private UndertakingService undertakingService;
     @Autowired
     private UndertakingRepo undertakingRepo;
+    @Autowired
+    private ThesisStorageRepo thesisStorageRepo;
 
 
     @Value("${app.storage.base-dir}")
@@ -3154,4 +3161,83 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         }
         return latestContent;
     }
+
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_Thesis Storage Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    private static final String STORAGE_PATH = "/Users/pateldeep/Desktop/Coding/Springboot_Intern_Management_System-master-main/src/main/resources/static/files/thesis-storage/";
+
+    // ✅ Upload Thesis PDF
+    @PostMapping("/upload-thesis")
+    public String uploadThesis(@RequestParam("internId") String internId,
+                               @RequestParam("thesisTitle") String thesisTitle,
+                               @RequestParam("file") MultipartFile file) {
+        try {
+            // Ensure storage directory exists
+            File directory = new File(STORAGE_PATH);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            // Generate unique filename
+            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+            String filePath = STORAGE_PATH + fileName;
+
+            // Save file locally
+            file.transferTo(new File(filePath));
+
+            // Save metadata to database
+            ThesisStorage thesis = new ThesisStorage();
+            thesis.setInternId(internId);
+            thesis.setThesisTitle(thesisTitle);
+            thesis.setFilePath(filePath);
+            thesis.setUploadDate(new Date());
+            thesisStorageRepo.save(thesis);
+
+            return "redirect:/bisag/admin/thesis-storage";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "error";
+        }
+    }
+
+    // ✅ Fetch List of Uploaded Theses
+    @GetMapping("/thesis-storage")
+    public String viewThesisStorage(Model model) {
+        List<ThesisStorage> thesisList = thesisStorageRepo.findAll();
+        model.addAttribute("theses", thesisList);
+        return "admin/thesis_storage";
+    }
+
+    // ✅ Generate Shareable Link
+    @GetMapping("/generate-thesis-link/{id}")
+    @ResponseBody
+    public String generateThesisLink(@PathVariable Long id) {
+        ThesisStorage thesis = thesisStorageRepo.findById(id).orElse(null);
+        if (thesis == null) {
+            return "Invalid thesis ID";
+        }
+        return "localhost:8080/bisag/admin/view-thesis/" + id;
+    }
+
+    // ✅ Download/View Thesis PDF
+    @GetMapping("/view-thesis/{id}")
+    public ResponseEntity<Resource> viewThesis(@PathVariable Long id) {
+        ThesisStorage thesis = thesisStorageRepo.findById(id).orElse(null);
+        if (thesis == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            Path path = Paths.get(thesis.getFilePath());
+            Resource resource = new UrlResource(path.toUri());
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + path.getFileName().toString() + "\"")
+                    .body(resource);
+        } catch (MalformedURLException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
 }

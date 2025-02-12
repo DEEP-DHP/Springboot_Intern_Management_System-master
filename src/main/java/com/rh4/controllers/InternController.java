@@ -21,6 +21,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -68,6 +70,8 @@ public class InternController {
     private UndertakingRepo undertakingRepo;
     @Autowired
     private UndertakingService undertakingService;
+    @Autowired
+    private ThesisStorageService thesisStorageService;
     @Autowired
     HttpSession session;
     @Autowired
@@ -897,5 +901,37 @@ public class InternController {
     public String getLatestUndertakingContent() {
         String latestContent = undertakingRepo.findLatestUndertakingContent();
         return (latestContent != null && !latestContent.isEmpty()) ? latestContent : "No undertaking content available.";
+    }
+
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-View Thesis PDF_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    @GetMapping("/view-thesis/{id}")
+    public ResponseEntity<Resource> viewThesiss(@PathVariable Long id) throws IOException {
+        Optional<ThesisStorage> optionalThesisStorage = thesisStorageService.getThesisById(id);
+
+        if (optionalThesisStorage.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        ThesisStorage thesisStorage = optionalThesisStorage.get();
+
+        // Check if file path is null or empty
+        if (thesisStorage.getFilePath() == null || thesisStorage.getFilePath().isEmpty()) {
+            System.err.println("Error: Thesis file path is null or empty for ID: " + id);
+            return ResponseEntity.notFound().build();
+        }
+
+        // Load the thesis PDF file
+        Path filePath = Paths.get(thesisStorage.getFilePath());
+        Resource resource = new UrlResource(filePath.toUri());
+
+        if (!resource.exists() || !resource.isReadable()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Set headers for direct access
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filePath.getFileName() + "\"")
+                .body(resource);
     }
 }
