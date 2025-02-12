@@ -1,192 +1,165 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Query To Admin</title>
-<link rel="stylesheet"
-	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-	integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
-	crossorigin="anonymous">
-<style>
-body {
-	font-family: Arial, sans-serif;
-	margin: 0;
-	padding: 20px;
-}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Query To Admin</title>
+	<link rel="stylesheet"
+		  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+		  integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+		  crossorigin="anonymous">
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			margin: 0;
+			padding: 20px;
+		}
 
-table {
-	width: 100%;
-	border-collapse: collapse;
-	margin-bottom: 20px;
-}
+		.chat-container {
+			display: flex;
+			flex-direction: column;
+			margin: 0 4%;
+			border: 1px solid;
+			border-radius: 10px;
+			height: 400px;
+			overflow: hidden;
+		}
 
-th, td {
-	border: 1px solid #ddd;
-	padding: 8px;
-	text-align: left;
-}
+		.message-section {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			justify-content: flex-start;
+			height: 100%;
+			overflow-y: auto;
+			padding: 10px;
+		}
 
-th {
-	background-color: #f2f2f2;
-}
+		.sender, .receiver {
+			margin: 10px;
+			padding: 10px;
+			border-radius: 8px;
+			max-width: 60%;
+		}
 
-iframe {
-	width: 100%;
-	height: 300px;
-}
+		.sender {
+			background-color: #007bff;
+			color: #fff;
+			align-self: flex-end;
+		}
 
-.status-dropdown {
-	width: 100%;
-	padding: 8px;
-}
+		.receiver {
+			background-color: #e0e0e0;
+			color: #000;
+			align-self: flex-start;
+		}
 
-#mysubmitbutton {
-	padding: 10px 15px;
-	background-color: #2196F3;
-	color: white;
-	border: none;
-	border-radius: 5px;
-	cursor: pointer;
-}
+		#sendButton {
+			padding: 10px 15px;
+			background-color: #2196F3;
+			color: white;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+		}
 
-.chat-container {
-	display: flex;
-	flex-direction: column;
-	margin: 0 4%;
-	border: 1px solid;
-	border-radius: 10px;
-	height: 400px; /* Set your fixed height */
-	overflow: hidden; /* Hide the overflow beyond the fixed height */
-}
+	</style>
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script>
+		$(document).ready(function () {
+			let senderId = "GUIDE_ID"; // Replace this with dynamic guide ID from session
+			let receiverId = "";
 
-.message-section {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	/* Align children (messages) to the start (left side) */
-	justify-content: flex-start;
-	/* Align children (messages) to the start (top) */
-	height: 100%;
-	overflow-y: auto; /* Enable vertical scrolling if content overflows */
-}
+			function fetchMessages() {
+				if (receiverId === "") return; // Don't fetch if no receiver is selected
 
-.sender, .receiver {
-	margin: 10px;
-	border-radius: 8px;
-	max-width: 45%;
-}
+				$.get("/bisag/guide/chat/history", { senderId: senderId, receiverId: receiverId }, function (messages) {
+					$(".message-section").empty();
+					messages.forEach(msg => {
+						let messageDiv = `<div class="message ${msg.senderId === senderId ? 'sender' : 'receiver'}">
+                                    <p class="mx-3">${msg.messageText}</p>
+                                  </div>`;
+						$(".message-section").append(messageDiv);
+					});
+				});
+			}
 
-.sender {
-	background-color: #007bff;
-	color: #fff;
-	align-self: flex-end;
-	/* Align sender messages to the end (right side) */
-}
+			// Load messages every 3 seconds
+			setInterval(fetchMessages, 3000);
 
-.receiver {
-	background-color: #e0e0e0;
-	color: #000;
-	align-self: flex-start;
-	/* Align receiver messages to the start (left side) */
-}
-</style>
+			// Change receiver ID when a new recipient is selected
+			$("#receiverId").change(function () {
+				receiverId = $(this).val();
+				fetchMessages();
+			});
+
+			// Send message
+			$("#sendButton").click(function () {
+				let messageText = $("#query").val();
+				if (receiverId === "" || messageText.trim() === "") {
+					alert("Please select a receiver and enter a message.");
+					return;
+				}
+
+				$.post("/bisag/guide/chat/send", { senderId: senderId, receiverId: receiverId, messageText: messageText }, function () {
+					$("#query").val(""); // Clear input field
+					fetchMessages(); // Refresh messages
+				});
+			});
+		});
+	</script>
 </head>
 <body>
-	<!-- Include the header fragment -->
-	<div th:replace="fragments/guideHeaderFragment :: header"></div>
+<div th:replace="fragments/guideHeaderFragment :: header"></div>
+<div th:replace="fragments/guideAsideFragment :: aside"></div>
 
-	<!-- Include the aside fragment -->
-	<div th:replace="fragments/guideAsideFragment :: aside"></div>
+<main id="main" class="main">
+	<div class="pagetitle">
+		<h1>Queries</h1>
+		<nav>
+			<ol class="breadcrumb">
+				<li class="breadcrumb-item"><a href="index.html">Home</a></li>
+				<li class="breadcrumb-item active">Queries</li>
+			</ol>
+		</nav>
+	</div>
 
-	<main id="main" class="main">
-		<div class="pagetitle">
-			<h1>Queries</h1>
-			<nav>
-				<ol class="breadcrumb">
-					<li class="breadcrumb-item"><a href="index.html">Home</a></li>
-					<li class="breadcrumb-item active">Queries</li>
-				</ol>
-			</nav>
-		</div>
-		<div class="container">
-			<div class="card">
-				<div class="card-body chat-container my-5">
-					<div class="message-section">
-						<div class="message sender">
-							<p class="mx-3">Sender's message goes here</p>
-						</div>
-						<div class="message receiver">
-							<p class="mx-3">Receiver's message goes here</p>
-						</div>
-						<div class="message sender">
-							<p class="mx-3">Another sender's message goes here</p>
-						</div>
-						<div class="message receiver">
-							<p class="mx-3">Receiver's message goes here</p>
-						</div>
-						<div class="message sender">
-							<p class="mx-3">Sender's message goes here</p>
-						</div>
-						<div class="message receiver">
-							<p class="mx-3">Receiver's message goes here</p>
-						</div>
-						<div class="message sender">
-							<p class="mx-3">Another sender's message goes here</p>
-						</div>
-						<div class="message receiver">
-							<p class="mx-3">Receiver's message goes here</p>
-						</div>
-					</div>
-					<div class="mt-4">
-						<form action="project_definition_submission" method="post"
-							enctype="multipart/form-data" class="row">
+	<div class="container">
+		<div class="card">
+			<div class="card-body chat-container my-5">
+				<div class="message-section">
+					<!-- Messages will be loaded here dynamically -->
+				</div>
 
-							<!-- First column with 8 grid units -->
-							<div class="col-md-3">
-								<select id="receiverId" name="receiverId" class="form-select">
-									<option value="">Select Receiver</option>
-									<hr>
-									<option th:each="admin : ${admins}" th:value="${admin.adminId}"
-										th:text="${admin.name}"></option>
-									<hr>
+				<div class="mt-4">
+					<div class="row">
+						<div class="col-md-3">
+							<select id="receiverId" name="receiverId" class="form-select">
+								<option value="">Select Receiver</option>
+								<option th:each="admin : ${admins}" th:value="${admin.adminId}" th:text="${admin.name}"></option>
+								<option th:each="intern : ${interns}" th:value="${intern.internId}" th:text="${intern.firstName + ' ' + intern.lastName}"></option>
+								<option th:each="guide : ${guides}" th:value="${guide.guideId}" th:text="${guide.name}"></option>
+								<option th:each="group : ${groups}" th:value="${group.groupId}" th:text="${group.groupId}"></option>
+							</select>
+						</div>
 
-									<option th:each="intern : ${interns}"
-										th:value="${intern.internId}"
-										th:text="${intern.firstName + ' ' + intern.lastName}"></option>
-									<hr>
-									<option th:each="guide : ${guides}" th:value="${guide.guideId}"
-										th:text="${guide.name}"></option>
-									<hr>
-									<option th:each="group : ${groups}" th:value="${group.groupId}"
-										th:text="${group.groupId}"></option>
-								</select>
+						<div class="col-md-8">
+							<input id="query" name="query" placeholder="Your Message..." class="form-control" required>
+						</div>
 
-							</div>
-
-							<div class="col-md-8">
-								<div class="form-group">
-									<input id="query" name="query"
-										placeholder="Your Message Goes Here.........."
-										class="form-control" required></input>
-								</div>
-							</div>
-							<div class="col-md-1">
-								<div class="col-md-12 text-center">
-									<button type="submit" class="btn btn-primary">
-										<i class="fa fa-paper-plane" aria-hidden="true"></i>
-									</button>
-								</div>
-							</div>
-
-						</form>
+						<div class="col-md-1 text-center">
+							<button id="sendButton" class="btn btn-primary">
+								<i class="fa fa-paper-plane" aria-hidden="true"></i>
+							</button>
+						</div>
 					</div>
 				</div>
+
 			</div>
 		</div>
+	</div>
 
-		<!-- Include the footer fragment -->
-		<div th:replace="fragments/footerFragment :: footer"></div>
-	</main>
+	<div th:replace="fragments/footerFragment :: footer"></div>
+</main>
 </body>
 </html>
