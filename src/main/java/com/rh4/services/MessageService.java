@@ -27,4 +27,7 @@ public class MessageService {
         return messageRepo.findBySenderIdAndReceiverIdOrReceiverIdAndSenderIdOrderByTimestamp(
                 senderId, receiverId, receiverId, senderId);
     }
+    public List<Message> getChatHistoryForBothUsers(String senderId, String receiverId) {
+        return messageRepo.findBySenderIdAndReceiverId(senderId, receiverId);
+    }
 }

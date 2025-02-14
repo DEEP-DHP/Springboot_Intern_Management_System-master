@@ -137,5 +137,8 @@ public class GuideService {
 	public List<Guide> findAllGuides() {
 		return guideRepo.findAll();  // Fetch all guides
 	}
-	
+
+	public Optional<Guide> findById(Long guideId) {
+		return guideRepo.findById(guideId);
+	}
 }
