@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Query To Admin</title>
+	<title>Chat</title>
 	<link rel="stylesheet"
 		  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
 		  integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
@@ -28,8 +28,6 @@
 		.message-section {
 			display: flex;
 			flex-direction: column;
-			align-items: flex-start;
-			justify-content: flex-start;
 			height: 100%;
 			overflow-y: auto;
 			padding: 10px;
@@ -39,7 +37,8 @@
 			margin: 10px;
 			padding: 10px;
 			border-radius: 8px;
-			max-width: 60%;
+			max-width: 45%;
+			word-wrap: break-word;
 		}
 
 		.sender {
@@ -53,73 +52,21 @@
 			color: #000;
 			align-self: flex-start;
 		}
-
-		#sendButton {
-			padding: 10px 15px;
-			background-color: #2196F3;
-			color: white;
-			border: none;
-			border-radius: 5px;
-			cursor: pointer;
-		}
-
 	</style>
-	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-	<script>
-		$(document).ready(function () {
-			let senderId = "GUIDE_ID"; // Replace this with dynamic guide ID from session
-			let receiverId = "";
-
-			function fetchMessages() {
-				if (receiverId === "") return; // Don't fetch if no receiver is selected
-
-				$.get("/bisag/guide/chat/history", { senderId: senderId, receiverId: receiverId }, function (messages) {
-					$(".message-section").empty();
-					messages.forEach(msg => {
-						let messageDiv = `<div class="message ${msg.senderId === senderId ? 'sender' : 'receiver'}">
-                                    <p class="mx-3">${msg.messageText}</p>
-                                  </div>`;
-						$(".message-section").append(messageDiv);
-					});
-				});
-			}
-
-			// Load messages every 3 seconds
-			setInterval(fetchMessages, 3000);
-
-			// Change receiver ID when a new recipient is selected
-			$("#receiverId").change(function () {
-				receiverId = $(this).val();
-				fetchMessages();
-			});
-
-			// Send message
-			$("#sendButton").click(function () {
-				let messageText = $("#query").val();
-				if (receiverId === "" || messageText.trim() === "") {
-					alert("Please select a receiver and enter a message.");
-					return;
-				}
-
-				$.post("/bisag/guide/chat/send", { senderId: senderId, receiverId: receiverId, messageText: messageText }, function () {
-					$("#query").val(""); // Clear input field
-					fetchMessages(); // Refresh messages
-				});
-			});
-		});
-	</script>
 </head>
 <body>
+
+<!-- Include header and aside fragments -->
 <div th:replace="fragments/guideHeaderFragment :: header"></div>
 <div th:replace="fragments/guideAsideFragment :: aside"></div>
 
 <main id="main" class="main">
 	<div class="pagetitle">
-		<h1>Queries</h1>
+		<h1>Chat</h1>
 		<nav>
 			<ol class="breadcrumb">
-				<li class="breadcrumb-item"><a href="index.html">Home</a></li>
-				<li class="breadcrumb-item active">Queries</li>
+				<li class="breadcrumb-item"></li>
+				<li class="breadcrumb-item active">Chat</li>
 			</ol>
 		</nav>
 	</div>
@@ -127,39 +74,111 @@
 	<div class="container">
 		<div class="card">
 			<div class="card-body chat-container my-5">
-				<div class="message-section">
-					<!-- Messages will be loaded here dynamically -->
+				<div class="message-section" id="chatBox">
+					<!-- Chat messages will be appended here dynamically -->
 				</div>
-
 				<div class="mt-4">
-					<div class="row">
+					<form id="chatForm" class="row">
+						<input type="hidden" id="senderId" name="senderId" th:value="${guide.guideId}">
+
+						<!-- Receiver selection -->
 						<div class="col-md-3">
 							<select id="receiverId" name="receiverId" class="form-select">
 								<option value="">Select Receiver</option>
 								<option th:each="admin : ${admins}" th:value="${admin.adminId}" th:text="${admin.name}"></option>
 								<option th:each="intern : ${interns}" th:value="${intern.internId}" th:text="${intern.firstName + ' ' + intern.lastName}"></option>
-								<option th:each="guide : ${guides}" th:value="${guide.guideId}" th:text="${guide.name}"></option>
-								<option th:each="group : ${groups}" th:value="${group.groupId}" th:text="${group.groupId}"></option>
 							</select>
 						</div>
 
+						<!-- Message input -->
 						<div class="col-md-8">
-							<input id="query" name="query" placeholder="Your Message..." class="form-control" required>
+							<div class="form-group">
+								<input id="query" name="query" placeholder="Your Message..." class="form-control" required>
+							</div>
 						</div>
 
-						<div class="col-md-1 text-center">
-							<button id="sendButton" class="btn btn-primary">
+						<!-- Send button -->
+						<div class="col-md-1">
+							<button type="submit" class="btn btn-primary">
 								<i class="fa fa-paper-plane" aria-hidden="true"></i>
 							</button>
 						</div>
-					</div>
+					</form>
 				</div>
-
 			</div>
 		</div>
 	</div>
 
+	<!-- Include footer fragment -->
 	<div th:replace="fragments/footerFragment :: footer"></div>
 </main>
+
+<!-- JavaScript for Fetching and Sending Messages -->
+<script>
+	document.addEventListener("DOMContentLoaded", function () {
+		const chatBox = document.getElementById("chatBox");
+		const chatForm = document.getElementById("chatForm");
+
+		// Load chat history when receiver is selected
+		document.getElementById("receiverId").addEventListener("change", function () {
+			loadChatHistory();
+		});
+
+		// Handle form submission
+		chatForm.addEventListener("submit", function (event) {
+			event.preventDefault();
+
+			let senderId = document.getElementById("senderId").value;
+			let receiverId = document.getElementById("receiverId").value;
+			let messageText = document.getElementById("query").value;
+
+			if (!receiverId || !messageText) {
+				alert("Please select a receiver and enter a message.");
+				return;
+			}
+
+			fetch("/bisag/guide/chat/send", {
+				method: "POST",
+				headers: { "Content-Type": "application/x-www-form-urlencoded" },
+				body: new URLSearchParams({ senderId, receiverId, messageText })
+			})
+					.then(response => response.json())
+					.then(data => {
+						appendMessage(data.messageText, "sender");
+						document.getElementById("query").value = "";
+					})
+					.catch(error => console.error("Error:", error));
+		});
+
+		// Function to fetch and display chat history
+		function loadChatHistory() {
+			let senderId = document.getElementById("senderId").value;
+			let receiverId = document.getElementById("receiverId").value;
+
+			if (!receiverId) return;
+
+			fetch(`/bisag/guide/chat/history?senderId=${senderId}&receiverId=${receiverId}`)
+					.then(response => response.json())
+					.then(messages => {
+						chatBox.innerHTML = "";
+						messages.forEach(msg => {
+							let messageType = msg.senderId === senderId ? "sender" : "receiver";
+							appendMessage(msg.messageText, messageType);
+						});
+					})
+					.catch(error => console.error("Error:", error));
+		}
+
+		// Function to append a message to the chat box
+		function appendMessage(text, type) {
+			let messageDiv = document.createElement("div");
+			messageDiv.classList.add("message", type);
+			messageDiv.innerHTML = `<p class="mx-3">${text}</p>`;
+			chatBox.appendChild(messageDiv);
+			chatBox.scrollTop = chatBox.scrollHeight;
+		}
+	});
+</script>
+
 </body>
 </html>
