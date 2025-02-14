@@ -99,6 +99,23 @@
 			</ul></li>
 	</ul>
 
+	<ul class="sidebar-nav" id="def-nav">
+		<li class="nav-item"><a class="nav-link collapsed"
+								data-bs-target="#tasks-def-nav" data-bs-toggle="collapse" href="#">
+			<i class="bi bi-menu-button-wide"></i><span>Tasks</span><i
+				class="bi bi-chevron-down ms-auto"></i>
+		</a>
+			<ul id="tasks-def-nav" class="nav-content collapse "
+				data-bs-parent="#admin-nav">
+				<li>
+					<a th:href="@{/bisag/intern/tasks}">
+						<i class="bi bi-circle"></i><span>Assigned Tasks</span>
+					</a>
+				</li>
+			</ul></li>
+	</ul>
+
+
 	<ul class="sidebar-nav" id="help-nav" style="position: absolute; bottom: 0;">
 		<li class="nav-item">
 			<a class="nav-link" href="#">
