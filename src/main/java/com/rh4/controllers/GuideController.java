@@ -1,25 +1,28 @@
 package com.rh4.controllers;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 import com.rh4.entities.*;
 import com.rh4.repositories.LeaveApplicationRepo;
+import com.rh4.repositories.TaskAssignmentRepo;
 import com.rh4.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -53,6 +56,10 @@ public class GuideController {
             private LeaveApplicationRepo leaveApplicationRepo;
     @Autowired
     private MessageService messageService;
+    @Autowired
+    private TaskAssignmentRepo taskAssignmentRepo;
+    @Autowired
+            private TaskAssignmentService taskAssignmentService;
     Intern internFromUploadFileMethod;
     int CurrentWeekNo;
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -368,10 +375,12 @@ public class GuideController {
     public ModelAndView queryToAdmin() {
         ModelAndView mv = new ModelAndView("/guide/query_to_admin");
         List<Admin> admins = adminService.getAdmin();
+        List<Intern> interns = internService.getInterns();
         List<Guide> guides = guideService.getGuide();
         Guide guide = getSignedInGuide();
         List<GroupEntity> groups = guideService.getInternGroups(guide);
         mv.addObject("admins", admins);
+        mv.addObject("interns", interns);
         mv.addObject("guides", guides);
         mv.addObject("groups", groups);
         mv.addObject("guide", getSignedInGuide());
@@ -448,24 +457,189 @@ public class GuideController {
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Messaging Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
-    // Guide sends a message
-    @PostMapping("/chat/send")
-    public ResponseEntity<Message> sendMessageAsGuide(
-            @RequestParam String senderId,
-            @RequestParam String receiverId,
-            @RequestParam String messageText) {
+        // Guide sends a message
+        @PostMapping("/chat/send")
+        public ResponseEntity<Message> sendMessageAsGuide(
+                @RequestParam String senderId,
+                @RequestParam String receiverId,
+                @RequestParam String messageText) {
 
-        Message message = messageService.sendMessage(senderId, receiverId, messageText);
-        return ResponseEntity.ok(message);
-    }
+            Optional<Guide> guide = guideService.findById(Long.valueOf(senderId));
+            if (guide.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
 
-    // Guide fetches chat history with a user
+            Message message = messageService.sendMessage(String.valueOf(guide.get().getGuideId()), receiverId, messageText);
+            return ResponseEntity.ok(message);
+        }
+
     @GetMapping("/chat/history")
     public ResponseEntity<List<Message>> getChatHistoryAsGuide(
-            @RequestParam String senderId,
+            @RequestParam Long senderId,
             @RequestParam String receiverId) {
 
-        List<Message> messages = messageService.getChatHistory(senderId, receiverId);
+        // Ensure senderId is correctly mapped to an actual Guide ID
+        Optional<Guide> guide = guideService.findById(senderId);
+        if (guide.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String guideId = String.valueOf(guide.get().getGuideId());
+
+        // Fetch both sent and received messages
+        List<Message> messages = messageService.getChatHistory(guideId, receiverId);
+        messages.addAll(messageService.getChatHistory(receiverId, guideId)); // Fetch messages in reverse order
+
+        // Sort messages by timestamp to maintain chronological order
+        messages.sort(Comparator.comparing(Message::getTimestamp));
+
         return ResponseEntity.ok(messages);
     }
-}
+    // Load chat page for Guide
+//    @GetMapping("/chat")
+//    public String loadGuideMessengerPage(Model model) {
+//        Guide guide = getSignedInGuide();
+//
+//        if (guide == null) {
+//            System.out.println("Guide not found or session expired.");
+//            return "redirect:/login"; // Redirect to login if guide is null
+//        }
+//
+//        model.addAttribute("loggedInGuide", guide);
+//
+//        // Load receivers dynamically
+//        List<Admin> admins = adminService.getAdmin(); // Fetch all admins
+//        List<Intern> interns = internService.getAllInterns(); // Fetch all interns
+//
+//        model.addAttribute("admins", admins);
+//        model.addAttribute("interns", interns);
+//
+//        return "guide/query_to_admin"; // Thymeleaf template for guide chat
+//    }
+
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Task Assignment Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    @GetMapping("/tasks_assignments")
+    public String viewTaskAssignmentsPage(Model model) {
+        // Fetch all task assignments
+        List<TaskAssignment> tasks = taskAssignmentService.getAllTasks();
+
+        // Add the task list to the model
+        model.addAttribute("tasks", tasks);
+
+        return "guide/task_assignments"; // Ensure this matches your actual HTML file
+    }
+    // ✅ Assign a New Task
+    @PostMapping("/tasks/assign")
+    public String assignTask(
+            @RequestParam("intern") String intern,
+            @RequestParam("assignedById") String assignedById,
+            @RequestParam("assignedByRole") String assignedByRole,
+            @RequestParam("taskDescription") String taskDescription,
+            @RequestParam("startDate") String startDateStr,
+            @RequestParam("endDate") String endDateStr) {
+
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+            // Convert String to Date
+            Date startDate = dateFormat.parse(startDateStr);
+            Date endDate = dateFormat.parse(endDateStr);
+
+            Optional<Intern> optionalIntern = internService.getIntern(intern);
+            if (optionalIntern.isPresent()) {
+                TaskAssignment task = new TaskAssignment();
+                task.setIntern(intern);
+                task.setAssignedById(assignedById);
+                task.setAssignedByRole(assignedByRole);
+                task.setTaskDescription(taskDescription);
+                task.setStartDate(startDate);
+                task.setEndDate(endDate);
+                task.setStatus("Pending");
+                task.setApproved(false);
+
+                taskAssignmentService.saveTask(task);
+            }
+        } catch (ParseException e) {
+            // Handle exception silently
+        }
+
+        return "redirect:/bisag/guide/tasks_assignments";  // ✅ Redirects to the same task assignment page
+    }
+
+    // ✅ Get Tasks Assigned by Admin/Guide
+    @GetMapping("/tasks/assignedBy/{assignedById}")
+    public ResponseEntity<List<TaskAssignment>> getTasksAssignedBy(@PathVariable("assignedById") String assignedById) {
+        return ResponseEntity.ok(taskAssignmentService.getTasksAssignedBy(assignedById));
+    }
+
+    // ✅ Approve Task Completion
+    @PostMapping("/tasks/approve/{taskId}")
+    public ResponseEntity<String> approveTask(@PathVariable("taskId") Long taskId) {
+        Optional<TaskAssignment> optionalTask = taskAssignmentService.getTaskById(taskId);
+
+        if (optionalTask.isPresent()) {
+            TaskAssignment task = optionalTask.get();
+            task.setApproved(true);
+            task.setStatus("Completed");
+
+            taskAssignmentService.saveTask(task);
+            return ResponseEntity.ok("Task approved successfully.");
+        }
+        return ResponseEntity.badRequest().body("Task not found.");
+    }
+
+    @GetMapping("/tasks/proof/{taskId}")
+    public ResponseEntity<Resource> getProofAttachment(@PathVariable Long taskId) {
+        Optional<TaskAssignment> taskOpt = taskAssignmentRepo.findById(taskId);
+
+        if (taskOpt.isEmpty() || taskOpt.get().getProofAttachment() == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        try {
+            // Fetch file from local storage
+            String fileName = taskOpt.get().getProofAttachment();
+            Path filePath = Paths.get("uploads/task_proofs/", fileName);
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (!resource.exists()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+
+
+    @PutMapping("/update-task/{id}")
+    public ResponseEntity<Map<String, Object>> updateTaskStatus(@PathVariable Long id, @RequestBody Map<String, String> taskData) {
+        try {
+            String newStatus = taskData.get("status");
+            if (newStatus == null || newStatus.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Status cannot be empty"));
+            }
+
+            Optional<TaskAssignment> optionalTask = taskAssignmentService.getTaskById(id);
+            if (optionalTask.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Task not found"));
+            }
+
+            TaskAssignment task = optionalTask.get();
+            task.setStatus(newStatus); // Updating only the status
+            taskAssignmentService.saveTask(task);
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "Status updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "An error occurred: " + e.getMessage()));
+        }
+    }
+    }

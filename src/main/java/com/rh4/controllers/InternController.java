@@ -14,9 +14,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import com.rh4.entities.*;
-import com.rh4.repositories.InternRepo;
-import com.rh4.repositories.LeaveApplicationRepo;
-import com.rh4.repositories.UndertakingRepo;
+import com.rh4.repositories.*;
 import com.rh4.services.*;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,8 +32,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
-
-import com.rh4.repositories.GroupRepo;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -75,6 +71,10 @@ public class InternController {
     private ThesisStorageService thesisStorageService;
     @Autowired
     private MessageService messageService;
+    @Autowired
+    private TaskAssignmentService taskAssignmentService;
+    @Autowired
+    private TaskAssignmentRepo taskAssignmentRepo;
     @Autowired
     HttpSession session;
     @Autowired
@@ -525,6 +525,7 @@ public class InternController {
                               @RequestParam("usedResource") String usedResource,
                               @RequestParam("registrationForm") MultipartFile registrationForm,
                               @RequestParam("securityForm") MultipartFile securityForm,
+                              @RequestParam("projectDefinitionForm") MultipartFile projectDefinitionForm,
                               @RequestParam("icardForm") MultipartFile icardForm) throws IllegalStateException, IOException, Exception {
         System.out.println("called sub");
         Intern intern = getSignedInIntern();
@@ -540,6 +541,8 @@ public class InternController {
         String registrationFormName = storageDir + "registrationForm.pdf";
         String securityFormName = storageDir + "securityForm.pdf";
         String icardFormName = storageDir + "icardForm.pdf";
+        String projectDefinitionFormName = storageDir + "projectDefinitnionForm.pdf";
+        String extraForm = storageDir + "extraForm.pdf";
 
         // Save Passport Size Image
         Files.write(Paths.get(registrationFormName), registrationForm.getBytes());
@@ -550,6 +553,12 @@ public class InternController {
         // Save NOC PDF
         Files.write(Paths.get(icardFormName), icardForm.getBytes());
 
+        //Save Project Definition form
+        Files.write(Paths.get(projectDefinitionFormName), projectDefinitionFormName.getBytes());
+
+        //Save Project Definition form
+        Files.write(Paths.get(extraForm), extraForm.getBytes());
+
         intern.setPermanentAddress(permanentAddress);
         intern.setDateOfBirth(dateOfBirth);
         intern.setGender(gender);
@@ -557,6 +566,8 @@ public class InternController {
         intern.setAggregatePercentage(aggregatePercentage);
         intern.setUsedResource(usedResource);
         intern.setIcardForm(icardForm.getBytes());
+        intern.setProjectDefinitionForm(projectDefinitionForm.getBytes());
+        intern.setExtraForm(extraForm.getBytes());
         intern.setSecurityForm(securityForm.getBytes());
         intern.setRegistrationForm(registrationForm.getBytes());
         internService.registerIntern(intern);
@@ -576,6 +587,41 @@ public class InternController {
 
                 logService.saveLog(id, "Viewed I-Card Form",
                         "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their I-Card form.");
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
+            }
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/documents/projectDefinitionForm/{id}")
+    public ResponseEntity<byte[]> getProjectDefinitionFormForIntern(@PathVariable("id") String id) {
+        Optional<Intern> optionalApplication = internService.getIntern(id);
+
+        if (optionalApplication.isPresent()) {
+            Intern application = optionalApplication.get();
+            byte[] pdf = application.getProjectDefinitionForm();
+
+            if (pdf != null) {
+
+                logService.saveLog(id, "Viewed Project Definition Form",
+                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their Project Definition form.");
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
+            }
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/documents/extraForm/{id}")
+    public ResponseEntity<byte[]> getExtraFormForIntern(@PathVariable("id") String id) {
+        Optional<Intern> optionalApplication = internService.getIntern(id);
+
+        if (optionalApplication.isPresent()) {
+            Intern application = optionalApplication.get();
+            byte[] pdf = application.getExtraForm();
+
+            if (pdf != null) {
+                logService.saveLog(id, "Viewed Extra Form",
+                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their Extra form.");
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
             }
         }
@@ -966,17 +1012,143 @@ public class InternController {
             @RequestParam String receiverId,
             @RequestParam String messageText) {
 
-        Message message = messageService.sendMessage(senderId, receiverId, messageText);
+        // Extract actual internId (assuming senderId is passed as a string)
+        Optional<Intern> intern = internService.findById(senderId);
+        if (intern.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Message message = messageService.sendMessage(intern.get().getInternId(), receiverId, messageText);
         return ResponseEntity.ok(message);
     }
 
-    // Intern fetches chat history with a user
+    // Intern fetches chat history (both sent and received messages)
     @GetMapping("/chat/history")
     public ResponseEntity<List<Message>> getChatHistoryAsIntern(
             @RequestParam String senderId,
             @RequestParam String receiverId) {
 
-        List<Message> messages = messageService.getChatHistory(senderId, receiverId);
+        // Ensure senderId is correctly mapped to actual intern ID
+        Optional<Intern> intern = internService.findById(senderId);
+        if (intern.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String internId = intern.get().getInternId();
+
+        // Fetch both sent and received messages
+        List<Message> messages = messageService.getChatHistory(internId, receiverId);
+        messages.addAll(messageService.getChatHistory(receiverId, internId)); // Fetch messages in reverse order
+
+        // Sort messages by timestamp to maintain chronological order
+        messages.sort(Comparator.comparing(Message::getTimestamp));
+
         return ResponseEntity.ok(messages);
+    }
+
+    //Task Assignment Module
+    @GetMapping("/tasks")
+    public String viewInternTasks(Model model) {
+        // Fetch the logged-in intern using the existing method
+        Intern loggedIntern = getSignedInIntern();
+
+        if (loggedIntern == null) {
+            return "redirect:/intern/login"; // Redirect if not authenticated or inactive
+        }
+
+        // Fetch tasks assigned to the logged-in intern
+        List<TaskAssignment> tasks = taskAssignmentService.getTasksByIntern(loggedIntern.getInternId());
+        model.addAttribute("tasks", tasks);
+
+        return "intern/intern-tasks"; // Returns the intern's task list page
+    }
+    // ✅ Get Tasks Assigned to a Specific Intern
+    @GetMapping("/tasks/{internId}")
+    public String getInternTasks(@PathVariable("internId") String internId, Model model) {
+        List<TaskAssignment> tasks = taskAssignmentService.getTasksByIntern(internId);
+        model.addAttribute("tasks", tasks);
+        model.addAttribute("internId", internId); // Add internId for navigation
+        return "intern-tasks"; // Renders the intern's task list page
+    }
+    // ✅ Update Task Status by Intern
+    @PutMapping("/tasks/update-status/{taskId}")
+    public ResponseEntity<Map<String, String>> updateTaskStatus(@PathVariable("taskId") Long taskId, @RequestBody Map<String, String> request) {
+        String newStatus = request.get("status");
+        boolean isUpdated = taskAssignmentService.updateTaskStatus(taskId, newStatus);
+
+        Map<String, String> response = new HashMap<>();
+        if (isUpdated) {
+            response.put("success", "Task status updated successfully");
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("error", "Failed to update task status");
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    @PostMapping("/tasks/upload-proof/{taskId}")
+    public ResponseEntity<Map<String, String>> uploadProof(@PathVariable Long taskId, @RequestParam("file") MultipartFile file) {
+        Map<String, String> response = new HashMap<>();
+
+        try {
+            // Validate file
+            if (file.isEmpty()) {
+                response.put("error", "File is empty");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Fetch task from DB
+            Optional<TaskAssignment> taskOpt = taskAssignmentRepo.findById(taskId);
+            if (!taskOpt.isPresent()) {
+                response.put("error", "Task not found");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Create upload directory if not exists
+            String uploadDir = "uploads/task_proofs/";
+            Files.createDirectories(Paths.get(uploadDir));
+
+            // Save file in local storage
+            String fileName = "task_" + taskId + "_" + file.getOriginalFilename();
+            Path filePath = Paths.get(uploadDir, fileName);
+            Files.write(filePath, file.getBytes());
+
+            // Update database with file path
+            TaskAssignment task = taskOpt.get();
+            task.setProofAttachment(fileName);  // Store filename instead of byte[]
+            taskAssignmentRepo.save(task);
+
+            response.put("success", "Proof uploaded successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("error", "Failed to upload proof: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    @GetMapping("/tasks/proof/{taskId}")
+    public ResponseEntity<Resource> getProofAttachment(@PathVariable Long taskId) {
+        Optional<TaskAssignment> taskOpt = taskAssignmentRepo.findById(taskId);
+
+        if (!taskOpt.isPresent() || taskOpt.get().getProofAttachment() == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        try {
+            // Fetch file from local storage
+            String fileName = taskOpt.get().getProofAttachment();
+            Path filePath = Paths.get("uploads/task_proofs/", fileName);
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (!resource.exists()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 }

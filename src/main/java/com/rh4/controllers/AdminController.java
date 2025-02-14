@@ -10,7 +10,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -40,6 +39,7 @@ import com.rh4.services.*;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.view.RedirectView;
 
 @Controller
 @RequestMapping("/bisag/admin")
@@ -105,6 +105,10 @@ public class AdminController {
     private ThesisStorageRepo thesisStorageRepo;
     @Autowired
     private MessageService messageService;
+    @Autowired
+    private TaskAssignmentService taskAssignmentService;
+    @Autowired
+    private TaskAssignmentRepo taskAssignmentRepo;
 
 
     @Value("${app.storage.base-dir}")
@@ -131,7 +135,18 @@ public class AdminController {
 
     public Admin getSignedInAdmin() {
         String username = (String) session.getAttribute("username");
+
+        if (username == null) {
+            System.out.println("No username found in session.");
+            return null;
+        }
+
         Admin admin = adminService.getAdminByUsername(username);
+
+        if (admin == null) {
+            System.out.println("No admin found for username: " + username);
+        }
+
         return admin;
     }
 
@@ -833,7 +848,51 @@ public class AdminController {
             return ResponseEntity.notFound().build();
         }
     }
+    @GetMapping("/intern/documents/projectDefinitionForm/{id}")
+    public ResponseEntity<byte[]> getProjectDefinitionFormForIntern(@PathVariable("id") String id) {
+        Optional<Intern> optionalApplication = internService.getIntern(id);
 
+        if (optionalApplication.isPresent()) {
+            Intern application = optionalApplication.get();
+
+            byte[] pdf = application.getProjectDefinitionForm();
+
+            if (pdf != null) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .body(pdf);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/intern/documents/projectDefinitionForm/{id}")
+    public String updateProjectDefinitionFormForIntern(@PathVariable("id") String id, @RequestParam("file") MultipartFile file) throws IOException {
+        Optional<Intern> optionalApplication = internService.getIntern(id);
+        if (optionalApplication.isPresent()) {
+            Intern application = optionalApplication.get();
+
+            String storageDir = baseDir + application.getEmail() + "/";
+            String oldFilePath = storageDir + "projectDefinitionForm.pdf";
+
+            File oldFile = new File(oldFilePath);
+            if (oldFile.exists()) {
+                oldFile.delete();
+            }
+
+            String newFilePath = storageDir + "projectDefinitionForm.pdf";
+            Files.write(Paths.get(newFilePath), file.getBytes());
+
+            application.setProjectDefinitionForm(file.getBytes());
+            internService.save(application);
+
+            return "redirect:/bisag/admin/intern_docs/" + id;
+        }
+        return "redirect:/bisag/admin/intern_docs/" + id;
+    }
     @PostMapping("/documents/passport/{id}")
     public String updatePassportSizeImage(@PathVariable("id") long id, @RequestParam("file") MultipartFile file) throws IOException {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
@@ -1087,6 +1146,96 @@ public class AdminController {
             Files.write(Paths.get(newFilePath), file.getBytes());
 
             application.setIcardForm(file.getBytes());
+            internService.save(application);
+
+            return "redirect:/bisag/admin/intern_docs/" + id;
+        }
+        return "redirect:/bisag/admin/intern_docs/" + id;
+    }
+
+    @GetMapping("/intern/documents/extraForm/{id}")
+    public ResponseEntity<byte[]> getExtraFormForIntern(@PathVariable("id") String id) {
+        Optional<Intern> optionalApplication = internService.getIntern(id);
+
+        if (optionalApplication.isPresent()) {
+            Intern application = optionalApplication.get();
+            byte[] pdf = application.getExtraForm();
+
+            if (pdf != null) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .body(pdf);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/intern/documents/extraForm/{id}")
+    public String updateExtraFormForIntern(@PathVariable("id") String id, @RequestParam("file") MultipartFile file) throws IOException {
+        Optional<Intern> optionalApplication = internService.getIntern(id);
+        if (optionalApplication.isPresent()) {
+            Intern application = optionalApplication.get();
+
+            String storageDir = baseDir + application.getEmail() + "/";
+            String oldFilePath = storageDir + "extraForm.pdf";
+
+            File oldFile = new File(oldFilePath);
+            if (oldFile.exists()) {
+                oldFile.delete();
+            }
+
+            String newFilePath = storageDir + "extraForm.pdf";
+            Files.write(Paths.get(newFilePath), file.getBytes());
+
+            application.setExtraForm(file.getBytes());
+            internService.save(application);
+
+            return "redirect:/bisag/admin/intern_docs/" + id;
+        }
+        return "redirect:/bisag/admin/intern_docs/" + id;
+    }
+
+    @GetMapping("/intern/documents/extraForm2/{id}")
+    public ResponseEntity<byte[]> getExtraForm2ForIntern(@PathVariable("id") String id) {
+        Optional<Intern> optionalApplication = internService.getIntern(id);
+
+        if (optionalApplication.isPresent()) {
+            Intern application = optionalApplication.get();
+            byte[] pdf = application.getExtraForm2();
+
+            if (pdf != null) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .body(pdf);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/intern/documents/extraForm2/{id}")
+    public String updateExtraForm2ForIntern(@PathVariable("id") String id, @RequestParam("file") MultipartFile file) throws IOException {
+        Optional<Intern> optionalApplication = internService.getIntern(id);
+        if (optionalApplication.isPresent()) {
+            Intern application = optionalApplication.get();
+
+            String storageDir = baseDir + application.getEmail() + "/";
+            String oldFilePath = storageDir + "extraForm2.pdf";
+
+            File oldFile = new File(oldFilePath);
+            if (oldFile.exists()) {
+                oldFile.delete();
+            }
+
+            String newFilePath = storageDir + "extraForm2.pdf";
+            Files.write(Paths.get(newFilePath), file.getBytes());
+
+            application.setExtraForm2(file.getBytes());
             internService.save(application);
 
             return "redirect:/bisag/admin/intern_docs/" + id;
@@ -3268,24 +3417,180 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Messaging Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    // Load chat page
+    @GetMapping("/chat")
+    public String loadMessengerPage(Model model) {
+        Admin admin = getSignedInAdmin();
+
+        if (admin == null) {
+            System.out.println("Admin not found or session expired.");
+            return "redirect:/login"; // Redirect to login if admin is null
+        }
+
+        model.addAttribute("loggedInAdmin", admin);
+
+        // Load receivers dynamically
+        List<Admin> admins = adminService.getAdmin();
+        List<Guide> guides = guideService.getGuide();
+        List<Intern> interns = internService.getAllInterns();
+        List<GroupEntity> groups = groupService.getGroups();
+
+        model.addAttribute("admins", admins);
+        model.addAttribute("guides", guides);
+        model.addAttribute("interns", interns);
+        model.addAttribute("groups", groups);
+
+        return "admin/query_to_guide"; // Thymeleaf template
+    }
+
     // Admin sends a message
     @PostMapping("/chat/send")
     public ResponseEntity<Message> sendMessageAsAdmin(
-            @RequestParam String senderId,
             @RequestParam String receiverId,
             @RequestParam String messageText) {
+
+        Admin admin = getSignedInAdmin();
+        String senderId = String.valueOf(admin.getAdminId());
 
         Message message = messageService.sendMessage(senderId, receiverId, messageText);
         return ResponseEntity.ok(message);
     }
 
-    // Admin fetches chat history with a user
+    // Admin fetches chat history
+    // Admin fetches chat history (both sent and received messages)
     @GetMapping("/chat/history")
-    public ResponseEntity<List<Message>> getChatHistoryAsAdmin(
-            @RequestParam String senderId,
-            @RequestParam String receiverId) {
+    public ResponseEntity<List<Message>> getChatHistoryAsAdmin(@RequestParam String receiverId) {
+        Admin admin = getSignedInAdmin();
+        String senderId = String.valueOf(admin.getAdminId());
 
-        List<Message> messages = messageService.getChatHistory(senderId, receiverId);
+        // Fetch messages where the admin is either sender or receiver
+        List<Message> messages = messageService.getChatHistoryForBothUsers(senderId, receiverId);
         return ResponseEntity.ok(messages);
     }
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Task Assignment Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    @GetMapping("/tasks_assignments")
+    public String viewTaskAssignmentsPage(Model model) {
+        // Fetch all task assignments
+        List<TaskAssignment> tasks = taskAssignmentService.getAllTasks();
+
+        // Add the task list to the model
+        model.addAttribute("tasks", tasks);
+
+        return "admin/task_assignments"; // Ensure this matches your actual HTML file
+    }
+    // ✅ Assign a New Task
+    @PostMapping("/tasks/assign")
+    public String assignTask(
+            @RequestParam("intern") String intern,
+            @RequestParam("assignedById") String assignedById,
+            @RequestParam("assignedByRole") String assignedByRole,
+            @RequestParam("taskDescription") String taskDescription,
+            @RequestParam("startDate") String startDateStr,
+            @RequestParam("endDate") String endDateStr) {
+
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+            // Convert String to Date
+            Date startDate = dateFormat.parse(startDateStr);
+            Date endDate = dateFormat.parse(endDateStr);
+
+            Optional<Intern> optionalIntern = internService.getIntern(intern);
+            if (optionalIntern.isPresent()) {
+                TaskAssignment task = new TaskAssignment();
+                task.setIntern(intern);
+                task.setAssignedById(assignedById);
+                task.setAssignedByRole(assignedByRole);
+                task.setTaskDescription(taskDescription);
+                task.setStartDate(startDate);
+                task.setEndDate(endDate);
+                task.setStatus("Pending");
+                task.setApproved(false);
+
+                taskAssignmentService.saveTask(task);
+            }
+        } catch (ParseException e) {
+            // Handle exception silently
+        }
+
+        return "redirect:/bisag/admin/tasks_assignments";  // ✅ Redirects to the same task assignment page
+    }
+
+    // ✅ Get Tasks Assigned by Admin/Guide
+    @GetMapping("/tasks/assignedBy/{assignedById}")
+    public ResponseEntity<List<TaskAssignment>> getTasksAssignedBy(@PathVariable("assignedById") String assignedById) {
+        return ResponseEntity.ok(taskAssignmentService.getTasksAssignedBy(assignedById));
+    }
+
+    // ✅ Approve Task Completion
+    @PostMapping("/tasks/approve/{taskId}")
+    public ResponseEntity<String> approveTask(@PathVariable("taskId") Long taskId) {
+        Optional<TaskAssignment> optionalTask = taskAssignmentService.getTaskById(taskId);
+
+        if (optionalTask.isPresent()) {
+            TaskAssignment task = optionalTask.get();
+            task.setApproved(true);
+            task.setStatus("Completed");
+
+            taskAssignmentService.saveTask(task);
+            return ResponseEntity.ok("Task approved successfully.");
+        }
+        return ResponseEntity.badRequest().body("Task not found.");
+    }
+
+    @GetMapping("/tasks/proof/{taskId}")
+    public ResponseEntity<Resource> getProofAttachment(@PathVariable Long taskId) {
+        Optional<TaskAssignment> taskOpt = taskAssignmentRepo.findById(taskId);
+
+        if (taskOpt.isEmpty() || taskOpt.get().getProofAttachment() == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        try {
+            // Fetch file from local storage
+            String fileName = taskOpt.get().getProofAttachment();
+            Path filePath = Paths.get("uploads/task_proofs/", fileName);
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (!resource.exists()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+
+
+    @PutMapping("/update-task/{id}")
+    public ResponseEntity<Map<String, Object>> updateTaskStatus(@PathVariable Long id, @RequestBody Map<String, String> taskData) {
+        try {
+            String newStatus = taskData.get("status");
+            if (newStatus == null || newStatus.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Status cannot be empty"));
+            }
+
+            Optional<TaskAssignment> optionalTask = taskAssignmentService.getTaskById(id);
+            if (optionalTask.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Task not found"));
+            }
+
+            TaskAssignment task = optionalTask.get();
+            task.setStatus(newStatus); // Updating only the status
+            taskAssignmentService.saveTask(task);
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "Status updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "An error occurred: " + e.getMessage()));
+        }
+    }
+
 }
