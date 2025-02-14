@@ -45,6 +45,18 @@ public class Intern {
     private byte[] resumePdf;
 
     @Lob
+    @Column(name = "project_definition_form", columnDefinition = "LONGBLOB")
+    private byte[] projectDefinitionForm;
+
+    @Lob
+    @Column(name = "extra_form", columnDefinition = "LONGBLOB")
+    private byte[] extraForm;
+
+    @Lob
+    @Column(name = "extra_form2", columnDefinition = "LONGBLOB")
+    private byte[] extraForm2;
+
+    @Lob
     @Column(name = "passport_size_image", columnDefinition = "LONGBLOB")
     private byte[] passportSizeImage;
 
@@ -130,7 +142,7 @@ public class Intern {
     }
 
     public Intern(String internId, String firstName, String lastName, String contactNo, String email,
-                  String collegeName, String branch, byte[] collegeIcardImage, byte[] nocPdf, byte[] resumePdf, int semester,
+                  String collegeName, String branch, byte[] collegeIcardImage, byte[] nocPdf, byte[] projectDefinitionForm, byte[] extraForm, byte[] extraForm2, byte[] resumePdf, int semester,
                   String permanentAddress, Date dateOfBirth, String gender, String collegeGuideHodName, String degree, Double aggregatePercentage, String projectDefinitionName, String cancellationStatus,
                   Guide guide, String domain, Date joiningDate, Date completionDate, String password, byte[] icardForm, byte[] registrationForm, byte[] securityForm,
                   String usedResource, LocalDateTime createdAt, LocalDateTime updatedAt, GroupEntity group, boolean isActive) {
@@ -145,6 +157,9 @@ public class Intern {
         this.branch = branch;
         this.collegeIcardImage = collegeIcardImage;
         this.nocPdf = nocPdf;
+        this.projectDefinitionForm = projectDefinitionForm;
+        this.extraForm = extraForm;
+        this.extraForm2 = extraForm2;
         this.resumePdf = resumePdf;
         this.semester = semester;
         this.permanentAddress = permanentAddress;
@@ -479,5 +494,29 @@ public class Intern {
 
     public void setUndertakingAccepted(boolean undertakingAccepted) {
         this.undertakingAccepted = undertakingAccepted;
+    }
+
+    public byte[] getProjectDefinitionForm() {
+        return projectDefinitionForm;
+    }
+
+    public void setProjectDefinitionForm(byte[] projectDefinitionForm) {
+        this.projectDefinitionForm = projectDefinitionForm;
+    }
+
+    public byte[] getExtraForm() {
+        return extraForm;
+    }
+
+    public void setExtraForm(byte[] extraForm) {
+        this.extraForm = extraForm;
+    }
+
+    public byte[] getExtraForm2() {
+        return extraForm2;
+    }
+
+    public void setExtraForm2(byte[] extraForm2) {
+        this.extraForm2 = extraForm2;
     }
 }
