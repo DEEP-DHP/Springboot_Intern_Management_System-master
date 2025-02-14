@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Management</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        crossorigin="anonymous">
+  <style>
+    .form-floating { margin-bottom: 20px; }
+    .form-group { margin-bottom: 20px; }
+    .card-body { padding: 30px; }
+    .breadcrumb-item a { font-weight: bold; }
+    .table-responsive { margin-top: 20px; }
+    .editable-status {
+      border: none;
+      background: transparent;
+      width: 100px;
+    }
+    .editable-status:focus {
+      border: 1px solid #007bff;
+      outline: none;
+      background: #f8f9fa;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- Include the header fragment -->
+<div th:replace="fragments/headerFragment :: header"></div>
+
+<!-- Include the aside fragment -->
+<div th:replace="fragments/asideFragment :: aside"></div>
+
+<main id="main" class="main">
+
+  <div class="pagetitle">
+    <h1>Task Management</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a th:href="@{/bisag/admin/tasks}">Tasks</a></li>
+        <li class="breadcrumb-item active">Assign & View Tasks</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Task Assignment Section -->
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Assign Task</h5>
+
+            <!-- Success/Error Messages -->
+            <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+            <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+            <!-- Task Assignment Form -->
+            <form th:action="@{/bisag/admin/tasks/assign}" method="post">
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="form-floating">
+                    <input type="text" name="intern" class="form-control" id="intern" required>
+                    <label for="intern">Intern ID</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-floating">
+                    <input type="text" name="assignedById" class="form-control" id="assignedById" required>
+                    <label for="assignedById">Assigned By (ID)</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-floating">
+                    <select name="assignedByRole" class="form-control" id="assignedByRole" required>
+                      <option value="Admin">Admin</option>
+                    </select>
+                    <label for="assignedByRole">Assigned By (Role)</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-floating">
+                    <textarea name="taskDescription" class="form-control" id="taskDescription" style="height: 100px" required></textarea>
+                    <label for="taskDescription">Task Description</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-floating">
+                    <input type="date" name="startDate" class="form-control" id="startDate" required>
+                    <label for="startDate">Start Date</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-floating">
+                    <input type="date" name="endDate" class="form-control" id="endDate" required>
+                    <label for="endDate">End Date</label>
+                  </div>
+                </div>
+                <div class="col-md-12 text-center">
+                  <button type="submit" class="btn btn-primary mt-3">Assign Task</button>
+                </div>
+              </div>
+            </form>
+            <!-- End Task Assignment Form -->
+
+            <!-- Task Table -->
+            <div class="table-responsive">
+              <h5 class="card-title mt-4">Assigned Tasks</h5>
+
+              <script>
+                function enableEditing(taskId) {
+                  let statusSelect = document.getElementById('statusSelect_' + taskId);
+                  let statusText = document.getElementById('statusText_' + taskId);
+
+                  // Hide the status text and show the dropdown
+                  statusText.classList.add('d-none');
+                  statusSelect.classList.remove('d-none');
+
+                  document.getElementById('editBtn_' + taskId).classList.add('d-none');
+                  document.getElementById('saveBtn_' + taskId).classList.remove('d-none');
+                }
+
+                function saveTask(taskId) {
+                  let statusSelect = document.getElementById("statusSelect_" + taskId);
+                  let selectedStatus = statusSelect.value;
+
+                  fetch(`/bisag/admin/update-task/${taskId}`, {
+                    method: "PUT",
+                    headers: {
+                      "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ status: selectedStatus })
+                  })
+                          .then(response => response.json())
+                          .then(data => {
+                            if (data.success) {
+                              document.getElementById("statusText_" + taskId).textContent = selectedStatus;
+                              statusSelect.classList.add("d-none");
+                              document.getElementById("statusText_" + taskId).classList.remove("d-none");
+                              document.getElementById("editBtn_" + taskId).classList.remove("d-none");
+                              document.getElementById("saveBtn_" + taskId).classList.add("d-none");
+                            } else {
+                              alert(data.message);
+                            }
+                          })
+                          .catch(error => console.error("Error:", error));
+                }
+              </script>
+
+              <table class="table datatable table-bordered">
+                <thead>
+                <tr>
+                  <th>Intern ID</th>
+                  <th>Assigned By</th>
+                  <th>Task Description</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Proof of Document</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="task : ${tasks}">
+                  <td th:text="${task.intern}"></td>
+                  <td th:text="${task.assignedByRole}"></td>
+                  <td th:text="${task.taskDescription}"></td>
+                  <td th:text="${#dates.format(task.startDate, 'yyyy-MM-dd')}"></td>
+                  <td th:text="${#dates.format(task.endDate, 'yyyy-MM-dd')}"></td>
+                  <td>
+                    <span th:if="${task.proofAttachment != null}">
+                      <a th:href="@{'/bisag/admin/tasks/proof/' + ${task.id}}" target="_blank">View</a>
+                    </span>
+                    <span th:if="${task.proofAttachment == null}">No Proof Uploaded</span>
+                  </td>
+                  <td>
+                    <span th:id="'statusText_' + ${task.id}" th:text="${task.status}"></span>
+                    <select th:id="'statusSelect_' + ${task.id}" class="form-control d-none">
+                      <option value="Pending" th:selected="${task.status == 'Pending'}">Pending</option>
+                      <option value="In Progress" th:selected="${task.status == 'In Progress'}">In Progress</option>
+                      <option value="Completed" th:selected="${task.status == 'Completed'}">Completed</option>
+                    </select>
+                  </td>
+                  <td>
+                    <button class="btn btn-warning btn-sm" th:id="'editBtn_' + ${task.id}"
+                            th:attr="onclick='enableEditing(' + ${task.id} + ')'" >
+                      Edit
+                    </button>
+                    <button class="btn btn-success btn-sm d-none" th:id="'saveBtn_' + ${task.id}"
+                            th:attr="onclick='saveTask(' + ${task.id} + ')'" >
+                      Save
+                    </button>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- End Task Table -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

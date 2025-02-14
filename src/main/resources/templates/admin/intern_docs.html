@@ -185,6 +185,45 @@ iframe {
                 </form>
             </td>
         </tr>
+        <tr>
+            <th><p class="text-5xl font-bold underline">Project Definition Form</p></th>
+            <td>
+                <iframe th:src="@{/bisag/admin/intern/documents/projectDefinitionForm/{id}(id=${id})}" width="300" height="500"></iframe>
+
+                <form id="projectDefinitionForm" th:action="@{/bisag/admin/intern/documents/projectDefinitionForm/{id}(id=${id})}" method="post"
+                      enctype="multipart/form-data">
+                    <label for="projectDefinitionForm">Update Project Definition Form:</label>
+                    <input type="file" name="file" id="projectDefinitionForm" class="border" accept=".pdf" required>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </form>
+            </td>
+        </tr>
+        <tr>
+            <th><p class="text-5xl font-bold underline">Extra Form</p></th>
+            <td>
+                <iframe th:src="@{/bisag/admin/intern/documents/extraForm/{id}(id=${id})}" width="300" height="500"></iframe>
+
+                <form id="extraForm" th:action="@{/bisag/admin/intern/documents/extraForm/{id}(id=${id})}" method="post"
+                      enctype="multipart/form-data">
+                    <label for="extraForm">Update Extra Form:</label>
+                    <input type="file" name="file" id="extraForm" class="border" accept=".pdf" required>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </form>
+            </td>
+        </tr>
+        <tr>
+        <th><p class="text-5xl font-bold underline">Extra Form 2</p></th>
+        <td>
+            <iframe th:src="@{/bisag/admin/intern/documents/extraForm2/{id}(id=${id})}" width="300" height="500"></iframe>
+
+            <form id="extraForm2" th:action="@{/bisag/admin/intern/documents/extraForm2/{id}(id=${id})}" method="post"
+                  enctype="multipart/form-data">
+                <label for="extraForm2">Update Extra Form 2:</label>
+                <input type="file" name="file" id="extraForm2" class="border" accept=".pdf" required>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </form>
+        </td>
+    </tr>
     </table>
 
     <!-- Bootstrap Modal -->

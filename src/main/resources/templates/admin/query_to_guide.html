@@ -6,85 +6,45 @@
 	<title>Messenger</title>
 	<link rel="stylesheet"
 		  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-		  integrity="sha384-T3c6oIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
 		  crossorigin="anonymous">
 	<style>
-		body {
-			font-family: Arial, sans-serif;
-			margin: 0;
-			padding: 20px;
-		}
+		body { font-family: Arial, sans-serif; padding: 20px; }
+		.chat-container { display: flex; flex-direction: column; height: 400px; border: 1px solid; border-radius: 10px; overflow: hidden; }
+		.message-section { display: flex; flex-direction: column; height: 100%; overflow-y: auto; padding: 10px; }
 
-		.chat-container {
-			display: flex;
-			flex-direction: column;
-			margin: 0 4%;
-			border: 1px solid;
-			border-radius: 10px;
-			height: 400px;
-			overflow: hidden;
-		}
-
-		.message-section {
-			display: flex;
-			flex-direction: column;
-			align-items: flex-start;
-			justify-content: flex-start;
-			height: 100%;
-			overflow-y: auto;
-			padding: 10px;
-		}
-
-		.sender, .receiver {
-			margin: 10px;
-			border-radius: 8px;
-			max-width: 45%;
-			padding: 10px;
-		}
-
+		/* Sender messages (logged-in admin) - Aligned Right */
 		.sender {
 			background-color: #007bff;
 			color: #fff;
+			border-radius: 8px;
+			max-width: 60%;
+			padding: 10px;
 			align-self: flex-end;
+			margin: 5px 10px;
+			word-wrap: break-word;
 		}
 
+		/* Receiver messages - Aligned Left */
 		.receiver {
 			background-color: #e0e0e0;
 			color: #000;
+			border-radius: 8px;
+			max-width: 60%;
+			padding: 10px;
 			align-self: flex-start;
+			margin: 5px 10px;
+			word-wrap: break-word;
 		}
 
-		#messageForm {
-			display: flex;
-			align-items: center;
-			padding: 10px;
-			background: #f8f9fa;
-			border-top: 1px solid #ccc;
-		}
-
-		#messageInput {
-			flex: 1;
-			padding: 10px;
-			border: 1px solid #ccc;
-			border-radius: 5px;
-			margin-right: 10px;
-		}
-
-		#sendMessage {
-			padding: 10px 15px;
-			background-color: #2196F3;
-			color: white;
-			border: none;
-			border-radius: 5px;
-			cursor: pointer;
-		}
+		#messageForm { display: flex; padding: 10px; background: #f8f9fa; border-top: 1px solid #ccc; }
+		#messageInput { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-right: 10px; }
+		#sendMessage { padding: 10px 15px; background-color: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; }
 	</style>
 </head>
 <body>
-<!-- Include the header fragment -->
-<div th:replace="fragments/headerFragment :: header"></div>
 
-<!-- Include the aside fragment -->
+<!-- Include header and sidebar -->
+<div th:replace="fragments/headerFragment :: header"></div>
 <div th:replace="fragments/asideFragment :: aside"></div>
 
 <main id="main" class="main">
@@ -110,7 +70,7 @@
 						<option th:each="admin : ${admins}" th:value="${admin.adminId}" th:text="${admin.name}"></option>
 						<option th:each="guide : ${guides}" th:value="${guide.guideId}" th:text="${guide.name}"></option>
 						<option th:each="intern : ${interns}" th:value="${intern.internId}" th:text="${intern.firstName + ' ' + intern.lastName}"></option>
-						<option th:each="group : ${groups}" th:value="${group.groupId}" th:text="${group.groupId}"></option>
+<!--						<option th:each="group : ${groups}" th:value="${group.groupId}" th:text="${group.groupId}"></option>-->
 					</select>
 
 					<input id="messageInput" type="text" placeholder="Type your message..." required>
@@ -120,7 +80,7 @@
 		</div>
 	</div>
 
-	<!-- Include the footer fragment -->
+	<!-- Include footer -->
 	<div th:replace="fragments/footerFragment :: footer"></div>
 </main>
 
@@ -130,25 +90,35 @@
 		const messageInput = document.getElementById("messageInput");
 		const sendMessageBtn = document.getElementById("sendMessage");
 		const receiverId = document.getElementById("receiverId");
-		const senderId = "admin"; // Assuming the sender is an admin
 
-		// Function to load messages
+		// Fetch the logged-in admin's ID dynamically
+		const senderId = "[[${loggedInAdmin != null ? loggedInAdmin.adminId : ''}]]";
+
 		function loadMessages() {
 			const receiver = receiverId.value;
-			if (!receiver) return; // Don't fetch messages if no receiver is selected
+			if (!receiver) return;
 
-			fetch(`/bisag/admin/chat/history?senderId=${senderId}&receiverId=${receiver}`)
+			fetch(`/bisag/admin/chat/history?receiverId=${receiver}`)
 					.then(response => response.json())
 					.then(messages => {
-						messageContainer.innerHTML = ""; // Clear existing messages
+						messageContainer.innerHTML = "";
+
 						messages.forEach(message => {
 							const messageDiv = document.createElement("div");
-							messageDiv.classList.add("message");
-							messageDiv.classList.add(message.senderId === senderId ? "sender" : "receiver");
-							messageDiv.innerHTML = `<p class="mx-3">${message.messageText}</p>`;
+
+							// Check if message is sent by the logged-in admin
+							if (message.senderId === senderId) {
+								messageDiv.classList.add("sender");
+							} else {
+								messageDiv.classList.add("receiver");
+							}
+
+							messageDiv.innerHTML = `<p>${message.messageText}</p>`;
 							messageContainer.appendChild(messageDiv);
 						});
-						messageContainer.scrollTop = messageContainer.scrollHeight; // Auto-scroll to latest message
+
+						// Auto-scroll to the latest message
+						messageContainer.scrollTop = messageContainer.scrollHeight;
 					})
 					.catch(error => console.error("Error loading messages:", error));
 		}
@@ -157,38 +127,26 @@
 		sendMessageBtn.addEventListener("click", function () {
 			const messageText = messageInput.value.trim();
 			const receiver = receiverId.value;
-
-			if (!messageText || !receiver) {
-				alert("Please select a receiver and enter a message.");
-				return;
-			}
-
-			// Use FormData to send request parameters
-			const formData = new URLSearchParams();
-			formData.append("senderId", senderId);
-			formData.append("receiverId", receiver);
-			formData.append("messageText", messageText);
+			if (!messageText || !receiver) return;
 
 			fetch("/bisag/admin/chat/send", {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded"
-				},
-				body: formData
-			})
-					.then(response => {
-						if (response.ok) {
-							messageInput.value = ""; // Clear input after sending
-							loadMessages(); // Reload messages
-						} else {
-							console.error("Failed to send message.");
-						}
-					})
-					.catch(error => console.error("Error sending message:", error));
+				headers: { "Content-Type": "application/x-www-form-urlencoded" },
+				body: new URLSearchParams({ receiverId: receiver, messageText })
+			}).then(response => {
+				if (response.ok) {
+					loadMessages();
+				}
+			});
+
+			messageInput.value = "";
 		});
 
-		// Auto-refresh messages every 5 seconds
-		setInterval(loadMessages, 5000);
+		// Auto-refresh chat every 3 seconds
+		setInterval(loadMessages, 3000);
+
+		// Load messages when receiver is selected
+		receiverId.addEventListener("change", loadMessages);
 	});
 </script>
 

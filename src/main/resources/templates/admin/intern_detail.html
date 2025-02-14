@@ -225,6 +225,18 @@ iframe {
 						<td><iframe th:src="@{/bisag/admin/intern/documents/icardForm/{id}(id=${intern.get().internId})}" width="300" height="200"></iframe></td>
 					</tr>
 					<tr>
+						<th>Project Definition Form</th>
+						<td><iframe th:src="@{/bisag/admin/intern/documents/projectDefinitionForm/{id}(id=${intern.get().internId})}" width="300" height="200"></iframe></td>
+					</tr>
+					<tr>
+						<th>Extra Form</th>
+						<td><iframe th:src="@{/bisag/admin/intern/documents/extraForm/{id}(id=${intern.get().internId})}" width="300" height="200"></iframe></td>
+					</tr>
+					<tr>
+						<th>Extra Form 2</th>
+						<td><iframe th:src="@{/bisag/admin/intern/documents/extraForm2/{id}(id=${intern.get().internId})}" width="300" height="200"></iframe></td>
+					</tr>
+					<tr>
 						<th>Cancellation Status</th>
 						<td><input type="text" name="cancellationStatus"
 							th:value="${intern.get().cancellationStatus != null ? intern.get().cancellationStatus : 'null'}" class="no-border" readonly></td>

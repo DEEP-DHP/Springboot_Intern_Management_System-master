@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Assignment List</title>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const adminOrGuideId = "admin123"; // Replace dynamically
+      fetch(`/bisag/admin/tasks/assignedBy/${adminOrGuideId}`)
+              .then(response => response.json())
+              .then(data => {
+                const taskTable = document.getElementById("taskTable");
+                data.forEach(task => {
+                  let statusText = task.status;
+                  const currentDate = new Date().toISOString().split("T")[0];
+
+                  if (task.status === "Pending" && task.endDate < currentDate) {
+                    statusText = "Late + Pending";
+                  } else if (task.status === "Completed") {
+                    statusText = "Completed (On Time)";
+                  }
+
+                  let row = `<tr>
+                            <td>${task.intern.id}</td>
+                            <td>${task.taskDescription}</td>
+                            <td>${task.startDate}</td>
+                            <td>${task.endDate}</td>
+                            <td>${statusText}</td>
+                            <td>
+                                ${task.proofAttachment ? `<a href="/admin/tasks/proof/${task.id}" target="_blank">View</a>` : "No Proof"}
+                            </td>
+                            <td>
+                                ${task.status === "Submitted for Approval" ?
+                          `<button onclick="approveTask(${task.id})">Approve</button>` : "N/A"}
+                            </td>
+                        </tr>`;
+                  taskTable.innerHTML += row;
+                });
+              })
+              .catch(error => console.error("Error fetching tasks:", error));
+    });
+
+    function approveTask(taskId) {
+      fetch(`/admin/tasks/approve/${taskId}`, { method: "POST" })
+              .then(response => response.text())
+              .then(data => alert(data))
+              .catch(error => console.error("Error approving task:", error));
+    }
+  </script>
+</head>
+<body>
+<h2>Assigned Tasks</h2>
+<table border="1">
+  <thead>
+  <tr>
+    <th>Intern ID</th>
+    <th>Task Description</th>
+    <th>Start Date</th>
+    <th>End Date</th>
+    <th>Status</th>
+    <th>Proof</th>
+    <th>Approve</th>
+  </tr>
+  </thead>
+  <tbody id="taskTable"></tbody>
+</table>
+</body>
+</html>
