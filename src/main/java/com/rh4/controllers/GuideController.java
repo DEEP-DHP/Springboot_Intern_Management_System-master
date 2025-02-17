@@ -60,9 +60,13 @@ public class GuideController {
     private TaskAssignmentRepo taskAssignmentRepo;
     @Autowired
             private TaskAssignmentService taskAssignmentService;
+    @Autowired
+            private FieldService fieldService;
     Intern internFromUploadFileMethod;
     int CurrentWeekNo;
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private InternApplicationService internApplicationService;
 
     public static String encodePassword(String rawPassword) {
         return passwordEncoder.encode(rawPassword);
@@ -530,7 +534,7 @@ public class GuideController {
 
         return "guide/task_assignments"; // Ensure this matches your actual HTML file
     }
-    // ✅ Assign a New Task
+    //  Assign a New Task
     @PostMapping("/tasks/assign")
     public String assignTask(
             @RequestParam("intern") String intern,
@@ -565,16 +569,16 @@ public class GuideController {
             // Handle exception silently
         }
 
-        return "redirect:/bisag/guide/tasks_assignments";  // ✅ Redirects to the same task assignment page
+        return "redirect:/bisag/guide/tasks_assignments";
     }
 
-    // ✅ Get Tasks Assigned by Admin/Guide
+    //  Get Tasks Assigned by Admin/Guide
     @GetMapping("/tasks/assignedBy/{assignedById}")
     public ResponseEntity<List<TaskAssignment>> getTasksAssignedBy(@PathVariable("assignedById") String assignedById) {
         return ResponseEntity.ok(taskAssignmentService.getTasksAssignedBy(assignedById));
     }
 
-    // ✅ Approve Task Completion
+    //  Approve Task Completion
     @PostMapping("/tasks/approve/{taskId}")
     public ResponseEntity<String> approveTask(@PathVariable("taskId") Long taskId) {
         Optional<TaskAssignment> optionalTask = taskAssignmentService.getTaskById(taskId);
@@ -641,5 +645,111 @@ public class GuideController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "An error occurred: " + e.getMessage()));
         }
+    }
+
+    @PostMapping("/intern_application/approved_intern/ans")
+    public String approvedInterns(@RequestParam String message, @RequestParam long id, @RequestParam String finalStatus) {
+        System.out.println("id: " + id + ", finalStatus: " + finalStatus);
+
+        Optional<InternApplication> intern = internService.getInternApplication(id);
+        intern.get().setFinalStatus(finalStatus);
+        internService.addInternApplication(intern.get());
+
+        if (finalStatus.equals("failed")) {
+
+        } else {
+            String finalMessage = message + "\n" + "Username: " + intern.get().getFirstName() +
+                    intern.get().getLastName() + "\n Password: " + intern.get().getFirstName() + "_" + intern.get().getId();
+        }
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Updated Final Status",
+                    "Admin with ID: " + admin.getAdminId() + " updated final status of intern with ID: " + id + " to " + finalStatus);
+        }
+
+        return "redirect:/bisag/guide/intern_application/approved_interns";
+    }
+
+    @GetMapping("/approved_interns")
+    public ModelAndView approvedInterns(Model model) {
+        ModelAndView mv = new ModelAndView();
+
+        // Get the logged-in guide's username from session
+        String username = (String) session.getAttribute("username");
+        Guide guide = guideService.getGuideByUsername(username);
+
+        if (guide != null) {
+            long guideId = guide.getGuideId();
+
+            // Fetch interns assigned to this guide
+            List<InternApplication> intern = internApplicationService.getApprovedInternsByGuideId(guideId);
+
+            mv.addObject("intern", intern);
+            session.setAttribute("id", guideId);
+
+            logService.saveLog(String.valueOf(guideId),
+                    "View Shortlisted Intern Applications",
+                    "Guide " + guide.getName() + " accessed the shortlisted intern applications page.");
+        } else {
+            System.out.println("Error: Guide not found for logging!");
+            mv.addObject("interns", List.of()); // Empty list if guide not found
+        }
+
+        mv.setViewName("guide/approved_interns");
+        return mv;
+    }
+
+    @GetMapping("/intern_application/{id}")
+    public ModelAndView internApplication(@PathVariable("id") long id, Model model) {
+        System.out.println("id" + id);
+        ModelAndView mv = new ModelAndView();
+
+        Optional<InternApplication> intern = internService.getInternApplication(id);
+        List<Guide> guides = guideService.getGuide();
+
+        Guide signedInGuide = getSignedInGuide();
+        if (signedInGuide != null) {
+            logService.saveLog(String.valueOf(signedInGuide.getGuideId()), "View Intern Application Details",
+                    "Guide " + signedInGuide.getName() + " viewed the details of Intern Application with ID: " + id);
+        } else {
+            System.out.println("Error: Signed-in guide not found for logging!");
+        }
+
+        // Adding attributes to the ModelAndView for rendering the page
+        mv.addObject("intern", intern);
+        model.addAttribute("guides", guides);
+
+        List<College> colleges = fieldService.getColleges();
+        List<Domain> domains = fieldService.getDomains();
+        List<Branch> branches = fieldService.getBranches();
+        mv.addObject("colleges", colleges);
+        mv.addObject("domains", domains);
+        mv.addObject("branches", branches);
+
+        mv.setViewName("guide/intern_application_detail");
+        return mv;
+    }
+    @PostMapping("/intern_application/ans")
+    public String internApplicationSubmission(@RequestParam String message, @RequestParam long id,
+                                              @RequestParam String status, @RequestParam String finalStatus) {
+        System.out.println("id: " + id + ", status: " + status);
+
+        Optional<InternApplication> intern = internService.getInternApplication(id);
+
+        if (intern.isPresent()) {
+            intern.get().setStatus(status);
+            intern.get().setFinalStatus(finalStatus);
+            internService.addInternApplication(intern.get());
+
+            logService.saveLog(String.valueOf(id), "Updated application status for intern", "Status Change");
+
+            // Send email notifications based on status
+            if (status.equals("rejected")) {
+            } else {
+            }
+        }
+        return "redirect:/bisag/guide/approved_interns";
     }
     }

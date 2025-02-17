@@ -109,6 +109,8 @@ public class AdminController {
     private TaskAssignmentService taskAssignmentService;
     @Autowired
     private TaskAssignmentRepo taskAssignmentRepo;
+    @Autowired
+    private FeedBackService feedbackService;
 
 
     @Value("${app.storage.base-dir}")
@@ -465,6 +467,7 @@ public class AdminController {
         ModelAndView mv = new ModelAndView();
 
         Optional<InternApplication> intern = internService.getInternApplication(id);
+        List<Guide> guides = guideService.getGuide();
 
         Admin signedInAdmin = getSignedInAdmin();
         if (signedInAdmin != null) {
@@ -476,6 +479,8 @@ public class AdminController {
 
         // Adding attributes to the ModelAndView for rendering the page
         mv.addObject("intern", intern);
+        model.addAttribute("guides", guides);
+
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
         List<Branch> branches = fieldService.getBranches();
@@ -1352,6 +1357,8 @@ public class AdminController {
             intern.get().setSemester(internApplication.getSemester());
             intern.get().setJoiningDate(internApplication.getJoiningDate());
             intern.get().setCompletionDate(internApplication.getCompletionDate());
+            intern.get().setGuideName(internApplication.getGuideName());
+            intern.get().setGuideId(internApplication.getGuideId());
 
             logService.saveLog(String.valueOf(id), "Updated intern application details", "InternApplication Update");
         } else {
@@ -2541,8 +2548,8 @@ public ModelAndView cancellationRequests(Model model) {
         return "redirect:/logout";
     }
 
-    //-------------------------- View all thesis records-----------------------------------------------------------------------------------------------------------------
-    //--------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------- View all thesis records-------------------------------
+    //---------------------------------------------------------------------------------
 //    @GetMapping("/thesis")
 //    public String viewThesisList(Model model) {
 //        List<Thesis> thesisList = thesisService.getAllTheses();
@@ -2687,7 +2694,8 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         return "admin/logs";
     }
 
-    // Get intern activity logs----------------------------------------------------------------
+    // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_Get activity logs-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+    //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     @GetMapping("/activity_logs")
     public String getInternActivityLogs(Model model) {
         List<Log> logs = logService.getAllLogs();
@@ -2719,7 +2727,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         logInternAction(internId, "Updated Profile", "Changed Email: " + newEmail + ", Phone: " + newPhone);
     }
 
-    // ========================== COMPANY VERIFICATION REQUESTS ========================== //
+    // ========================== COMPANY VERIFICATION REQUESTS ==========================
     //View all pending verification requests
     @GetMapping("/verification_requests")
     public ModelAndView viewVerificationRequests(Model model, HttpSession session) {
@@ -3024,7 +3032,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             RedirectAttributes redirectAttributes) {
 
         List<RRecord> existingRecords = recordService.findByInternId(internId);
-        if (!existingRecords.isEmpty()) {  // 🔹 CORRECTED: Check if list is not empty
+        if (!existingRecords.isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "Intern already relieved!");
             return "redirect:/bisag/admin/relieving_records_list";
         }
@@ -3153,13 +3161,13 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
     @GetMapping("/getAllGuides")
     @ResponseBody
     public ResponseEntity<List<Map<String, String>>> getAllGuides() {
-        List<Guide> guides = guideService.findAllGuides();  // Use the correct method
+        List<Guide> guides = guideService.findAllGuides();
         List<Map<String, String>> guideList = new ArrayList<>();
 
         for (Guide guide : guides) {
             Map<String, String> guideMap = new HashMap<>();
-            guideMap.put("id", String.valueOf(guide.getGuideId())); // Convert Long to String
-            guideMap.put("name", guide.getName()); // Fetch guide name
+            guideMap.put("id", String.valueOf(guide.getGuideId()));
+            guideMap.put("name", guide.getName());
             guideList.add(guideMap);
         }
 
@@ -3283,7 +3291,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         return "admin/undertaking_form"; // Ensure the HTML file exists
     }
 
-    // ✅ Corrected POST method to add undertaking form
+    // Corrected POST method to add undertaking form
     @PostMapping("/add_undertaking")
     public String addUndertaking(@RequestParam String rules) {
         Undertaking undertaking = new Undertaking();
@@ -3293,7 +3301,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         return "redirect:/bisag/admin/undertaking"; // Redirect after form submission
     }
 
-    // ✅ Corrected method for updating the undertaking form
+    // Corrected method for updating the undertaking form
     @PostMapping("/update_undertaking/{id}")
     public String updateUndertaking(@PathVariable Long id, @RequestParam String content) {
         Undertaking undertaking = undertakingRepo.findById(id).orElseThrow(() -> new RuntimeException("Undertaking not found"));
@@ -3301,7 +3309,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         undertakingRepo.save(undertaking);
         return "redirect:/bisag/admin/undertaking"; // Redirect to avoid form resubmission issues
     }
-    // ✅ Fetch the latest Undertaking Form content for Interns
+    // Fetch the latest Undertaking Form content for Interns
     @GetMapping("/undertaking-content")
     @ResponseBody
     public String getUndertakingContent() {
@@ -3318,7 +3326,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     private static final String STORAGE_PATH = "/Users/pateldeep/Desktop/Coding/Springboot_Intern_Management_System-master-main/src/main/resources/static/files/thesis-storage/";
 
-    // ✅ Upload Thesis PDF
+    //  Upload Thesis PDF
     @PostMapping("/upload-thesis")
     public String uploadThesis(@RequestParam("thesisTitle") String thesisTitle,
                                @RequestParam("allowedInternId") String allowedInternId,
@@ -3353,7 +3361,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         }
     }
 
-    // ✅ Fetch List of Uploaded Theses
+    //  Fetch List of Uploaded Theses
     @GetMapping("/thesis-storage")
     public String viewThesisStorage(Model model) {
         List<ThesisStorage> thesisList = thesisStorageRepo.findAll();
@@ -3361,7 +3369,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         return "admin/thesis_storage";
     }
 
-    // ✅ Generate Shareable Link
+    //  Generate Shareable Link
     @GetMapping("/generate-thesis-link/{id}")
     @ResponseBody
     public String generateThesisLink(@PathVariable Long id) {
@@ -3372,7 +3380,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         return "localhost:8080/bisag/admin/view-thesis/" + id;
     }
 
-    // ✅ Download/View Thesis PDF
+    //  Download/View Thesis PDF
     @GetMapping("/view-thesis/{id}")
     public ResponseEntity<Resource> viewThesis(@PathVariable Long id) {
         ThesisStorage thesis = thesisStorageRepo.findById(id).orElse(null);
@@ -3424,7 +3432,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
 
         if (admin == null) {
             System.out.println("Admin not found or session expired.");
-            return "redirect:/login"; // Redirect to login if admin is null
+            return "redirect:/login";
         }
 
         model.addAttribute("loggedInAdmin", admin);
@@ -3440,7 +3448,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         model.addAttribute("interns", interns);
         model.addAttribute("groups", groups);
 
-        return "admin/query_to_guide"; // Thymeleaf template
+        return "admin/query_to_guide";
     }
 
     // Admin sends a message
@@ -3456,7 +3464,6 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         return ResponseEntity.ok(message);
     }
 
-    // Admin fetches chat history
     // Admin fetches chat history (both sent and received messages)
     @GetMapping("/chat/history")
     public ResponseEntity<List<Message>> getChatHistoryAsAdmin(@RequestParam String receiverId) {
@@ -3478,9 +3485,9 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         // Add the task list to the model
         model.addAttribute("tasks", tasks);
 
-        return "admin/task_assignments"; // Ensure this matches your actual HTML file
+        return "admin/task_assignments";
     }
-    // ✅ Assign a New Task
+    //  Assign a New Task
     @PostMapping("/tasks/assign")
     public String assignTask(
             @RequestParam("intern") String intern,
@@ -3515,16 +3522,16 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             // Handle exception silently
         }
 
-        return "redirect:/bisag/admin/tasks_assignments";  // ✅ Redirects to the same task assignment page
+        return "redirect:/bisag/admin/tasks_assignments";
     }
 
-    // ✅ Get Tasks Assigned by Admin/Guide
+    //  Get Tasks Assigned by Admin/Guide
     @GetMapping("/tasks/assignedBy/{assignedById}")
     public ResponseEntity<List<TaskAssignment>> getTasksAssignedBy(@PathVariable("assignedById") String assignedById) {
         return ResponseEntity.ok(taskAssignmentService.getTasksAssignedBy(assignedById));
     }
 
-    // ✅ Approve Task Completion
+    //  Approve Task Completion
     @PostMapping("/tasks/approve/{taskId}")
     public ResponseEntity<String> approveTask(@PathVariable("taskId") Long taskId) {
         Optional<TaskAssignment> optionalTask = taskAssignmentService.getTaskById(taskId);
@@ -3583,7 +3590,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             }
 
             TaskAssignment task = optionalTask.get();
-            task.setStatus(newStatus); // Updating only the status
+            task.setStatus(newStatus);
             taskAssignmentService.saveTask(task);
 
             return ResponseEntity.ok(Map.of("success", true, "message", "Status updated successfully"));
@@ -3591,6 +3598,16 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "An error occurred: " + e.getMessage()));
         }
+    }
+
+    //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+    //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_Feedback Module-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+    //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    @GetMapping("/feedback_form_list")
+    public String getAdminFeedbackList(Model model) {
+        List<Feedback> feedbacks = feedbackService.getFeedback();
+        model.addAttribute("feedbacks", feedbacks);
+        return "admin/feedback_form_list";
     }
 
 }
