@@ -140,7 +140,9 @@ tr.hover-element th div.dropdown .rounded button.btn-primary:hover {
 								<!-- Iterate over interns and display those associated with the current group -->
 								<tr th:each="intern : ${intern}" th:if="${intern.group != null && intern.group.id == group.id}">
 								
-									<td th:text="${intern.internId}"></td>
+									<td><a
+											th:href="@{'/bisag/guide/intern/' + ${intern.internId}}"><span
+											th:text="${intern.internId}"></span></a></td>
 									<td th:text="${intern.firstName}"></td>
 									<td th:text="${intern.email}"></td>
 								</tr>

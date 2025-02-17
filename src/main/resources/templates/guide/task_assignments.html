@@ -174,7 +174,7 @@
                   <td th:text="${#dates.format(task.endDate, 'yyyy-MM-dd')}"></td>
                   <td>
                     <span th:if="${task.proofAttachment != null}">
-                      <a th:href="@{'/bisag/admin/tasks/proof/' + ${task.id}}" target="_blank">View</a>
+                      <a th:href="@{'/bisag/guide/tasks/proof/' + ${task.id}}" target="_blank">View</a>
                     </span>
                     <span th:if="${task.proofAttachment == null}">No Proof Uploaded</span>
                   </td>
