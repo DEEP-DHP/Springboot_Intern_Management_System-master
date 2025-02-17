@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.rh4.entities.InternApplication;
@@ -30,4 +31,6 @@ public interface InternApplicationRepo extends JpaRepository<InternApplication, 
 	@Query("select COUNT(*) from InternApplication where status='approved' and finalStatus='passed' and groupCreated = false")
 	public long countByGroupCreated();
 
+	@Query("SELECT i FROM InternApplication i WHERE i.guideId = :guideId AND i.finalStatus = :status")
+	List<InternApplication> findByGuideIdAndFinalStatus(@Param("guideId") long guideId, @Param("status") String status);
 }
