@@ -20,6 +20,6 @@ public class LogService {
     public List<Log> getAllLogs() {
         List<Log> logs = logRepo.findAll();
         System.out.println("Logs fetched: " + logs.size());
-        return logs;
+        return logRepo.findAllByOrderByTimestampDesc();
     }
 }

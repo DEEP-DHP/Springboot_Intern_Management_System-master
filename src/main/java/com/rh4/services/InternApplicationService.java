@@ -34,4 +34,7 @@ public class InternApplicationService {
     public List<InternApplication> getRejectedInterns() {
         return internApplicationRepo.getInternRejectedStatus(); // Fetch rejected interns from DB
     }
+    public List<InternApplication> getApprovedInternsByGuideId(long guideId) {
+        return internApplicationRepo.findByGuideIdAndFinalStatus(guideId, "pending");
+    }
 }
