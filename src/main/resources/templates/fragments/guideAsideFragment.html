@@ -48,8 +48,13 @@
 		<li class="nav-item"><a class="nav-link collapsed"
 								data-bs-target="#guide-components-nav" data-bs-toggle="collapse"
 								href="#"> <i class="bi bi-menu-button-wide"></i><span>Intern
-					Groups</span><i class="bi bi-chevron-down ms-auto"></i>
+					</span><i class="bi bi-chevron-down ms-auto"></i>
 		</a>
+			<ul id="guide-components-nav" class="nav-content collapse "
+				data-bs-parent="#guide-nav">
+				<li><a th:href="@{/bisag/guide/approved_interns}"><i
+						class="bi bi-circle"></i><span>Shortlisted Intern Application</span></a></li>
+			</ul>
 			<ul id="guide-components-nav" class="nav-content collapse "
 				data-bs-parent="#guide-nav">
 				<li><a th:href="@{/bisag/guide/intern_groups}"><i
