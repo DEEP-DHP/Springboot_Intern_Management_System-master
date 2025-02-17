@@ -134,7 +134,10 @@
               </thead>
               <tbody>
               <tr th:each="thesis : ${thesisList}"
-                  th:classappend="${#temporals.createNow().toLocalDate().isAfter(thesis.expectedDate.toLocalDate())} ? 'table-danger' : ''">
+                  th:classappend="${
+        #temporals.createNow().toLocalDate().isAfter(thesis.expectedDate.toLocalDate())
+        and thesis.actualReturnDate != null and thesis.actualReturnDate.toLocalDate().isAfter(thesis.expectedDate.toLocalDate())
+        ? 'table-danger' : ''}">
 
                 <td>
                   <a th:href="@{/bisag/admin/thesis_list_detail/{id}(id=${thesis.id})}">
@@ -158,32 +161,6 @@
                 </td>
               </tr>
               </tbody>
-<!--                <script>-->
-<!--                  function updateReturnDate(id) {-->
-<!--                    fetch(`/bisag/admin/update-return/${id}`, {-->
-<!--                      method: "POST", // Must match @PostMapping in backend-->
-<!--                      headers: {-->
-<!--                        "Content-Type": "application/json"-->
-<!--                      }-->
-<!--                    })-->
-<!--                            .then(response => {-->
-<!--                              if (!response.ok) {-->
-<!--                                throw new Error("Failed to update return date");-->
-<!--                              }-->
-<!--                              return response.json();-->
-<!--                            })-->
-<!--                            .then(data => {-->
-<!--                              alert("Actual return date updated successfully!");-->
-
-<!--                              // Update UI dynamically-->
-<!--                              document.getElementById(`location_${id}`).innerText = "Admin";-->
-<!--                            })-->
-<!--                            .catch(error => {-->
-<!--                              console.error("Error updating return date:", error);-->
-<!--                              alert("Failed to update return date");-->
-<!--                            });-->
-<!--                  }-->
-<!--                </script>-->
             </table>
           </div>
         </div>
@@ -246,13 +223,9 @@
         </script>
       </div>
     </div>
-
   </section>
-
-  <!-- Include the footer fragment -->
   <div th:replace="fragments/footerFragment :: footer"></div>
 </main>
-<!-- End #main -->
 <script
         src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
@@ -294,8 +267,7 @@
                       return $(row).children('td').eq(index).text();
                     }
                   });
-</script>
-<script>
+
   document.addEventListener('DOMContentLoaded', function() {
     var searchInput = document.getElementById('searchInput');
     var tableRows = document.querySelectorAll('.table tbody tr');

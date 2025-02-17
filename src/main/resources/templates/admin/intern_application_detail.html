@@ -137,6 +137,29 @@
                                th:value="${intern.get().completionDate}" class="no-border"></td>
                 </tr>
                 <tr>
+                    <th>Guide Name</th>
+                    <td>
+                        <select class="form-select" id="guideSelect" name="guideName">
+                            <option value="">Select Guide</option>
+                            <option th:each="guide : ${guides}"
+                                    th:text="${guide.name} + ' (' + ${guide.guideId} + ')'"
+                                    th:value="${guide.name}"
+                                    th:data-guideid="${guide.guideId}"
+                                    th:selected="${guide.name == intern.get().guideName}">
+                            </option>
+                        </select>
+                        <input type="hidden" id="guideId" name="guideId" th:value="${intern.get().guideId}">
+                    </td>
+                </tr>
+
+                <script>
+                    document.getElementById("guideSelect").addEventListener("change", function() {
+                        let selectedOption = this.options[this.selectedIndex];
+                        let guideId = selectedOption.getAttribute("data-guideid");
+                        document.getElementById("guideId").value = guideId;
+                    });
+                </script>
+                <tr>
                     <th>Is Active</th>
                     <td><label><input type="radio" name="isActive"
                                       value="true" th:checked="${intern.get().isActive}"

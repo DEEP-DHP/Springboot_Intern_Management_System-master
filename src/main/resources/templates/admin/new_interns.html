@@ -182,7 +182,29 @@
 							</tr>
 							</thead>
 							<tbody>
-							<tr th:each="intern : ${intern}">
+							<tr th:each="intern : ${intern}"
+								th:classappend="${intern.firstName == null or intern.firstName == '' or
+                     intern.lastName == null or intern.lastName == '' or
+                     intern.contactNo == null or intern.contactNo == '' or
+                     intern.email == null or intern.email == '' or
+                     intern.group.groupId == null or intern.group.groupId == '' or
+                     intern.domain == null or intern.domain == '' or
+                     intern.collegeName == null or intern.collegeName == '' or
+                     intern.branch == null or intern.branch == '' or
+                     intern.semester == null or intern.semester == '' or
+                     intern.permanentAddress == null or intern.permanentAddress == '' or
+                     intern.dateOfBirth == null or intern.dateOfBirth == '' or
+                     intern.gender == null or intern.gender == '' or
+                     intern.collegeGuideHodName == null or intern.collegeGuideHodName == '' or
+                     intern.degree == null or intern.degree == '' or
+                     intern.aggregatePercentage == null or intern.aggregatePercentage == '' or
+                     intern.projectDefinitionName == null or intern.projectDefinitionName == '' or
+                     intern.joiningDate == null or intern.joiningDate == '' or
+                     intern.completionDate == null or intern.completionDate == '' or
+                     intern.usedResource == null or intern.usedResource == '' or
+                     intern.createdAt == null or intern.createdAt == '' or
+                     intern.updatedAt == null or intern.updatedAt == ''
+                     ? 'table-warning' : ''}">
 								<td><a
 										th:href="@{'/bisag/admin/intern/' + ${intern.internId}}"><span
 										th:text="${intern.internId}"></span></a></td>
