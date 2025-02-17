@@ -37,6 +37,9 @@ public class InternApplication {
     @Column(name = "branch_name")
     private String branch;
 
+    private String guideName;
+    private Long guideId;
+
     @Lob
     @Column(name = "passport_size_image", columnDefinition = "LONGBLOB")
     private byte[] passportSizeImage;
