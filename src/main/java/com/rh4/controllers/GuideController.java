@@ -572,6 +572,23 @@ public class GuideController {
         return "redirect:/bisag/guide/tasks_assignments";
     }
 
+    //View Task Details ID wise
+    @GetMapping("/task_details/{id}")
+    public String viewTaskDetails(@PathVariable Long id, Model model) {
+        TaskAssignment tasks = taskAssignmentRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task Assignment Not Found"));
+        model.addAttribute("tasks", tasks);
+
+        Guide guide = getSignedInGuide();
+        if (guide != null) {
+            String guideId = String.valueOf(guide.getGuideId());
+            logService.saveLog(guideId, "Viewed Task Details",
+                    "Guide " + guide.getName() + " viewed details of Task Assignment ID: " + id);
+        }
+
+        return "guide/task_details";
+    }
+
     //  Get Tasks Assigned by Admin/Guide
     @GetMapping("/tasks/assignedBy/{assignedById}")
     public ResponseEntity<List<TaskAssignment>> getTasksAssignedBy(@PathVariable("assignedById") String assignedById) {

@@ -76,6 +76,10 @@ public class InternController {
     @Autowired
     private TaskAssignmentRepo taskAssignmentRepo;
     @Autowired
+    private FeedBackService feedBackService;
+    @Autowired
+    private FeedbackRepo feedbackRepo;
+    @Autowired
     HttpSession session;
     @Autowired
     GroupRepo groupRepo;
@@ -895,7 +899,7 @@ public class InternController {
 
     // ========================= Intern Undertaking Acceptance ==========================
 
-    // ✅ Check if Intern has accepted the undertaking (Once in a lifetime)
+    //  Check if Intern has accepted the undertaking (Once in a lifetime)
     @GetMapping("/check-undertaking")
     public ResponseEntity<Boolean> checkUndertaking(HttpSession session) {
         String internId = (String) session.getAttribute("internId");
@@ -905,19 +909,19 @@ public class InternController {
         return ResponseEntity.ok(hasAccepted);
     }
 
-    // ✅ Display the Undertaking Form (Only if not accepted)
+    //  Display the Undertaking Form (Only if not accepted)
     @GetMapping("/undertaking")
     public ModelAndView showUndertakingForm(HttpSession session) {
         String internId = (String) session.getAttribute("internId");
 
-        // ✅ Check if intern has already accepted the undertaking
+        //  Check if intern has already accepted the undertaking
         boolean hasAccepted = undertakingRepo.existsByIntern(internId);
         if (hasAccepted) {
             return new ModelAndView("redirect:/bisag/intern/intern_dashboard"); // Redirect if already accepted
         }
 
         ModelAndView mv = new ModelAndView("intern/undertaking");
-        String undertakingContent = undertakingRepo.findLatestUndertakingContent(); // ✅ Fetch latest content
+        String undertakingContent = undertakingRepo.findLatestUndertakingContent();
 
         if (undertakingContent == null || undertakingContent.isEmpty()) {
             undertakingContent = "No undertaking content available.";
@@ -927,7 +931,7 @@ public class InternController {
         return mv;
     }
 
-    // ✅ Accept Undertaking (Save only if not already accepted)
+    //  Accept Undertaking (Save only if not already accepted)
     @PostMapping("/accept-undertaking")
     public ResponseEntity<Boolean> acceptUndertaking(HttpSession session) {
         String internId = (String) session.getAttribute("internId");
@@ -951,7 +955,7 @@ public class InternController {
         String latestContent = undertakingRepo.findLatestUndertakingContent();
         return (latestContent != null && !latestContent.isEmpty()) ? latestContent : "No undertaking content available.";
     }
-
+    //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-View Thesis PDF_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     @GetMapping("/view-thesis/{id}")
     public ResponseEntity<Resource> viewThesis(@PathVariable Long id, Principal principal) throws IOException {
@@ -963,10 +967,8 @@ public class InternController {
 
         ThesisStorage thesisStorage = optionalThesisStorage.get();
 
-        // Fetch the logged-in intern's email or username from Principal
         String emailOrUsername = principal.getName();
 
-        // Retrieve intern details from database using the email/username
         Optional<Intern> optionalIntern = Optional.ofNullable(internService.getInternByUsername(getUsername())); // Change this based on your login system
 
         if (optionalIntern.isEmpty()) {
@@ -974,20 +976,17 @@ public class InternController {
         }
 
         Intern loggedInIntern = optionalIntern.get();
-        String loggedInInternId = loggedInIntern.getInternId(); // Get the intern's actual ID
+        String loggedInInternId = loggedInIntern.getInternId();
 
-        // Compare the logged-in intern ID with the allowedInternId in ThesisStorage
         if (!loggedInInternId.equals(thesisStorage.getAllowedInternId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // Unauthorized access
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        // Check if file path is valid
         if (thesisStorage.getFilePath() == null || thesisStorage.getFilePath().isEmpty()) {
             System.err.println("Error: Thesis file path is null or empty for ID: " + id);
             return ResponseEntity.notFound().build();
         }
 
-        // Load the thesis PDF file
         Path filePath = Paths.get(thesisStorage.getFilePath());
         Resource resource = new UrlResource(filePath.toUri());
 
@@ -1028,7 +1027,6 @@ public class InternController {
             @RequestParam String senderId,
             @RequestParam String receiverId) {
 
-        // Ensure senderId is correctly mapped to actual intern ID
         Optional<Intern> intern = internService.findById(senderId);
         if (intern.isEmpty()) {
             return ResponseEntity.badRequest().build();
@@ -1040,7 +1038,6 @@ public class InternController {
         List<Message> messages = messageService.getChatHistory(internId, receiverId);
         messages.addAll(messageService.getChatHistory(receiverId, internId)); // Fetch messages in reverse order
 
-        // Sort messages by timestamp to maintain chronological order
         messages.sort(Comparator.comparing(Message::getTimestamp));
 
         return ResponseEntity.ok(messages);
@@ -1062,7 +1059,7 @@ public class InternController {
 
         return "intern/intern-tasks"; // Returns the intern's task list page
     }
-    // ✅ Get Tasks Assigned to a Specific Intern
+    //  Get Tasks Assigned to a Specific Intern
     @GetMapping("/tasks/{internId}")
     public String getInternTasks(@PathVariable("internId") String internId, Model model) {
         List<TaskAssignment> tasks = taskAssignmentService.getTasksByIntern(internId);
@@ -1070,7 +1067,7 @@ public class InternController {
         model.addAttribute("internId", internId); // Add internId for navigation
         return "intern-tasks"; // Renders the intern's task list page
     }
-    // ✅ Update Task Status by Intern
+    //  Update Task Status by Intern
     @PutMapping("/tasks/update-status/{taskId}")
     public ResponseEntity<Map<String, String>> updateTaskStatus(@PathVariable("taskId") Long taskId, @RequestBody Map<String, String> request) {
         String newStatus = request.get("status");
@@ -1090,13 +1087,11 @@ public class InternController {
         Map<String, String> response = new HashMap<>();
 
         try {
-            // Validate file
             if (file.isEmpty()) {
                 response.put("error", "File is empty");
                 return ResponseEntity.badRequest().body(response);
             }
 
-            // Fetch task from DB
             Optional<TaskAssignment> taskOpt = taskAssignmentRepo.findById(taskId);
             if (!taskOpt.isPresent()) {
                 response.put("error", "Task not found");
@@ -1112,9 +1107,8 @@ public class InternController {
             Path filePath = Paths.get(uploadDir, fileName);
             Files.write(filePath, file.getBytes());
 
-            // Update database with file path
             TaskAssignment task = taskOpt.get();
-            task.setProofAttachment(fileName);  // Store filename instead of byte[]
+            task.setProofAttachment(fileName);
             taskAssignmentRepo.save(task);
 
             response.put("success", "Proof uploaded successfully");
@@ -1134,7 +1128,6 @@ public class InternController {
         }
 
         try {
-            // Fetch file from local storage
             String fileName = taskOpt.get().getProofAttachment();
             Path filePath = Paths.get("uploads/task_proofs/", fileName);
             Resource resource = new UrlResource(filePath.toUri());
@@ -1151,4 +1144,45 @@ public class InternController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+    //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+    //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_Feedback Module-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+    //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+    @GetMapping("/feedback_form")
+    public String showFeedbackForm(Model model) {
+        Intern currentIntern = getSignedInIntern();
+
+        List<Intern> internList = new ArrayList<>();
+        internList.add(currentIntern);
+
+        Feedback feedback = new Feedback();
+        feedback.setInternId(currentIntern.getInternId());
+        feedback.setFirstName(currentIntern.getFirstName());  // Set firstName
+        feedback.setLastName(currentIntern.getLastName());    // Set lastName
+
+        model.addAttribute("interns", internList);
+        model.addAttribute("feedback", feedback);
+        return "intern/feedback_form";
+    }
+
+    @PostMapping("/feedback_form")
+    public String submitFeedback(@ModelAttribute Feedback feedback) {
+        try {
+            Intern currentIntern = getSignedInIntern();
+            System.out.println("Current Intern ID: " + currentIntern.getInternId());
+            System.out.println("Current Intern First Name: " + currentIntern.getFirstName());
+            System.out.println("Current Intern Last Name: " + currentIntern.getLastName());
+
+            feedback.setInternId(currentIntern.getInternId());
+            feedback.setFirstName(currentIntern.getFirstName());
+            feedback.setLastName(currentIntern.getLastName());
+
+            feedBackService.saveFeedback(feedback);
+            return "redirect:/bisag/intern/intern_dashboard";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "redirect:/bisag/intern/feedback_form?error=true";
+        }
+    }
+
 }
