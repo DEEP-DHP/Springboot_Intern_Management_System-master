@@ -155,6 +155,7 @@
               <table class="table datatable table-bordered">
                 <thead>
                 <tr>
+                  <th>ID</th>
                   <th>Intern ID</th>
                   <th>Assigned By</th>
                   <th>Task Description</th>
@@ -167,6 +168,11 @@
                 </thead>
                 <tbody>
                 <tr th:each="task : ${tasks}">
+                  <td>
+                    <a th:href="@{/bisag/admin/task_details/{id}(id=${task.id})}">
+                      <span th:text="${task.id}"></span>
+                    </a>
+                  </td>
                   <td th:text="${task.intern}"></td>
                   <td th:text="${task.assignedByRole}"></td>
                   <td th:text="${task.taskDescription}"></td>

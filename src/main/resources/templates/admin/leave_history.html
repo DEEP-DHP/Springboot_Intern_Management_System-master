@@ -90,6 +90,7 @@
                 <th>Reason</th>
                 <th>Guide Approval</th>
                 <th>Admin Approval</th>
+                <th>Reason of Rejection</th>
                 <th>Status</th>
               </tr>
               </thead>
@@ -102,6 +103,7 @@
                 <td th:text="${leave.subject}"></td>
                 <td th:text="${leave.guideApproval} ? '✔️ Yes' : '❌ No'"></td>
                 <td th:text="${leave.adminApproval} ? '✔️ Yes' : '❌ No'"></td>
+                <td th:text="${leave.remarks}"></td>
                 <td th:text="${leave.status}"></td>
               </tr>
               </tbody>

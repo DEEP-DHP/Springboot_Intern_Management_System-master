@@ -51,13 +51,9 @@
     }
   </style>
 </head>
-
 <body>
-
-<!-- Include the header fragment -->
 <div th:replace="fragments/headerFragment :: header"></div>
 
-<!-- Include the aside fragment -->
 <div th:replace="fragments/asideFragment :: aside"></div>
 
 <main id="main" class="main">
@@ -71,16 +67,12 @@
       </ol>
     </nav>
   </div>
-  <!-- End Page Title -->
-
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Update Thesis</h5>
-
-            <!-- Update Thesis Form -->
             <form th:action="@{/bisag/admin/thesis/update/{id}(id=${thesis.id})}" method="post">
               <input type="hidden" name="id" th:value="${thesis.id}" />
               <div class="mb-3">
@@ -99,19 +91,12 @@
                 <a href="/bisag/admin/thesis_list" class="btn btn-secondary">Cancel</a>
               </div>
             </form>
-
           </div>
         </div>
-
       </div>
     </div>
   </section>
-
-  <!-- Include the footer fragment -->
   <div th:replace="fragments/footerFragment :: footer"></div>
 </main>
-<!-- End #main -->
-
 </body>
-
 </html>

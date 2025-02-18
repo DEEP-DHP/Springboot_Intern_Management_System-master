@@ -143,11 +143,33 @@
                     <button type="submit" class="btn-approve">Approve</button>
                   </form>
 
-                  <form th:action="@{/bisag/admin/reject_leave/{id}(id=${leave.id})}" method="post">
+                  <form class="reject-form" th:action="@{/bisag/admin/reject_leave/{id}(id=${leave.id})}" method="post" onsubmit="return validateRemarks(this);">
                     <input type="hidden" name="role" th:value="${role}" />
-                    <button type="submit" class="btn-reject">Reject</button>
+                    <button type="button" class="btn-reject" onclick="showRemarksBox(this)">Reject</button>
+                    <input type="text" name="remarks" class="remarks-box form-control mt-2" placeholder="Enter remarks" style="display: none;" required>
+                    <button type="submit" class="btn btn-danger mt-2 submit-reject" style="display: none;">Confirm Reject</button>
                   </form>
                 </td>
+                <script>
+                  function showRemarksBox(button) {
+                    let form = button.closest(".reject-form");
+                    let remarksBox = form.querySelector(".remarks-box");
+                    let submitBtn = form.querySelector(".submit-reject");
+
+                    remarksBox.style.display = "block";
+                    submitBtn.style.display = "block";
+                    remarksBox.focus();
+                  }
+
+                  function validateRemarks(form) {
+                    let remarksBox = form.querySelector(".remarks-box");
+                    if (remarksBox.value.trim() === "") {
+                      alert("Remarks are required for rejection.");
+                      return false;
+                    }
+                    return true;
+                  }
+                </script>
               </tr>
               </tbody>
             </table>

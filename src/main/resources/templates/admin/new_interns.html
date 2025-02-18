@@ -177,12 +177,14 @@
 								<th><i class="fa-solid fa-sort mx-2"></i>Used Resources</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Created At</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Updated At</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Cancellation
-									Status</th>
+<!--								<th><i class="fa-solid fa-sort mx-2"></i>Cancellation Status</th>-->
+								<th><i class="fa-solid fa-sort mx-2"></i>Current Status</th>
+
 							</tr>
 							</thead>
 							<tbody>
 							<tr th:each="intern : ${intern}"
+								th:class="${intern.cancellationStatus == 'Cancelled' ? 'table-danger' : ''}"
 								th:classappend="${intern.firstName == null or intern.firstName == '' or
                      intern.lastName == null or intern.lastName == '' or
                      intern.contactNo == null or intern.contactNo == '' or
@@ -235,7 +237,15 @@
 								<td th:text="${intern.usedResource}"></td>
 								<td th:text="${intern.createdAt}"></td>
 								<td th:text="${intern.updatedAt}"></td>
-								<td th:text="${intern.cancellationStatus}"></td>
+<!--								<td th:text="${intern.cancellationStatus}"></td>-->
+								<td th:with="today=${#dates.createNow()}"
+									th:text="${intern.cancellationStatus == 'Cancelled'} ? 'Cancelled' :
+             (${intern.completionDate != null and intern.joiningDate != null} ?
+             (${#dates.format(today, 'yyyy-MM-dd') >= #dates.format(intern.joiningDate, 'yyyy-MM-dd') and
+               #dates.format(today, 'yyyy-MM-dd') <= #dates.format(intern.completionDate, 'yyyy-MM-dd')} ? 'Working' :
+              (${#dates.format(today, 'yyyy-MM-dd') > #dates.format(intern.completionDate, 'yyyy-MM-dd')} ? 'Completed' : intern.status)) :
+             intern.status)">
+								</td>
 							</tr>
 							</tbody>
 						</table>

@@ -135,8 +135,11 @@
               <tbody>
               <tr th:each="thesis : ${thesisList}"
                   th:classappend="${
-        #temporals.createNow().toLocalDate().isAfter(thesis.expectedDate.toLocalDate())
-        and thesis.actualReturnDate != null and thesis.actualReturnDate.toLocalDate().isAfter(thesis.expectedDate.toLocalDate())
+        thesis.expectedDate != null
+        and #temporals.createNow().toLocalDate().isAfter(thesis.expectedDate.toLocalDate())
+        and thesis.actualReturnDate != null
+        and thesis.actualReturnDate.toLocalDate().isAfter(thesis.expectedDate.toLocalDate())
+        and thesis.location == 'Intern'
         ? 'table-danger' : ''}">
 
                 <td>

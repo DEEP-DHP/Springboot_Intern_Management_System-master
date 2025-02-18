@@ -12,23 +12,25 @@
           integrity="sha384-T3c6CoIi6uLrA9TneNEoa0Yz1rzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
           crossorigin="anonymous">
 
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- jsPDF AutoTable Plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         .form-floating {
             margin-bottom: 20px;
         }
-
         .form-group {
             margin-bottom: 20px;
         }
-
         .card-body {
             padding: 30px;
         }
-
         .breadcrumb-item a {
             font-weight: bold;
         }
-
         .table-responsive {
             margin-top: 20px;
         }
@@ -36,11 +38,8 @@
 </head>
 
 <body>
-
-<!-- Include the header fragment -->
 <div th:replace="fragments/headerFragment :: header"></div>
 
-<!-- Include the aside fragment -->
 <div th:replace="fragments/asideFragment :: aside"></div>
 
 <main id="main" class="main">
@@ -55,7 +54,6 @@
         </nav>
     </div>
     <!-- End Page Title -->
-
     <section class="section">
         <div class="row">
             <div class="col-lg-12">
@@ -85,10 +83,15 @@
                         </form>
                         <!-- End Upload Form -->
 
+                        <!-- PDF Download Button -->
+                        <div class="text-center mt-4">
+                            <button class="btn btn-success" id="downloadPDF">Download as PDF</button>
+                        </div>
+
                         <!-- Attendance Table -->
                         <div class="table-responsive">
                             <h5 class="card-title mt-4">Intern Attendance Details</h5>
-                            <table class="table datatable table-bordered">
+                            <table class="table datatable table-bordered" id="attendanceTable">
                                 <thead>
                                 <tr>
                                     <th>Intern ID</th>
@@ -128,6 +131,22 @@
     <div th:replace="fragments/footerFragment :: footer"></div>
 </main>
 <!-- End #main -->
+
+<!-- JavaScript for PDF Download -->
+<script>
+    document.getElementById("downloadPDF").addEventListener("click", function() {
+        const { jsPDF } = window.jspdf;  // Access jsPDF from the global object
+
+        // Create a new instance of jsPDF
+        const doc = new jsPDF();
+
+        // Generate the table in the PDF
+        doc.autoTable({ html: '#attendanceTable' });
+
+        // Download the PDF
+        doc.save('attendance_records.pdf');
+    });
+</script>
 
 </body>
 </html>
