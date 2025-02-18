@@ -28,6 +28,8 @@ public class LeaveApplication {
     @Column(name = "fromDate")
     private LocalDate fromDate;
 
+    private String remarks;
+
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     @Column(name = "toDate")
     private LocalDate toDate;
@@ -52,13 +54,14 @@ public class LeaveApplication {
 
     public LeaveApplication() { super();}
 
-    public LeaveApplication(Long id, String internId, String subject, String body, LocalDate fromDate, LocalDate toDate, boolean guideApproval, boolean adminApproval, String status, LocalDateTime submittedOn, String leaveType) {
+    public LeaveApplication(Long id, String internId, String subject, String body, LocalDate fromDate, String remarks, LocalDate toDate, boolean guideApproval, boolean adminApproval, String status, LocalDateTime submittedOn, String leaveType) {
         super();
         this.id = id;
         this.internId = internId;
         this.subject = subject;
         this.body = body;
         this.fromDate = fromDate;
+        this.remarks = remarks;
         this.toDate = toDate;
         this.guideApproval = guideApproval;
         this.adminApproval = adminApproval;
@@ -153,6 +156,14 @@ public class LeaveApplication {
 
     public void setLeaveType(String leaveType) {
         this.leaveType = leaveType;
+    }
+
+    public String getRemarks() {
+        return remarks;
+    }
+
+    public void setRemarks(String remarks) {
+        this.remarks = remarks;
     }
 
     public void updateStatus() {

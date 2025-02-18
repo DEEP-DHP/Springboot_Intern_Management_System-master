@@ -137,6 +137,8 @@ public class Intern {
     @JoinColumn(name = "group_id", referencedColumnName = "id") // Reference GroupEntity primary key 'id'
     private GroupEntity group;
 
+    private String status;
+
     public Intern() {
         super();
     }
@@ -145,7 +147,7 @@ public class Intern {
                   String collegeName, String branch, byte[] collegeIcardImage, byte[] nocPdf, byte[] projectDefinitionForm, byte[] extraForm, byte[] extraForm2, byte[] resumePdf, int semester,
                   String permanentAddress, Date dateOfBirth, String gender, String collegeGuideHodName, String degree, Double aggregatePercentage, String projectDefinitionName, String cancellationStatus,
                   Guide guide, String domain, Date joiningDate, Date completionDate, String password, byte[] icardForm, byte[] registrationForm, byte[] securityForm,
-                  String usedResource, LocalDateTime createdAt, LocalDateTime updatedAt, GroupEntity group, boolean isActive) {
+                  String usedResource, LocalDateTime createdAt, LocalDateTime updatedAt, GroupEntity group, boolean isActive, String status) {
         super();
         this.internId = internId;
         this.firstName = firstName;
@@ -182,6 +184,7 @@ public class Intern {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.group = group;
+        this.status = status;
     }
 
     public Intern(String firstName, String lastName, String contactNo, String email, String collegeName, Date joiningDate, Date completionDate,
@@ -518,5 +521,13 @@ public class Intern {
 
     public void setExtraForm2(byte[] extraForm2) {
         this.extraForm2 = extraForm2;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
