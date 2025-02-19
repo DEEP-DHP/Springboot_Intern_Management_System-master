@@ -29,12 +29,12 @@
 									<h4><span>Your Last Leave</span></h4>
 									<h5>
                                             <span class="text-success small pt-1 fw-bold">Submitted on:
-<!--                                                <span th:text="${lastLeave != null ? #dates.format(lastLeave.submittedOn, 'dd/MM/yyyy - hh:mm a') : 'N/A'}"></span>-->
+												<!--                                                <span th:text="${lastLeave != null ? #dates.format(lastLeave.submittedOn, 'dd/MM/yyyy - hh:mm a') : 'N/A'}"></span>-->
                                             </span>
 									</h5>
 									<h5>
                                             <span class="text-success small pt-1 fw-bold">Subject:
-<!--                                                <span th:text="${lastLeave != null ? lastLeave.subject : 'N/A'}"></span>-->
+												<!--                                                <span th:text="${lastLeave != null ? lastLeave.subject : 'N/A'}"></span>-->
                                             </span>
 									</h5>
 								</div>
@@ -121,10 +121,10 @@ Your Sincerely,
 							<option value="Half Day">Half Day</option>
 						</select>
 					</div>
-<!--					<div class="form-group">-->
-<!--						<label for="proofDocument" class="form-label">Proof Doc (If Any):</label>-->
-<!--						<input type="file" class="form-control" id="proofDocument" name="proofDocument">-->
-<!--					</div>-->
+					<!--					<div class="form-group">-->
+					<!--						<label for="proofDocument" class="form-label">Proof Doc (If Any):</label>-->
+					<!--						<input type="file" class="form-control" id="proofDocument" name="proofDocument">-->
+					<!--					</div>-->
 
 					<div class="form-group mt-4">
 						<p>
@@ -169,8 +169,8 @@ Your Sincerely,
 						<td th:text="${leave.toDate}"></td>
 
 						<!--						<td th:text="${#dates.format(leave.submittedOn, 'dd/MM/yyyy')}"></td>-->
-<!--						<td th:text="${#dates.format(leave.fromDate, 'dd/MM/yyyy - hh:mm a')}"></td>-->
-<!--						<td th:text="${#dates.format(leave.toDate, 'dd/MM/yyyy - hh:mm a')}"></td>-->
+						<!--						<td th:text="${#dates.format(leave.fromDate, 'dd/MM/yyyy - hh:mm a')}"></td>-->
+						<!--						<td th:text="${#dates.format(leave.toDate, 'dd/MM/yyyy - hh:mm a')}"></td>-->
 						<td>
                                     <span th:class="${leave.status == 'Approved' ? 'text-success' : (leave.status == 'Rejected' ? 'text-danger' : 'text-warning')}"
 										  th:text="${leave.status}">
