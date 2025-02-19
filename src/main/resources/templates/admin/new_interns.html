@@ -179,6 +179,7 @@
 								<th><i class="fa-solid fa-sort mx-2"></i>Updated At</th>
 <!--								<th><i class="fa-solid fa-sort mx-2"></i>Cancellation Status</th>-->
 								<th><i class="fa-solid fa-sort mx-2"></i>Current Status</th>
+								<th><i class="fa-solid fa-sort mx-2"></i>Cancel Time</th>
 
 							</tr>
 							</thead>
@@ -245,6 +246,8 @@
                #dates.format(today, 'yyyy-MM-dd') <= #dates.format(intern.completionDate, 'yyyy-MM-dd')} ? 'Working' :
               (${#dates.format(today, 'yyyy-MM-dd') > #dates.format(intern.completionDate, 'yyyy-MM-dd')} ? 'Completed' : intern.status)) :
              intern.status)">
+								<td th:text="${intern.cancelTime}"></td>
+
 								</td>
 							</tr>
 							</tbody>

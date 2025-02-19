@@ -64,21 +64,23 @@
               <div class="row">
                 <div class="col-md-6">
                   <div class="form-floating">
+                    <input type="text" name="internName" class="form-control" id="internName"
+                           placeholder="Intern Name" required onkeyup="fetchInternDetailsByName()">
+                    <label for="internName">Intern Name</label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-floating">
                     <input type="text" name="internId" class="form-control" id="internId"
-                           placeholder="Intern ID" required onkeyup="fetchInternDetails()">
+                           placeholder="Intern ID" readonly>
                     <label for="internId">Intern ID</label>
                   </div>
                 </div>
                 <div class="col-md-6">
                   <div class="form-floating">
-                    <input type="text" name="internName" class="form-control" id="internName" placeholder="Intern Name" readonly>
-                    <label for="internName">Intern Name:</label>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-floating">
-                    <input type="text" name="internContact" class="form-control" id="internContact" placeholder="Intern Contact" readonly>
-                    <label for="internContact">Intern Contact:</label>
+                    <input type="text" name="internContact" class="form-control" id="internContact"
+                           placeholder="Intern Contact" readonly>
+                    <label for="internContact">Intern Contact</label>
                   </div>
                 </div>
                 <div class="col-md-6">
@@ -117,25 +119,30 @@
             </form>
 
             <script>
-              function fetchInternDetails() {
-                let internId = document.getElementById('internId').value; // Get intern ID from the input field
+              function fetchInternDetailsByName() {
+                let internName = document.getElementById('internName').value; // Get intern name from the input field
 
-                // Only proceed if an internId is provided
-                if (internId) {
-                  fetch(`/bisag/admin/get-intern-details/${internId}`)  // Make sure the URL is correct
-                          .then(response => response.json())  // Parse the JSON response
+                if (internName) {
+                  fetch(`/bisag/admin/get-intern-details-by-name/${internName}`)  // Call the new API
+                          .then(response => {
+                            if (!response.ok) {
+                              throw new Error('Intern not found');
+                            }
+                            return response.json();
+                          })
                           .then(data => {
                             if (data) {
-                              document.getElementById('internName').value = data.internName || ''; // Fill the intern name field
-                              document.getElementById('internContact').value = data.internContact || ''; // Fill the contact field
+                              document.getElementById('internId').value = data.internId || ''; // Autofill Intern ID
+                              document.getElementById('internContact').value = data.internContact || ''; // Autofill Contact
                             } else {
-                              // Clear fields if no data is returned
-                              document.getElementById('internName').value = '';
+                              document.getElementById('internId').value = '';
                               document.getElementById('internContact').value = '';
                             }
                           })
                           .catch(error => {
-                            console.error('Error fetching intern details:', error); // Log any error
+                            console.error('Error fetching intern details:', error);
+                            document.getElementById('internId').value = '';
+                            document.getElementById('internContact').value = '';
                           });
                 }
               }

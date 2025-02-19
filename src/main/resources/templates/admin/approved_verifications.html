@@ -40,7 +40,11 @@
                     <tbody>
                     <tr th:each="verification : ${verifications}">
                         <td th:text="${verification.id}"></td>
-                        <td th:text="${verification.internId}"></td>
+                        <td>
+                            <a th:href="@{'/bisag/admin/intern_verification_details/' + ${verification.internId}}">
+                                <span th:text="${verification.internId}"></span>
+                            </a>
+                        </td>
                         <td th:text="${verification.companyName}"></td>
                         <td th:text="${verification.email}"></td>
                         <td th:text="${verification.verifiedDate}"></td>
