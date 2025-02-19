@@ -108,8 +108,9 @@ public class AdminService {
 
 			if ("approve".equals(cancelAns)) {
 				// Handle approval
-				intern.setCancellationStatus("cancelled");
+				intern.setCancellationStatus("Cancelled");
 				intern.setIsActive(false);
+
 				// Save the intern to the cancelled table
 				Cancelled cancelledEntry = new Cancelled();
 				cancelledEntry.setTableName("intern");
@@ -118,6 +119,7 @@ public class AdminService {
 			} else if ("reject".equals(cancelAns)) {
 				// Handle rejection
 				intern.setCancellationStatus(null);
+				intern.setCancelTime(null); // Reset cancelTime to null
 			}
 
 			internService.updateCancellationStatus(intern);

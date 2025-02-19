@@ -237,4 +237,8 @@ public class InternService {
 				.orElse("Intern Not Found");
 	}
 
+	public Intern getInternByName(String internName) {
+		return internRepo.findByFirstName(internName);
+	}
+
 }
