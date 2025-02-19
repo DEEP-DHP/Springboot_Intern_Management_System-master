@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.rh4.entities.*;
 import com.rh4.repositories.*;
@@ -248,10 +249,16 @@ public class InternController {
     @PostMapping("/requestCancellation")
     public String requestCancellation(HttpSession session) {
         Intern intern = getSignedInIntern();
+
         intern.setCancellationStatus("requested");
+        intern.setCancelTime(LocalDateTime.now()); // Store current timestamp
+
         internService.updateCancellationStatus(intern);
+
         String internFullName = intern.getFirstName() + " " + intern.getLastName();
-        logService.saveLog(intern.getInternId(), "Cancellation Request Submitted", "Intern " + internFullName + " submitted cancellation request.");
+        logService.saveLog(intern.getInternId(), "Cancellation Request Submitted",
+                "Intern " + internFullName + " submitted cancellation request at " + intern.getCancelTime());
+
         return "redirect:/bisag/intern/intern_dashboard";
     }
 
@@ -260,9 +267,6 @@ public class InternController {
         // Fetch intern details by their ID
         Intern intern = internService.getInternById(id);
         String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
-
-//        String internFullName = intern.getFirstName() + " " + intern.getLastName();
-//        logService.saveLog(internId, "Viewed Image", internFullName + " viewed the image with ID: " + id);
 
         // Fetch the image data
         byte[] imageData = internService.getImageData(id);
@@ -1043,7 +1047,7 @@ public class InternController {
         return ResponseEntity.ok(messages);
     }
 
-    //Task Assignment Module
+    // View Assigned Tasks for Logged-in Intern
     @GetMapping("/tasks")
     public String viewInternTasks(Model model) {
         // Fetch the logged-in intern using the existing method
@@ -1055,16 +1059,31 @@ public class InternController {
 
         // Fetch tasks assigned to the logged-in intern
         List<TaskAssignment> tasks = taskAssignmentService.getTasksByIntern(loggedIntern.getInternId());
-        model.addAttribute("tasks", tasks);
+
+        // Filter out tasks marked as "Completed"
+        List<TaskAssignment> pendingTasks = tasks.stream()
+                .filter(task -> !"Completed".equalsIgnoreCase(task.getStatus()))
+                .collect(Collectors.toList());
+
+        model.addAttribute("tasks", pendingTasks);
 
         return "intern/intern-tasks"; // Returns the intern's task list page
     }
-    //  Get Tasks Assigned to a Specific Intern
+
+    // Get Tasks Assigned to a Specific Intern
     @GetMapping("/tasks/{internId}")
     public String getInternTasks(@PathVariable("internId") String internId, Model model) {
+        // Fetch tasks for the specified intern
         List<TaskAssignment> tasks = taskAssignmentService.getTasksByIntern(internId);
-        model.addAttribute("tasks", tasks);
+
+        // Filter out tasks marked as "Completed"
+        List<TaskAssignment> pendingTasks = tasks.stream()
+                .filter(task -> !"Completed".equalsIgnoreCase(task.getStatus()))
+                .collect(Collectors.toList());
+
+        model.addAttribute("tasks", pendingTasks);
         model.addAttribute("internId", internId); // Add internId for navigation
+
         return "intern-tasks"; // Renders the intern's task list page
     }
     //  Update Task Status by Intern
@@ -1123,11 +1142,12 @@ public class InternController {
     public ResponseEntity<Resource> getProofAttachment(@PathVariable Long taskId) {
         Optional<TaskAssignment> taskOpt = taskAssignmentRepo.findById(taskId);
 
-        if (!taskOpt.isPresent() || taskOpt.get().getProofAttachment() == null) {
+        if (taskOpt.isEmpty() || taskOpt.get().getProofAttachment() == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
 
         try {
+            // Fetch file from local storage
             String fileName = taskOpt.get().getProofAttachment();
             Path filePath = Paths.get("uploads/task_proofs/", fileName);
             Resource resource = new UrlResource(filePath.toUri());
@@ -1136,9 +1156,12 @@ public class InternController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
 
+            logService.saveLog(taskOpt.get().getAssignedById(), "Viewed Task Proof",
+                    "Intern ID " + taskOpt.get().getAssignedById() + " viewed proof for Task ID: " + taskId);
+
             return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                    .contentType(MediaType.APPLICATION_PDF)  // Ensure it's opened as a PDF
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"") // View in browser
                     .body(resource);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

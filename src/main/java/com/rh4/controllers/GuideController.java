@@ -184,7 +184,6 @@ public class GuideController {
             updatedGuide.setContactNo(guide.getContactNo());
             updatedGuide.setEmailId(guide.getEmailId());
 
-            // Save the updated guide entity
             guideService.updateGuide(updatedGuide, existingGuide);
 
             logService.saveLog(String.valueOf(updatedGuide.getGuideId()), "Guide Profile Updated",
@@ -441,19 +440,22 @@ public class GuideController {
 
     // Reject leave request
     @PostMapping("/reject_leave/{id}")
-    public String rejectLeave(@PathVariable Long id) {
-        Guide guide = getSignedInGuide();
-
+    public String rejectLeave(@PathVariable Long id, @RequestParam("remarks") String remarks) {
         Optional<LeaveApplication> optionalLeave = leaveApplicationRepo.findById(id);
         if (optionalLeave.isPresent()) {
             LeaveApplication leave = optionalLeave.get();
             leave.setStatus("Rejected");
             leave.setAdminApproval(false);
             leave.setGuideApproval(false);
+            leave.setRemarks(remarks);
             leaveApplicationRepo.save(leave);
 
-            logService.saveLog(String.valueOf(guide.getGuideId()), "Rejected Leave Request",
-                    "Guide " + guide.getName() + " rejected leave request for Intern ID: " + leave.getInternId());
+            Guide guide = getSignedInGuide();
+            if (guide != null) {
+                String guideId = String.valueOf(guide.getGuideId());
+                logService.saveLog(guideId, "Rejected Leave Application",
+                        "Guide " + guide.getName() + " rejected leave application for intern ID: " + leave.getInternId() + ". Remarks: " + remarks);
+            }
         }
         return "redirect:/bisag/guide/pending_leaves";
     }
@@ -462,27 +464,31 @@ public class GuideController {
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Messaging Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
         // Guide sends a message
-        @PostMapping("/chat/send")
-        public ResponseEntity<Message> sendMessageAsGuide(
-                @RequestParam String senderId,
-                @RequestParam String receiverId,
-                @RequestParam String messageText) {
+    @PostMapping("/chat/send")
+    public ResponseEntity<Message> sendMessageAsGuide(
+            @RequestParam String senderId,
+            @RequestParam String receiverId,
+            @RequestParam String messageText) {
 
-            Optional<Guide> guide = guideService.findById(Long.valueOf(senderId));
-            if (guide.isEmpty()) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            Message message = messageService.sendMessage(String.valueOf(guide.get().getGuideId()), receiverId, messageText);
-            return ResponseEntity.ok(message);
+        Optional<Guide> guide = guideService.findById(Long.valueOf(senderId));
+        if (guide.isEmpty()) {
+            return ResponseEntity.badRequest().build();
         }
+
+        Message message = messageService.sendMessage(String.valueOf(guide.get().getGuideId()), receiverId, messageText);
+
+        Guide senderGuide = guide.get();
+        logService.saveLog(senderId, "Sent Message",
+                "Guide " + senderGuide.getName() + " sent a message to Intern ID: " + receiverId + ". Message: " + messageText);
+
+        return ResponseEntity.ok(message);
+    }
 
     @GetMapping("/chat/history")
     public ResponseEntity<List<Message>> getChatHistoryAsGuide(
             @RequestParam Long senderId,
             @RequestParam String receiverId) {
 
-        // Ensure senderId is correctly mapped to an actual Guide ID
         Optional<Guide> guide = guideService.findById(senderId);
         if (guide.isEmpty()) {
             return ResponseEntity.badRequest().build();
@@ -490,12 +496,14 @@ public class GuideController {
 
         String guideId = String.valueOf(guide.get().getGuideId());
 
-        // Fetch both sent and received messages
         List<Message> messages = messageService.getChatHistory(guideId, receiverId);
-        messages.addAll(messageService.getChatHistory(receiverId, guideId)); // Fetch messages in reverse order
+        messages.addAll(messageService.getChatHistory(receiverId, guideId));
 
-        // Sort messages by timestamp to maintain chronological order
         messages.sort(Comparator.comparing(Message::getTimestamp));
+
+        Guide senderGuide = guide.get();
+        logService.saveLog(guideId, "Viewed Chat History",
+                "Guide " + senderGuide.getName() + " viewed chat history with ID: " + receiverId);
 
         return ResponseEntity.ok(messages);
     }
@@ -526,15 +534,24 @@ public class GuideController {
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     @GetMapping("/tasks_assignments")
     public String viewTaskAssignmentsPage(Model model) {
-        // Fetch all task assignments
-        List<TaskAssignment> tasks = taskAssignmentService.getAllTasks();
 
-        // Add the task list to the model
+        List<TaskAssignment> tasks = taskAssignmentService.getAllTasks();
+        List<Intern> interns = internService.getAllInterns();
+
+        model.addAttribute("interns", interns);
         model.addAttribute("tasks", tasks);
 
-        return "guide/task_assignments"; // Ensure this matches your actual HTML file
+        Guide guide = getSignedInGuide();
+        if (guide != null) {
+            String guideId = String.valueOf(guide.getGuideId());
+            logService.saveLog(guideId, "Viewed Task Assignments",
+                    "Guide " + guide.getName() + " viewed the task assignments page.");
+        }
+
+        return "guide/task_assignments";
     }
-    //  Assign a New Task
+
+    // Assign a New Task
     @PostMapping("/tasks/assign")
     public String assignTask(
             @RequestParam("intern") String intern,
@@ -547,7 +564,6 @@ public class GuideController {
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-            // Convert String to Date
             Date startDate = dateFormat.parse(startDateStr);
             Date endDate = dateFormat.parse(endDateStr);
 
@@ -564,6 +580,9 @@ public class GuideController {
                 task.setApproved(false);
 
                 taskAssignmentService.saveTask(task);
+
+                logService.saveLog(assignedById, "Assigned Task",
+                        assignedByRole + " assigned a new task to Intern ID: " + intern);
             }
         } catch (ParseException e) {
             // Handle exception silently
@@ -572,7 +591,7 @@ public class GuideController {
         return "redirect:/bisag/guide/tasks_assignments";
     }
 
-    //View Task Details ID wise
+    // View Task Details ID-wise
     @GetMapping("/task_details/{id}")
     public String viewTaskDetails(@PathVariable Long id, Model model) {
         TaskAssignment tasks = taskAssignmentRepo.findById(id)
@@ -589,13 +608,18 @@ public class GuideController {
         return "guide/task_details";
     }
 
-    //  Get Tasks Assigned by Admin/Guide
+    // Get Tasks Assigned by Admin/Guide
     @GetMapping("/tasks/assignedBy/{assignedById}")
     public ResponseEntity<List<TaskAssignment>> getTasksAssignedBy(@PathVariable("assignedById") String assignedById) {
-        return ResponseEntity.ok(taskAssignmentService.getTasksAssignedBy(assignedById));
+        List<TaskAssignment> tasks = taskAssignmentService.getTasksAssignedBy(assignedById);
+
+        logService.saveLog(assignedById, "Viewed Assigned Tasks",
+                "User with ID " + assignedById + " viewed tasks assigned by them.");
+
+        return ResponseEntity.ok(tasks);
     }
 
-    //  Approve Task Completion
+    // Approve Task Completion
     @PostMapping("/tasks/approve/{taskId}")
     public ResponseEntity<String> approveTask(@PathVariable("taskId") Long taskId) {
         Optional<TaskAssignment> optionalTask = taskAssignmentService.getTaskById(taskId);
@@ -606,6 +630,10 @@ public class GuideController {
             task.setStatus("Completed");
 
             taskAssignmentService.saveTask(task);
+
+            logService.saveLog(task.getAssignedById(), "Approved Task",
+                    "User with ID " + task.getAssignedById() + " approved Task ID: " + taskId);
+
             return ResponseEntity.ok("Task approved successfully.");
         }
         return ResponseEntity.badRequest().body("Task not found.");
@@ -620,7 +648,7 @@ public class GuideController {
         }
 
         try {
-            // Fetch file from local storage
+
             String fileName = taskOpt.get().getProofAttachment();
             Path filePath = Paths.get("uploads/task_proofs/", fileName);
             Resource resource = new UrlResource(filePath.toUri());
@@ -629,9 +657,12 @@ public class GuideController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
 
+            logService.saveLog(taskOpt.get().getAssignedById(), "Viewed Task Proof",
+                    "Guide with ID " + taskOpt.get().getAssignedById() + " viewed proof for Task ID: " + taskId);
+
             return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
                     .body(resource);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -654,8 +685,16 @@ public class GuideController {
             }
 
             TaskAssignment task = optionalTask.get();
+            String oldStatus = task.getStatus();
             task.setStatus(newStatus); // Updating only the status
             taskAssignmentService.saveTask(task);
+
+            Guide guide = getSignedInGuide();
+            if (guide != null) {
+                String guideId = String.valueOf(guide.getGuideId());
+                logService.saveLog(guideId, "Updated Task Status",
+                        "Guide " + guide.getName() + " updated Task ID: " + id + " from '" + oldStatus + "' to '" + newStatus + "'.");
+            }
 
             return ResponseEntity.ok(Map.of("success", true, "message", "Status updated successfully"));
         } catch (Exception e) {
@@ -664,6 +703,7 @@ public class GuideController {
         }
     }
 
+    //Shortlisting Interns
     @PostMapping("/intern_application/approved_intern/ans")
     public String approvedInterns(@RequestParam String message, @RequestParam long id, @RequestParam String finalStatus) {
         System.out.println("id: " + id + ", finalStatus: " + finalStatus);
@@ -700,7 +740,6 @@ public class GuideController {
         if (guide != null) {
             long guideId = guide.getGuideId();
 
-            // Fetch interns assigned to this guide
             List<InternApplication> intern = internApplicationService.getApprovedInternsByGuideId(guideId);
 
             mv.addObject("intern", intern);
@@ -734,7 +773,6 @@ public class GuideController {
             System.out.println("Error: Signed-in guide not found for logging!");
         }
 
-        // Adding attributes to the ModelAndView for rendering the page
         mv.addObject("intern", intern);
         model.addAttribute("guides", guides);
 
@@ -762,7 +800,6 @@ public class GuideController {
 
             logService.saveLog(String.valueOf(id), "Updated application status for intern", "Status Change");
 
-            // Send email notifications based on status
             if (status.equals("rejected")) {
             } else {
             }

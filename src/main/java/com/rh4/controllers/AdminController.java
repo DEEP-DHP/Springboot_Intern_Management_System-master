@@ -1425,7 +1425,7 @@ public class AdminController {
 
         if (!internApplication.getIsActive()) {
             intern.get().setIsActive(false);
-            intern.get().setCancellationStatus("cancelled");
+            intern.get().setCancellationStatus("Cancelled");
             Cancelled cancelledEntry = new Cancelled();
             cancelledEntry.setTableName("intern");
             cancelledEntry.setCancelId(intern.get().getInternId());
@@ -2700,14 +2700,14 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
     public String getInternActivityLogs(Model model) {
         List<Log> logs = logService.getAllLogs();
         if (logs == null) {
-            logs = new ArrayList<>();  // Ensure it's not null
+            logs = new ArrayList<>();
         }
         System.out.println("Logs fetched: " + logs.size());
 
         Admin admin = getSignedInAdmin();
         String id = String.valueOf(admin.getAdminId());
 
-        logInternAction(id, "Viewed Activity Logs", "Admin " + admin.getName() + " accessed the intern activity logs.");
+        logInternAction(id, "Viewed Activity Logs", "Admin " + admin.getName() + " accessed the activity logs.");
 
         model.addAttribute("logs", logs);
         return "admin/activity_logs";
@@ -2845,6 +2845,62 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             if (admin != null) {
                 logService.saveLog(String.valueOf(admin.getAdminId()), "Fetched Intern Details",
                         "Admin " + admin.getName() + " fetched details for Intern ID " + internId);
+            }
+
+            return ResponseEntity.ok(internDetails);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+    }
+
+    @GetMapping("/intern_verification_details/{id}")
+    public ModelAndView internverificationDetails(@PathVariable("id") String id, Model model) {
+        ModelAndView mv = new ModelAndView();
+
+        Optional<Intern> intern = internService.getIntern(id);
+        model = countNotifications(model);
+
+        mv.addObject("intern", intern);
+
+        List<College> colleges = fieldService.getColleges();
+        List<Domain> domains = fieldService.getDomains();
+        List<Branch> branches = fieldService.getBranches();
+        List<GroupEntity> groups = groupService.getGroups();
+
+        mv.addObject("colleges", colleges);
+        mv.addObject("domains", domains);
+        mv.addObject("branches", branches);
+        mv.addObject("groups", groups);
+
+        mv.setViewName("admin/intern_verification_details");
+
+        Admin admin = getSignedInAdmin();
+        if (admin != null && intern.isPresent()) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Intern Verification Details",
+                    "Admin " + admin.getName() + " viewed the details of intern ID: " + id + ", Name: " + intern.get().getFirstName() + " " + intern.get().getLastName());
+        } else {
+            System.out.println("Error: Admin or Intern not found for logging!");
+        }
+
+        return mv;
+    }
+
+    //For Verification Module
+    @GetMapping("/get-intern-details-by-name/{internName}")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> getInternDetailsByName(@PathVariable String internName) {
+        Intern intern = internService.getInternByName(internName);
+
+        if (intern != null) {
+            Map<String, String> internDetails = new HashMap<>();
+            internDetails.put("internId", intern.getInternId());
+            internDetails.put("internContact", intern.getContactNo());
+
+            Admin admin = getSignedInAdmin();
+
+            if (admin != null) {
+                logService.saveLog(String.valueOf(admin.getAdminId()), "Fetched Intern Details",
+                        "Admin " + admin.getName() + " fetched details for Intern Name " + internName);
             }
 
             return ResponseEntity.ok(internDetails);
@@ -3556,7 +3612,9 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
     @GetMapping("/tasks_assignments")
     public String viewTaskAssignmentsPage(Model model) {
         List<TaskAssignment> tasks = taskAssignmentService.getAllTasks();
+        List<Intern> interns = internService.getAllInterns();
 
+        model.addAttribute("interns", interns);
         model.addAttribute("tasks", tasks);
 
         Admin admin = getSignedInAdmin();
@@ -3672,7 +3730,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             }
 
             logService.saveLog(taskOpt.get().getAssignedById(), "Viewed Task Proof",
-                    "User with ID " + taskOpt.get().getAssignedById() + " viewed proof for Task ID: " + taskId);
+                    "Admin with ID " + taskOpt.get().getAssignedById() + " viewed proof for Task ID: " + taskId);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_PDF)  // Ensure it's opened as a PDF
