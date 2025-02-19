@@ -139,6 +139,8 @@ public class Intern {
 
     private String status;
 
+    private LocalDateTime cancelTime;
+
     public Intern() {
         super();
     }
@@ -147,7 +149,7 @@ public class Intern {
                   String collegeName, String branch, byte[] collegeIcardImage, byte[] nocPdf, byte[] projectDefinitionForm, byte[] extraForm, byte[] extraForm2, byte[] resumePdf, int semester,
                   String permanentAddress, Date dateOfBirth, String gender, String collegeGuideHodName, String degree, Double aggregatePercentage, String projectDefinitionName, String cancellationStatus,
                   Guide guide, String domain, Date joiningDate, Date completionDate, String password, byte[] icardForm, byte[] registrationForm, byte[] securityForm,
-                  String usedResource, LocalDateTime createdAt, LocalDateTime updatedAt, GroupEntity group, boolean isActive, String status) {
+                  String usedResource, LocalDateTime createdAt, LocalDateTime updatedAt, GroupEntity group, boolean isActive, String status, LocalDateTime cancelTime) {
         super();
         this.internId = internId;
         this.firstName = firstName;
@@ -185,6 +187,7 @@ public class Intern {
         this.updatedAt = updatedAt;
         this.group = group;
         this.status = status;
+        this.cancelTime = cancelTime;
     }
 
     public Intern(String firstName, String lastName, String contactNo, String email, String collegeName, Date joiningDate, Date completionDate,
@@ -529,5 +532,13 @@ public class Intern {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public LocalDateTime getCancelTime() {
+        return cancelTime;
+    }
+
+    public void setCancelTime(LocalDateTime cancelTime) {
+        this.cancelTime = cancelTime;
     }
 }
