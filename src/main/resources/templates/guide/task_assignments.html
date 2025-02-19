@@ -65,8 +65,12 @@
               <div class="row">
                 <div class="col-md-4">
                   <div class="form-floating">
-                    <input type="text" name="intern" class="form-control" id="intern" required>
-                    <label for="intern">Intern ID</label>
+                    <select class="form-select" id="internId" name="intern">
+                      <option value="">-- Select Intern ID --</option>
+                      <th:block th:each="intern : ${interns}">
+                        <option th:value="${intern.internId}" th:text="${intern.internId}"></option>
+                      </th:block>
+                    </select>
                   </div>
                 </div>
                 <div class="col-md-4">
