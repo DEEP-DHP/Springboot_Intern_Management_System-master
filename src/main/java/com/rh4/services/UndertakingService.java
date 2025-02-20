@@ -26,16 +26,16 @@ public class UndertakingService {
                 .orElse(false);
     }
 
-    @Transactional
-    public void acceptUndertaking(String internId) {
-        Undertaking form = undertakingRepo.findByInternId(internId)
-                .orElseThrow(() -> new RuntimeException("Undertaking Form not found for this intern"));
-
-        form.setAccepted(true);
-        form.setAcceptedAt(LocalDateTime.now());
-
-        undertakingRepo.save(form);
-    }
+//    @Transactional
+//    public void acceptUndertaking(String internId) {
+//        Undertaking form = undertakingRepo.findByInternId(internId)
+//                .orElseThrow(() -> new RuntimeException("Undertaking Form not found for this intern"));
+//
+//        form.setAccepted(true);
+//        form.setAcceptedAt(LocalDateTime.now());
+//
+//        undertakingRepo.save(form);
+//    }
 
     // Fetch all undertaking forms
     public List<Undertaking> getAllForms() {
@@ -53,5 +53,15 @@ public class UndertakingService {
         undertaking.setContent(content);
         undertaking.setCreatedAt(LocalDateTime.now());
         undertakingRepo.save(undertaking);
+    }
+
+    public boolean acceptUndertaking(String internId) {
+        Undertaking undertaking = undertakingRepo.findByInternId(internId).orElse(null);
+        if (undertaking != null) {
+            undertaking.setAcceptedAt(LocalDateTime.now()); // Store current timestamp
+            undertakingRepo.save(undertaking);
+            return true;
+        }
+        return false;
     }
 }

@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import com.rh4.entities.Guide;
 import com.rh4.entities.Intern;
@@ -26,6 +24,8 @@ public class WeeklyReportService {
 	private WeeklyReportRepo weeklyReportRepo;
 	@Autowired
 	private GroupService groupService;
+	@Autowired
+	private GroupRepo groupRepo;
 
 	public int getRecentWeekNo(GroupEntity group) {
 			List<WeeklyReport> reports = weeklyReportRepo.getRecentWeekNo(group);
@@ -89,5 +89,57 @@ public class WeeklyReportService {
 		}
 
 		weeklyReportRepo.save(report);
+	}
+
+	public List<WeeklyReport> getOverdueReports() {
+		return weeklyReportRepo.findOverdueReports();
+	}
+
+	public Map<String, Integer> getPendingReports() {
+		List<GroupEntity> allGroups = groupRepo.findAll(); // Get all groups
+		List<WeeklyReport> submittedReports = weeklyReportRepo.findAll(); // Get all reports
+
+		Map<String, Integer> pendingReports = new HashMap<>();
+
+		for (GroupEntity group : allGroups) {
+			int currentWeek = getCurrentWeekNumber();
+			int overdueWeekNo = -1;
+
+			for (int week = 1; week <= currentWeek; week++) {
+				boolean isSubmitted = false;
+
+				for (WeeklyReport report : submittedReports) {
+					// ✅ Use '==' instead of '.equals()' for primitive long comparison
+					if (report.getGroup().getId() == group.getId() && report.getWeekNo() == week) {
+						isSubmitted = true;
+						break;
+					}
+				}
+
+				Date deadline = calculateDeadline(week);
+				if (!isSubmitted && deadline.before(new Date())) {
+					overdueWeekNo = week;
+					break;
+				}
+			}
+
+			if (overdueWeekNo != -1) {
+				pendingReports.put(String.valueOf(group.getGroupId()), overdueWeekNo); // Convert long to String
+			}
+		}
+
+		return pendingReports;
+	}
+
+	private Date calculateDeadline(int weekNo) {
+		Calendar cal = Calendar.getInstance();
+		cal.set(Calendar.WEEK_OF_YEAR, weekNo);
+		cal.set(Calendar.DAY_OF_WEEK, Calendar.SATURDAY);
+		return cal.getTime();
+	}
+
+	private int getCurrentWeekNumber() {
+		Calendar cal = Calendar.getInstance();
+		return cal.get(Calendar.WEEK_OF_YEAR);
 	}
 }
