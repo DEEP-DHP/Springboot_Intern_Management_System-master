@@ -136,7 +136,7 @@ button {
 										<td th:text="${intern.contactNo}"></td>
 										<td th:text="${intern.email}"></td>
 										<td th:text="${intern.collegeName}"></td>
-										<td th:text="${intern.isActive}"></td>
+										<td th:text="${intern.isActive} ? 'Yes' : 'No'"></td>
 										<td><a
 											th:href="@{'/bisag/admin/intern_application_docs/' + ${intern.id}}"
 											class="btn"><i class="fa-solid fa-book"></i></a></td>

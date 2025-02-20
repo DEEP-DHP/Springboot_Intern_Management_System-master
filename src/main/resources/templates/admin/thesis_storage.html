@@ -111,6 +111,10 @@
                                                 th:attr="onclick='saveInternId(' + ${thesis.id} + ')'" >
                                             Save
                                         </button>
+                                        <button class="btn btn-danger btn-sm" th:id="'removeBtn_' + ${thesis.id}"
+                                                th:attr="onclick='removeInternId(' + ${thesis.id} + ')'" >
+                                            Remove
+                                        </button>
                                     </td>
                                 </tr>
                                 </tbody>
@@ -124,6 +128,29 @@
     </section>
     <div th:replace="fragments/footerFragment :: footer"></div>
 </main>
+<script>
+    // Function to remove allowedInternId (set it to null)
+    function removeInternId(thesisId) {
+        fetch('/bisag/admin/remove-thesis-intern-id', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ thesisId: thesisId })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('internIdSpan_' + thesisId).innerText = "";
+                    document.getElementById('internIdInput_' + thesisId).value = "";
+                    alert("Intern ID removed successfully!");
+                } else {
+                    alert("Failed to remove Intern ID.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+    }
+</script>
 <script>
     // Enable inline editing for Intern ID field
     function enableEditing(thesisId) {

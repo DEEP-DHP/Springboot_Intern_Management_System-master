@@ -57,6 +57,9 @@
           <div class="card-body">
             <h5 class="card-title">Enter Data</h5>
 
+            <!-- Success/Error Messages -->
+            <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+            <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
             <!-- Floating Labels Form -->
             <form th:action="@{/bisag/admin/thesis/save}" th:object="${thesis}" method="post">
               <div class="row">

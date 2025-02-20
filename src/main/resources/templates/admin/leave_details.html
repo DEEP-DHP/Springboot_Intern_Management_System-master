@@ -80,7 +80,7 @@
             <td th:text="${leave.internId}"></td>
           </tr>
           <tr>
-            <th>Reason:</th>
+            <th>Body</th>
             <td th:text="${leave.body}"></td>
           </tr>
           <tr>
@@ -101,11 +101,11 @@
           </tr>
           <tr>
             <th>Guide Approval</th>
-            <td th:text="${leave.guideApproval} ? '✔️ Approved' : '❌ Rejected'"></td>
+            <td th:text="${leave.guideApproval} ? '✔️ Approved' : '❌ Pending'"></td>
           </tr>
           <tr>
             <th>Admin Approval</th>
-            <td th:text="${leave.adminApproval} ? '✔️ Approved' : '❌ Rejected'"></td>
+            <td th:text="${leave.adminApproval} ? '✔️ Approved' : '❌ Pending'"></td>
           </tr>
           <tr>
             <th>Status</th>

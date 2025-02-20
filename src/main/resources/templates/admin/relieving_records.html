@@ -55,7 +55,9 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Enter Details</h5>
-
+                        <!-- Success/Error Messages -->
+                        <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+                        <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
                         <!-- Relieving Record Form -->
     <!-- Dropdown to select intern ID -->
                         <form method="POST" action="/bisag/admin/submit_relieving_record">

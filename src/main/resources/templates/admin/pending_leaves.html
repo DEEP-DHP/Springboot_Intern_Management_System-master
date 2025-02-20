@@ -102,10 +102,14 @@
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
-        <input type="text" class="mb-4 form-control" id="searchInput" placeholder="Search...">
+        <input type="text" class="mb-4" id="searchInput"
+               placeholder="Search...">
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">List of Pending Leave Requests</h5>
+
+            <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+            <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
 
             <table class="table table-bordered">
               <thead>

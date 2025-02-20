@@ -29,7 +29,7 @@
                 <table class="table table-bordered">
                     <thead>
                     <tr>
-                        <th>ID</th>
+<!--                        <th>ID</th>-->
                         <th>Intern ID</th>
                         <th>Company Name</th>
                         <th>Email</th>
@@ -39,7 +39,7 @@
                     </thead>
                     <tbody>
                     <tr th:each="verification : ${verifications}">
-                        <td th:text="${verification.id}"></td>
+<!--                        <td th:text="${verification.id}"></td>-->
                         <td>
                             <a th:href="@{'/bisag/admin/intern_verification_details/' + ${verification.internId}}">
                                 <span th:text="${verification.internId}"></span>
