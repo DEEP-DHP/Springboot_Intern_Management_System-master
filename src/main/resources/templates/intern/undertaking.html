@@ -92,17 +92,14 @@
   $(document).ready(function () {
     let internId = sessionStorage.getItem("internId");
 
-    // ✅ Fetch Undertaking Content
     $.get("/bisag/intern/undertaking-content", function (data) {
       $("#undertakingText").html(data ? data : "No undertaking content available.");
     });
 
-    // ✅ Enable Button When Checkbox is Checked
     $("#acceptCheckbox").on("change", function () {
       $("#acceptBtn").prop("disabled", !this.checked);
     });
 
-    // ✅ Submit Undertaking Acceptance
     $("#acceptBtn").click(function () {
       $.ajax({
         type: "POST",
@@ -112,7 +109,7 @@
         success: function (response) {
           if (response) {
             alert("Undertaking accepted successfully!");
-            window.location.href = "/bisag/intern/intern_dashboard"; // ✅ Redirect to Dashboard
+            window.location.href = "/bisag/intern/intern_dashboard";
           }
         },
         error: function () {
