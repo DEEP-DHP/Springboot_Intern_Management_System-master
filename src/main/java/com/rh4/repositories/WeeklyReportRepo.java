@@ -36,6 +36,16 @@ public interface WeeklyReportRepo extends JpaRepository<WeeklyReport, Long> {
     @Query("SELECT w FROM WeeklyReport w WHERE YEAR(w.reportSubmittedDate) = :year")
     List<WeeklyReport> findReportsByYear(@Param("year") int year);
 
-    // Fetch the latest submitted report for a given group
     WeeklyReport findTopByGroupIdOrderByReportSubmittedDateDesc(Long groupId);
+
+    @Query("SELECT g FROM GroupEntity g WHERE g.id NOT IN " +
+            "(SELECT DISTINCT w.group.id FROM WeeklyReport w WHERE w.deadline >= CURRENT_DATE)")
+    List<GroupEntity> findGroupsWithOverdueReports();
+
+    @Query("SELECT w FROM WeeklyReport w WHERE w.reportSubmittedDate IS NULL OR w.reportSubmittedDate > w.deadline")
+    List<WeeklyReport> findOverdueReports();
+
+    @Query("SELECT w FROM WeeklyReport w WHERE w.group.id NOT IN " +
+            "(SELECT DISTINCT w2.group.id FROM WeeklyReport w2 WHERE w2.reportSubmittedDate IS NOT NULL)")
+    List<WeeklyReport> findPendingReports();
 }

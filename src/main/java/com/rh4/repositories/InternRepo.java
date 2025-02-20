@@ -14,6 +14,9 @@ import com.rh4.entities.*;
 @Repository
 public interface InternRepo extends JpaRepository<Intern, String> {
 
+	@Query("SELECT i.internId FROM Intern i") // Assuming 'id' is the field name for intern ID
+	List<String> findAllInternIds();
+
 	Intern findTopByOrderByInternIdDesc();
 
 	Intern findByEmail(String username);
