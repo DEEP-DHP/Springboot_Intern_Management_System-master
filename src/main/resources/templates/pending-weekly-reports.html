@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pending Weekly Reports</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div th:replace="fragments/headerFragment :: header"></div>
+<div th:replace="fragments/asideFragment :: aside"></div>
+
+<main id="main" class="main">
+  <div class="pagetitle">
+    <h1>Pending Weekly Reports</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a th:href="@{/bisag/admin/admin_weekly_report_form}">Weekly Reports</a></li>
+        <li class="breadcrumb-item active">Pending Reports</li>
+      </ol>
+    </nav>
+  </div>
+
+  <section class="section">
+    <input type="text" class="mb-4" id="searchInput"
+           placeholder="Search...">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">List of Pending Weekly Reports</h5>
+
+        <table class="table table-bordered">
+          <thead>
+          <tr>
+            <th>Group ID</th>
+            <th>Week Number</th>
+            <th>Status</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="entry : ${pendingReports}">
+            <td th:text="${entry.key}"></td> <!-- Group ID (String) -->
+            <td th:text="${entry.value}"></td> <!-- Overdue Week Number -->
+            <td>
+              <span class="text-danger fw-bold" th:if="${entry.value == 1}">Not Submitted Any Report</span>
+              <span class="accessibility-issue--warn" th:unless="${entry.value == 1}">Overdue</span>
+            </td>
+          </tr>
+          <tr th:if="${pendingReports.isEmpty()}">
+            <td colspan="3" class="text-center text-muted">No pending reports found.</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var searchInput = document.getElementById('searchInput');
+    var tableRows = document.querySelectorAll('.table tbody tr');
+
+    searchInput.addEventListener('input', function(event) {
+      var searchText = event.target.value.toLowerCase().trim();
+
+      tableRows.forEach(function(row) {
+        var isVisible = false;
+        row.querySelectorAll('td').forEach(function(cell) {
+          var cellText = cell.textContent.toLowerCase();
+          if (cellText.includes(searchText)) {
+            isVisible = true;
+          }
+        });
+
+        if (isVisible) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>
