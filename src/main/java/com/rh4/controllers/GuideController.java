@@ -460,6 +460,23 @@ public class GuideController {
         return "redirect:/bisag/guide/pending_leaves";
     }
 
+    // View Leave Details
+    @GetMapping("/leave_details/{id}")
+    public String viewLeaveDetails(@PathVariable Long id, Model model) {
+        LeaveApplication leave = leaveApplicationRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Leave Application Not Found"));
+        model.addAttribute("leave", leave);
+
+        Guide guide = getSignedInGuide();
+        if (guide != null) {
+            String guideId = String.valueOf(guide.getGuideId());
+            logService.saveLog(guideId, "Viewed Leave Details",
+                    "Guide " + guide.getName() + " viewed details of leave application ID: " + id);
+        }
+
+        return "guide/leave_details";
+    }
+
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Messaging Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-

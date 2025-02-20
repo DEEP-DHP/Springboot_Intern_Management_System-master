@@ -941,13 +941,15 @@ public class InternController {
         String internId = (String) session.getAttribute("internId");
 
         // Check if already accepted
-        if (undertakingRepo.existsByIntern(internId)) {
+        Optional<Undertaking> existingUndertaking = undertakingRepo.findByInternId(internId);
+        if (existingUndertaking.isPresent()) {
             return ResponseEntity.ok(true); // Already accepted, no need to save again
         }
 
-        // Save new acceptance
+        // Save new acceptance with timestamp
         Undertaking undertaking = new Undertaking();
         undertaking.setIntern(internId);
+        undertaking.setAcceptedAt(LocalDateTime.now()); // Set current timestamp
         undertakingRepo.save(undertaking);
 
         return ResponseEntity.ok(true);

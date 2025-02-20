@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.rh4.repositories.*;
 import com.rh4.entities.*;
@@ -179,33 +180,6 @@ public class AdminController {
         return lastFourDigits;
     }
 
-//	public String generateGroupId() {
-//		// Generate custom groupId using current year and serial number
-//		SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
-//		String currentYear = yearFormat.format(new Date());
-//
-//		// Assuming you have a method to get the next serial number
-//		int serialNumber = generateSerialNumberForGroup();
-//		++serialNumber;
-//		// Combine the parts to form the custom internId
-//		String sno = String.valueOf(serialNumber);
-//		String formattedSerialNumber = String.format("%03d", Integer.parseInt(sno));
-//		System.out.println("serialNumber..." + serialNumber);
-//		System.out.println("formated..." + formattedSerialNumber);
-//		String groupId = currentYear + "G" + formattedSerialNumber;
-//		return groupId;
-//	}
-//
-//	public int generateSerialNumberForGroup() {
-//
-//		String id = groupService.getMostRecentGroupId();
-//		if (id == null)
-//			return 0;
-//		String serialNumber = id.substring(id.length() - 3);
-//		int lastThreeDigits = Integer.parseInt(serialNumber);
-//		return lastThreeDigits;
-//	}
-
     // Method to generate the group ID
     public String generateGroupId() {
         // Check if the current year has changed
@@ -285,22 +259,6 @@ public class AdminController {
         return model;
     }
 
-    // Method to reject a student and log the action
-//    public void rejectStudent(String firstName, String lastName, String contactNo, String email,
-//                              String collegeName, String branch, int semester, String degree,
-//                              String domain, String reason) {
-//        logService.saveLog(firstName, lastName, contactNo, email, collegeName, branch,
-//                semester, degree, domain, "Rejected", reason);
-//    }
-//
-//    // Method to fail a student and log the action
-//    public void failStudent(String firstName, String lastName, String contactNo, String email,
-//                            String collegeName, String branch, int semester, String degree,
-//                            String domain, String reason) {
-//        logService.saveLog(firstName, lastName, contactNo, email, collegeName, branch,
-//                semester, degree, domain, "Failed", reason);
-//    }
-
     // Admin Dashboard
 
     @GetMapping("/admin_dashboard")
@@ -336,7 +294,7 @@ public class AdminController {
 
     // Group Manage
 
-    // Intern Management///////////////////////////////////////////////
+    // Intern Management
 
     @GetMapping("/register_intern")
     public String registerIntern() {
@@ -440,7 +398,7 @@ public class AdminController {
         return "redirect:/logout";
     }
 
-    // Manage intern application///////////////////////////////////
+    // Manage intern application
     @GetMapping("/intern_application")
     public ModelAndView internApplication(Model model) {
         ModelAndView mv = new ModelAndView("admin/intern_application");
@@ -477,7 +435,6 @@ public class AdminController {
             System.out.println("Error: Signed-in admin not found for logging!");
         }
 
-        // Adding attributes to the ModelAndView for rendering the page
         mv.addObject("intern", intern);
         model.addAttribute("guides", guides);
 
@@ -496,7 +453,7 @@ public class AdminController {
 
     @GetMapping("/intern_application_docs/{id}")
     public ModelAndView internApplicationDocs(@PathVariable("id") long id, Model model) {
-        Optional<InternApplication> optionalApplication = internService.getInternApplication(id); // Implement this service method
+        Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
         System.out.println("ID: " + id);
 
         Admin signedInAdmin = getSignedInAdmin();
@@ -539,7 +496,7 @@ public class AdminController {
 
         // Check if the intern exists
         if (optionalApplication.isPresent()) {
-            Intern application = optionalApplication.get(); // Retrieve the Intern object
+            Intern application = optionalApplication.get();
             model.addAttribute("id", id);
             model.addAttribute("intern", application);
             model.addAttribute("passportSizeImage", application.getPassportSizeImage());
@@ -553,7 +510,6 @@ public class AdminController {
             model.addAttribute("error", "Intern Application not found");
         }
 
-        // Return the view with the model and data
         ModelAndView mv = new ModelAndView();
         mv.setViewName("admin/intern_docs");
         return mv;
@@ -901,7 +857,7 @@ public class AdminController {
     @PostMapping("/documents/passport/{id}")
     public String updatePassportSizeImage(@PathVariable("id") long id, @RequestParam("file") MultipartFile file) throws IOException {
         Optional<InternApplication> optionalApplication = internService.getInternApplication(id);
-        Admin signedInAdmin = getSignedInAdmin(); // Assuming you have a method to get the logged-in admin
+        Admin signedInAdmin = getSignedInAdmin();
 
         if (signedInAdmin != null) {
             logService.saveLog(String.valueOf(signedInAdmin.getAdminId()), "Update Passport Size Image",
@@ -1494,7 +1450,6 @@ public class AdminController {
 
             session.setAttribute("id", admin.getAdminId());
 
-            // Log the action
             logService.saveLog(String.valueOf(admin.getAdminId()),
                     "View Shortlisted Intern Application Details",
                     "Admin " + admin.getName() + " accessed the details of shortlisted intern with ID: " + id);
@@ -1504,18 +1459,6 @@ public class AdminController {
 
         return mv;
     }
-
-//    // Method to reject an intern and log the rejection
-//    @PutMapping("/rejectIntern/{internId}")
-//    public String rejectIntern(@PathVariable Long internId) {
-//        // Call the service method through the injected service instance (not statically)
-//        internApplicationService.updateStatusToRejected(internId);
-//
-//        // Alternatively, call the log service directly if needed
-//        // logService.logRejectedIntern(internApplication);
-//
-//        return "Intern has been rejected and logged successfully.";
-//    }
 
     @PostMapping("/intern_application/approved_intern/update")
     public String approvedInterns(@RequestParam long id, InternApplication internApplication, MultipartHttpServletRequest req)
@@ -1599,7 +1542,7 @@ public class AdminController {
         return mv;
     }
 
-    // Group Creation//////////////////////////////////////////
+    // Group Creation
 
     @GetMapping("/create_group")
     public ModelAndView groupCreation(Model model) {
@@ -2288,7 +2231,55 @@ public String getReportsByYear(@RequestParam(value = "date", required = true) St
 
     return "admin/admin_yearly_report";
 }
-@GetMapping("/cancellation_requests")
+
+// -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_View report -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
+    @GetMapping("/view_weekly_reports/{weekNo}")
+    public ModelAndView chanegWeeklyReportSubmission(@PathVariable("weekNo") int weekNo) {
+        ModelAndView mv = new ModelAndView("intern/change_weekly_report");
+        Intern inetrn = getSignedInIntern();
+        GroupEntity group = inetrn.getGroup();
+        WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
+        MyUser user = myUserService.getUserByUsername(report.getReplacedBy().getUsername());
+        if (user.getRole().equals("GUIDE")) {
+            Guide guide = guideService.getGuideByUsername(user.getUsername());
+            String status = "Your Current Weekly report is required some modifications given by guide. Please check it out.";
+            mv.addObject("status", status);
+            mv.addObject("replacedBy", guide.getName());
+        } else if (user.getRole().equals("INTERN")) {
+            Intern intern = internService.getInternByUsername(user.getUsername());
+            mv.addObject("replacedBy", intern.getFirstName() + " " + intern.getLastName());
+            mv.addObject("status",
+                    "Your current weekly report is accepted and if any changes are required then you will be notified.");
+        }
+        mv.addObject("report", report);
+        mv.addObject("group", group);
+        return mv;
+    }
+
+    public Intern getSignedInIntern() {
+        String username = (String) session.getAttribute("username");
+        Intern intern = internService.getInternByUsername(username);
+        if (intern.getIsActive()) {
+            return intern;
+        } else {
+            return null;
+        }
+    }
+
+    @GetMapping("/viewPdf/{internId}/{weekNo}")
+    public ResponseEntity<byte[]> viewPdf(@PathVariable String internId, @PathVariable int weekNo) {
+        WeeklyReport report = weeklyReportService.getReportByInternIdAndWeekNo(internId, weekNo);
+        byte[] pdfContent = report.getSubmittedPdf();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+
+        return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+    }
+
+    //Cancellatin Request
+    @GetMapping("/cancellation_requests")
 public ModelAndView cancellationRequests(Model model) {
     ModelAndView mv = new ModelAndView("/admin/cancellation_requests");
     List<Intern> requestedInterns = internService.getInternsByCancellationStatus("requested");
@@ -2370,6 +2361,13 @@ public ModelAndView cancellationRequests(Model model) {
         groupRepo.save(group);
 
         return "redirect:/bisag/admin/admin_pending_final_reports";
+    }
+
+    @GetMapping("/weekly-reports/pending")
+    public String getPendingReports(Model model) {
+        Map<String, Integer> pendingReports = weeklyReportService.getPendingReports();
+        model.addAttribute("pendingReports", pendingReports);
+        return "admin/pending-weekly-reports";
     }
 
     //-------------------------------- Leave Application Module------------------------------------
@@ -2575,14 +2573,24 @@ public ModelAndView cancellationRequests(Model model) {
     // Handle adding/updating a thesis record
     @PostMapping("thesis/save")
     public String saveThesis(@ModelAttribute("thesis") Thesis thesis, RedirectAttributes redirectAttributes) {
-        Admin admin = getSignedInAdmin();
+        try {
+            Admin admin = getSignedInAdmin();
 
-        thesisService.saveThesis(thesis);
-        redirectAttributes.addFlashAttribute("successMessage", "Thesis record submitted successfully!");
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Thesis Saved",
-                "Admin " + admin.getName() + " added or updated a thesis with ID: " + thesis.getId());
+            thesisService.saveThesis(thesis);
 
-        return "redirect:/bisag/admin/thesis_list";
+            if (admin != null) {
+                logService.saveLog(String.valueOf(admin.getAdminId()), "Thesis Saved",
+                        "Admin " + admin.getName() + " added or updated a thesis with ID: " + thesis.getId());
+            }
+
+            // Set success message
+            redirectAttributes.addFlashAttribute("successMessage", "Thesis record submitted successfully!");
+        } catch (Exception e) {
+            // Set error message
+            redirectAttributes.addFlashAttribute("errorMessage", "Error saving thesis record. Please try again.");
+        }
+
+        return "redirect:/bisag/admin/thesis_list"; // Redirect after saving thesis
     }
 
     // Show all thesis records
@@ -2597,41 +2605,40 @@ public ModelAndView cancellationRequests(Model model) {
         return "admin/thesis_list";
     }
 
-//    @PostMapping("/update-return/{id}")
-//    public ResponseEntity<Thesis> updateReturnDate(
-//            @PathVariable Long id, @RequestBody Map<String, String> request) {
-//        try {
-//            System.out.println("Received update request for Thesis ID: " + id);
-//
-//            // Parse the date
-//            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-//            Date utilDate = dateFormat.parse(request.get("actualReturnDate"));
-//            java.sql.Date actualReturnDate = new java.sql.Date(utilDate.getTime());
-//
-//            String location = request.get("location");
-//
-//            Thesis updatedThesis = thesisService.updateReturnDate(id, actualReturnDate, location);
-//            return ResponseEntity.ok(updatedThesis);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-//        }
-//    }
-@GetMapping("/thesis/update/{id}")
-public String showUpdatePage(@PathVariable Long id, Model model) {
-    Thesis thesis = thesisService.getThesisById(id)
-            .orElseThrow(() -> new RuntimeException("Thesis not found with id: " + id));
-    model.addAttribute("thesis", thesis);
-    return "admin/update_thesis";
-}
+    @GetMapping("/thesis/update/{id}")
+    public String showUpdatePage(@PathVariable Long id, Model model) {
+        Thesis thesis = thesisService.getThesisById(id)
+                .orElseThrow(() -> new RuntimeException("Thesis not found with ID: " + id));
+
+        model.addAttribute("thesis", thesis);
+
+        Admin admin = getSignedInAdmin();
+        if (admin != null) {
+            String adminId = String.valueOf(admin.getAdminId());
+            logService.saveLog(adminId, "Accessed Thesis Update Page",
+                    "Admin " + admin.getName() + " accessed the update page for thesis ID: " + id);
+        }
+
+        return "admin/update_thesis";
+    }
+
     @PostMapping("/thesis/update/{id}")
     public String updateThesis(@PathVariable Long id,
                                @RequestParam String actualReturnDate,
-                               @RequestParam String location) {
+                               @RequestParam String location,
+                               RedirectAttributes redirectAttributes) {
         java.sql.Date returnDate = java.sql.Date.valueOf(actualReturnDate);
-
         thesisService.updateThesisReturnDateAndLocation(id, returnDate, location);
 
+        Admin admin = getSignedInAdmin();
+        if (admin != null) {
+            String adminId = String.valueOf(admin.getAdminId());
+            logService.saveLog(adminId, "Updated Thesis Return Date & Location",
+                    "Admin " + admin.getName() + " updated thesis ID: " + id +
+                            " with Actual Return Date: " + actualReturnDate + " and Location: " + location);
+        }
+
+        redirectAttributes.addFlashAttribute("successMessage", "Thesis details updated successfully!");
         return "redirect:/bisag/admin/thesis_list";
     }
     //Show thesis ID wise-------------------
@@ -3087,69 +3094,96 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             @RequestParam String attendance,
             RedirectAttributes redirectAttributes) {
 
-        List<RRecord> existingRecords = recordService.findByInternId(internId);
-        if (!existingRecords.isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "Intern already relieved!");
+        try {
+            // Check if the intern already has a relieving record
+            List<RRecord> existingRecords = recordService.findByInternId(internId);
+            if (!existingRecords.isEmpty()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Intern with ID " + internId + " is already relieved!");
+                return "redirect:/bisag/admin/relieving_records_list";
+            }
+
+            // Convert LocalDate to SQL Date
+            java.sql.Date joiningDateConverted = java.sql.Date.valueOf(joiningDate);
+            java.sql.Date plannedDateConverted = java.sql.Date.valueOf(plannedDate);
+
+            // Creating and saving the record
+            RRecord record = new RRecord();
+            record.setInternId(internId);
+            record.setFirstName(FirstName);
+            record.setGroupId(groupId);
+            record.setCollegeName(collegeName);
+            record.setJoiningDate(joiningDateConverted);
+            record.setPlannedDate(plannedDateConverted);
+            record.setPassword(password);
+            record.setMedia(media);
+            record.setStatus(status);
+            record.setProject(project);
+            record.setThesis(thesis);
+            record.setOthers(others);
+            record.setBooks(books);
+            record.setSubscription(subscription);
+            record.setAccessRights(accessRights);
+            record.setPendrives(pendrives);
+            record.setUnusedCd(unusedCd);
+            record.setBackupProject(backupProject);
+            record.setSystem(system);
+            record.setIdentityCards(identityCards);
+            record.setStipend(stipend);
+            record.setInformation(information);
+            record.setWeeklyReport(weeklyReport);
+            record.setAttendance(attendance);
+
+            recordService.saveRecord(record);
+
+            // Log action
+            Admin admin = getSignedInAdmin();
+            if (admin != null) {
+                String id = String.valueOf(admin.getAdminId());
+                logService.saveLog(id, "Submitted Relieving Record",
+                        "Admin " + admin.getName() + " submitted a relieving record for Intern ID: " + internId);
+            }
+
+            // Success message
+            redirectAttributes.addFlashAttribute("successMessage", "Relieving record for Intern ID " + internId + " submitted successfully!");
+            return "redirect:/bisag/admin/relieving_records_list";
+
+        } catch (Exception e) {
+            // Error message handling
+            redirectAttributes.addFlashAttribute("errorMessage", "An error occurred while submitting the relieving record. Please try again.");
             return "redirect:/bisag/admin/relieving_records_list";
         }
-
-        java.sql.Date joiningDateConverted = java.sql.Date.valueOf(joiningDate);
-        java.sql.Date plannedDateConverted = java.sql.Date.valueOf(plannedDate);
-
-        RRecord record = new RRecord();
-        record.setInternId(internId);
-        record.setFirstName(FirstName);
-        record.setGroupId(groupId);
-        record.setCollegeName(collegeName);
-        record.setJoiningDate(joiningDateConverted);
-        record.setPlannedDate(plannedDateConverted);
-        record.setPassword(password);
-        record.setMedia(media);
-        record.setStatus(status);
-        record.setProject(project);
-        record.setThesis(thesis);
-        record.setOthers(others);
-        record.setBooks(books);
-        record.setSubscription(subscription);
-        record.setAccessRights(accessRights);
-        record.setPendrives(pendrives);
-        record.setUnusedCd(unusedCd);
-        record.setBackupProject(backupProject);
-        record.setSystem(system);
-        record.setIdentityCards(identityCards);
-        record.setStipend(stipend);
-        record.setInformation(information);
-        record.setWeeklyReport(weeklyReport);
-        record.setAttendance(attendance);
-
-        recordService.saveRecord(record);
-
-        Admin admin = getSignedInAdmin();
-        String id = String.valueOf(admin.getAdminId());
-
-        logService.saveLog(id, "Submitted Relieving Record",
-                "Admin " + admin.getName() + " submitted a relieving record for Intern ID: " + internId);
-
-        redirectAttributes.addFlashAttribute("success", "Relieving record submitted successfully!");
-        return "redirect:/bisag/admin/relieving_records_list";
     }
     @GetMapping("/relieving_records_list")
-    public String getAllRelievingRecords(Model model) {
-        List<RRecord> records = recordService.getAllRecords();
-        model.addAttribute("records", records);
+    public String getAllRelievingRecords(Model model, RedirectAttributes redirectAttributes) {
+        try {
+            List<RRecord> records = recordService.getAllRecords();
+            model.addAttribute("records", records);
 
-        Admin admin = getSignedInAdmin();
+            Admin admin = getSignedInAdmin();
 
-        if (admin != null) {
-            String id = String.valueOf(admin.getAdminId());
+            if (admin != null) {
+                String id = String.valueOf(admin.getAdminId());
 
-            // Log Action
-            logService.saveLog(id, "Viewed Relieving Records",
-                    "Admin " + admin.getName() + " accessed the relieving records list.");
+                // Log Action
+                logService.saveLog(id, "Viewed Relieving Records",
+                        "Admin " + admin.getName() + " accessed the relieving records list.");
+            }
+
+            // Set success message if records are found
+            if (!records.isEmpty()) {
+                redirectAttributes.addFlashAttribute("successMessage", "Relieving records loaded successfully!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "No relieving records found.");
+            }
+
+        } catch (Exception e) {
+            // Set error message
+            redirectAttributes.addFlashAttribute("errorMessage", "Error loading relieving records. Please try again.");
         }
 
-        return "admin/relieving_records_list";
+        return "admin/relieving_records_list"; // Redirect to the page
     }
+
     //Show records ID wise-------------------
     @GetMapping("/relieving_records_detail/{id}")
     public String getRecordsDetails(@PathVariable("id") String id, Model model) {
@@ -3260,13 +3294,14 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
 
     // Approve leave request
     @PostMapping("/approve_leave/{id}")
-    public String approveLeave(@PathVariable Long id) {
+    public String approveLeave(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         Optional<LeaveApplication> optionalLeave = leaveApplicationRepo.findById(id);
+
         if (optionalLeave.isPresent()) {
             LeaveApplication leave = optionalLeave.get();
-            leave.setAdminApproval(true); // Set approval for admin
+            leave.setAdminApproval(true); // Admin approves leave
 
-            // If both admin and guide have approved, set status as "Approved"
+            // If both admin and guide have approved, set status to "Approved"
             if (leave.isAdminApproval() && leave.isGuideApproval()) {
                 leave.setStatus("Approved");
             }
@@ -3279,13 +3314,19 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
                 logService.saveLog(adminId, "Approved Leave Application",
                         "Admin " + admin.getName() + " approved leave application for intern ID: " + leave.getInternId());
             }
+
+            redirectAttributes.addFlashAttribute("successMessage", "Leave application approved successfully!");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Leave application not found!");
         }
+
         return "redirect:/bisag/admin/pending_leaves";
     }
 
     @PostMapping("/reject_leave/{id}")
-    public String rejectLeave(@PathVariable Long id, @RequestParam("remarks") String remarks) {
+    public String rejectLeave(@PathVariable Long id, @RequestParam("remarks") String remarks, RedirectAttributes redirectAttributes) {
         Optional<LeaveApplication> optionalLeave = leaveApplicationRepo.findById(id);
+
         if (optionalLeave.isPresent()) {
             LeaveApplication leave = optionalLeave.get();
             leave.setStatus("Rejected");
@@ -3300,7 +3341,12 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
                 logService.saveLog(adminId, "Rejected Leave Application",
                         "Admin " + admin.getName() + " rejected leave application for intern ID: " + leave.getInternId() + ". Remarks: " + remarks);
             }
+
+            redirectAttributes.addFlashAttribute("successMessage", "Leave application rejected successfully!");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Leave application not found!");
         }
+
         return "redirect:/bisag/admin/pending_leaves";
     }
 
@@ -3344,9 +3390,24 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
     public String showUndertakingForm(Model model) {
         System.out.println("Admin Undertaking page accessed"); // Debugging
 
-        List<Undertaking> forms = undertakingRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
-        model.addAttribute("forms", forms);
+        // Fetch all intern IDs from the Intern table
+        List<String> allInternIds = internRepo.findAllInternIds(); // Assuming this method exists in InternRepo
 
+        // Fetch the list of interns who have accepted the undertaking
+        List<Undertaking> acceptedForms = undertakingRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+        Set<String> acceptedInternIds = acceptedForms.stream()
+                .map(Undertaking::getIntern) // Assuming `getIntern()` returns intern ID
+                .collect(Collectors.toSet());
+
+        // Identify interns who have not accepted the undertaking
+        List<String> pendingInternIds = allInternIds.stream()
+                .filter(id -> !acceptedInternIds.contains(id))
+                .collect(Collectors.toList());
+
+        model.addAttribute("acceptedForms", acceptedForms); // Accepted interns
+        model.addAttribute("pendingInternIds", pendingInternIds); // Pending interns
+
+        // Logging admin activity
         Admin admin = getSignedInAdmin();
         if (admin != null) {
             String adminId = String.valueOf(admin.getAdminId());
@@ -3359,18 +3420,24 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
 
     // Corrected POST method to add undertaking form
     @PostMapping("/add_undertaking")
-    public String addUndertaking(@RequestParam String rules) {
-        Undertaking undertaking = new Undertaking();
-        undertaking.setContent(rules);
-        undertaking.setCreatedAt(LocalDateTime.now());
-        undertakingRepo.save(undertaking);
+    public String addUndertaking(@RequestParam String rules, RedirectAttributes redirectAttributes) {
+        try {
+            // Create and save new Undertaking
+            Undertaking undertaking = new Undertaking();
+            undertaking.setContent(rules);
+            undertaking.setCreatedAt(LocalDateTime.now());
+            undertakingRepo.save(undertaking);
 
-        // Logging the action
-        Admin admin = getSignedInAdmin();
-        if (admin != null) {
-            String adminId = String.valueOf(admin.getAdminId());
-            logService.saveLog(adminId, "Added Undertaking Form",
-                    "Admin " + admin.getName() + " added a new undertaking form.");
+            Admin admin = getSignedInAdmin();
+            if (admin != null) {
+                String adminId = String.valueOf(admin.getAdminId());
+                logService.saveLog(adminId, "Added Undertaking Form",
+                        "Admin " + admin.getName() + " added a new undertaking form.");
+            }
+
+            redirectAttributes.addFlashAttribute("successMessage", "Undertaking form added successfully!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error adding undertaking form. Please try again.");
         }
 
         return "redirect:/bisag/admin/undertaking"; // Redirect after form submission
@@ -3404,25 +3471,35 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
     // Upload Thesis PDF
     @PostMapping("/upload-thesis")
     public String uploadThesis(@RequestParam("thesisTitle") String thesisTitle,
-                               @RequestParam("file") MultipartFile file) {
+                               @RequestParam("file") MultipartFile file,
+                               RedirectAttributes redirectAttributes) {
         try {
-            File directory = new File(STORAGE_PATH);
-            if (!directory.exists()) {
-                directory.mkdirs();
+            // Validate file input
+            if (file.isEmpty()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "File upload failed! Please select a file.");
+                return "redirect:/bisag/admin/thesis-storage";
             }
 
-            // Generate unique filename
+            // Ensure directory exists
+            File directory = new File(STORAGE_PATH);
+            if (!directory.exists() && !directory.mkdirs()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Failed to create storage directory!");
+                return "redirect:/bisag/admin/thesis-storage";
+            }
+
             String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
             String filePath = STORAGE_PATH + fileName;
 
             file.transferTo(new File(filePath));
 
+            // Save thesis metadata in database
             ThesisStorage thesis = new ThesisStorage();
             thesis.setThesisTitle(thesisTitle);
             thesis.setFilePath(filePath);
             thesis.setUploadDate(new Date());
             thesisStorageRepo.save(thesis);
 
+            // Log the action
             Admin admin = getSignedInAdmin();
             if (admin != null) {
                 String adminId = String.valueOf(admin.getAdminId());
@@ -3430,10 +3507,18 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
                         "Admin " + admin.getName() + " uploaded a thesis titled '" + thesisTitle + "'.");
             }
 
+            // Success message
+            redirectAttributes.addFlashAttribute("successMessage", "Thesis uploaded successfully!");
+            return "redirect:/bisag/admin/thesis-storage";
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("errorMessage", "Error while saving the file. Please try again.");
             return "redirect:/bisag/admin/thesis-storage";
         } catch (Exception e) {
             e.printStackTrace();
-            return "error";
+            redirectAttributes.addFlashAttribute("errorMessage", "An unexpected error occurred. Please try again.");
+            return "redirect:/bisag/admin/thesis-storage";
         }
     }
 
@@ -3518,7 +3603,6 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
 
             thesisStorageRepo.save(thesisStorage);
 
-            // Log the update action
             Admin admin = getSignedInAdmin();
             if (admin != null) {
                 String adminId = String.valueOf(admin.getAdminId());
@@ -3538,6 +3622,30 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
+    @PostMapping("/remove-thesis-intern-id")
+    @ResponseBody
+    public Map<String, Boolean> removeThesisInternId(@RequestBody Map<String, Long> request) {
+        Long thesisId = request.get("thesisId");
+        Map<String, Boolean> response = new HashMap<>();
+
+        Optional<ThesisStorage> thesisOptional = thesisStorageRepo.findById(thesisId);
+        if (thesisOptional.isPresent()) {
+            ThesisStorage thesis = thesisOptional.get();
+            thesis.setAllowedInternId(null);
+            thesisStorageRepo.save(thesis);
+            response.put("success", true);
+        } else {
+            response.put("success", false);
+        }
+        Admin admin = getSignedInAdmin();
+        if (admin != null) {
+            String adminId = String.valueOf(admin.getAdminId());
+            logService.saveLog(adminId, "Removed Thesis Access",
+                    "Admin " + admin.getName() + " removed access of intern for Thesis ID: " + thesisId);
+        }
+        return response;
+    }
+
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Messaging Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
@@ -3553,7 +3661,6 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
 
         model.addAttribute("loggedInAdmin", admin);
 
-        // Load receivers dynamically
         List<Admin> admins = adminService.getAdmin();
         List<Guide> guides = guideService.getGuide();
         List<Intern> interns = internService.getAllInterns();
@@ -3564,7 +3671,6 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         model.addAttribute("interns", interns);
         model.addAttribute("groups", groups);
 
-        // Logging the action
         String adminId = String.valueOf(admin.getAdminId());
         logService.saveLog(adminId, "Accessed Chat Page",
                 "Admin " + admin.getName() + " accessed the chat page.");
@@ -3583,7 +3689,6 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
 
         Message message = messageService.sendMessage(senderId, receiverId, messageText);
 
-        // Logging the action
         logService.saveLog(senderId, "Sent a Message",
                 "Admin " + admin.getName() + " sent a message to User ID: " + receiverId);
 
@@ -3596,10 +3701,8 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         Admin admin = getSignedInAdmin();
         String senderId = String.valueOf(admin.getAdminId());
 
-        // Fetch messages where the admin is either sender or receiver
         List<Message> messages = messageService.getChatHistoryForBothUsers(senderId, receiverId);
 
-        // Logging the action
         logService.saveLog(senderId, "Viewed Chat History",
                 "Admin " + admin.getName() + " viewed chat history with User ID: " + receiverId);
 
@@ -3632,14 +3735,20 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
             @RequestParam("assignedByRole") String assignedByRole,
             @RequestParam("taskDescription") String taskDescription,
             @RequestParam("startDate") String startDateStr,
-            @RequestParam("endDate") String endDateStr) {
+            @RequestParam("endDate") String endDateStr,
+            RedirectAttributes redirectAttributes) {
 
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-            // Convert String to Date
+            // Validate and parse dates
             Date startDate = dateFormat.parse(startDateStr);
             Date endDate = dateFormat.parse(endDateStr);
+
+            if (endDate.before(startDate)) {
+                redirectAttributes.addFlashAttribute("errorMessage", "End date cannot be before start date!");
+                return "redirect:/bisag/admin/tasks_assignments";
+            }
 
             Optional<Intern> optionalIntern = internService.getIntern(intern);
             if (optionalIntern.isPresent()) {
@@ -3657,8 +3766,17 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
 
                 logService.saveLog(assignedById, "Assigned a Task",
                         "User with ID " + assignedById + " assigned a task to Intern ID: " + intern);
+
+                redirectAttributes.addFlashAttribute("successMessage", "Task assigned successfully!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Invalid Intern ID! Please select a valid intern.");
             }
         } catch (ParseException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Invalid date format! Please enter a valid date.");
+            return "redirect:/bisag/admin/tasks_assignments";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "An unexpected error occurred. Please try again.");
+            return "redirect:/bisag/admin/tasks_assignments";
         }
 
         return "redirect:/bisag/admin/tasks_assignments";
@@ -3720,7 +3838,6 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         }
 
         try {
-            // Fetch file from local storage
             String fileName = taskOpt.get().getProofAttachment();
             Path filePath = Paths.get("uploads/task_proofs/", fileName);
             Resource resource = new UrlResource(filePath.toUri());
@@ -3733,8 +3850,8 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
                     "Admin with ID " + taskOpt.get().getAssignedById() + " viewed proof for Task ID: " + taskId);
 
             return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF)  // Ensure it's opened as a PDF
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"") // View in browser
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
                     .body(resource);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -3769,9 +3886,7 @@ public String showUpdatePage(@PathVariable Long id, Model model) {
         }
     }
 
-    //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
     //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_Feedback Module-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-    //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     @GetMapping("/feedback_form_list")
     public String getAdminFeedbackList(Model model) {
         List<Feedback> feedbacks = feedbackService.getFeedback();
