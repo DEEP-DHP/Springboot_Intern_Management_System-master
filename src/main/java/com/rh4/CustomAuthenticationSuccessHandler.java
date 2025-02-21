@@ -44,6 +44,11 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 	    return authentication.getAuthorities().stream()
 	            .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_INTERN"));
 	}
+
+	private boolean isHR(Authentication authentication) {
+		return authentication.getAuthorities().stream()
+				.anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_HR"));
+	}
 	private MyUserDetails getMyUser(Authentication authentication) {
 	    if (authentication.getPrincipal() instanceof MyUserDetails) {
 	        return (MyUserDetails) authentication.getPrincipal();
@@ -96,9 +101,10 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 		        return "/bisag/super_admin/super_admin_dashboard";
 		    }else if (isUnderProcessIntern(authentication)) {
 		        return "/under_process_intern";
-		    } else {
-		        return "/under_process_application";
-		    }
-	    }
-
+		 } else if (isHR(authentication)) {
+			 return "/bisag/hr/hr_dashboard";
+		 } else {
+			 return "/under_process_application";
+		 }
+	 }
 }
