@@ -23,6 +23,10 @@ public interface UserRepo extends CrudRepository<MyUser,Long>{
 
 	@Modifying
 	@Transactional
+	@Query("UPDATE MyUser u SET u.password = :password, u.username = :emailId WHERE u.userId = :HRId AND u.role = :role")
+	public void updateHRUser(@Param("HRId") Long HRId, @Param("password") String password, @Param("emailId") String emailId, @Param("role") String role);
+	@Modifying
+	@Transactional
 	@Query("UPDATE MyUser u SET u.password = :password, u.username = :emailId WHERE u.userId = :guideId AND u.role = :role")
 	public void updateGuideUser(@Param("guideId") String guideId, @Param("password") String password, @Param("emailId") String emailId, @Param("role") String role);
 
