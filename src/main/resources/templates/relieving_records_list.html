@@ -88,10 +88,10 @@
 <body>
 
 <!-- Include the header fragment -->
-<div th:replace="fragments/headerFragment :: header"></div>
+<div th:replace="fragments/hrHeaderFragment :: header"></div>
 
 <!-- Include the aside fragment -->
-<div th:replace="fragments/asideFragment :: aside"></div>
+<div th:replace="fragments/hrAsideFragment :: aside"></div>
 
 <main id="main" class="main">
 
@@ -99,7 +99,7 @@
     <h1>Relieving Records</h1>
     <nav>
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a th:href="@{/bisag/admin/relieving_records}">Records</a></li>
+        <li class="breadcrumb-item"><a th:href="@{/bisag/hr/relieving_records_list}">Records</a></li>
         <li class="breadcrumb-item active">Relieving Records List</li>
       </ol>
     </nav>
@@ -127,31 +127,14 @@
                 <th>Institute Name</th>
                 <th>Joining Date</th>
                 <th>Planned Date to Relieve</th>
-                <th>Passwords</th>
-                <th>Media</th>
-                <th>Status of Projects on hand</th>
-                <th>Paths/Folder arrangements for projects handled/Pending</th>
-                <th>Thesis/Hard binding Submission</th>
-                <th>Books</th>
-                <th>Subscription</th>
-                <th>Access Rights Removal</th>
-                <th>Pendrives</th>
-                <th>Unused Cd's</th>
-                <th>Backups of project</th>
-                <th>System/Laptop handover</th>
                 <th>Identity Cards</th>
-                <th>Financial/Stipend Outstanding</th>
-                <th>Briefing of Information Security responsibilities after leaving BISAG-N</th>
-                <th>Weekly Report</th>
-                <th>Attendance</th>
-                <th>Any Others</th>
 
               </tr>
               </thead>
               <tbody>
               <tr th:each="record : ${records}">
                 <td>
-                  <a th:href="@{/bisag/admin/relieving_records_detail/{id}(id=${record.id})}">
+                  <a th:href="@{/bisag/hr/relieving_records_detail/{id}(id=${record.id})}">
                     <span th:text="${record.id}"></span>
                   </a>
                 </td>
@@ -161,24 +144,16 @@
                 <td th:text="${record.collegeName}"></td>
                 <td th:text="${record.joiningDate}"></td>
                 <td th:text="${record.plannedDate}"></td>
-                <td th:text="${record.password}"></td>
-                <td th:text="${record.media}"></td>
-                <td th:text="${record.status}"></td>
-                <td th:text="${record.project}"></td>
-                <td th:text="${record.thesis}"></td>
-                <td th:text="${record.books}"></td>
-                <td th:text="${record.subscription}"></td>
-                <td th:text="${record.accessRights}"></td>
-                <td th:text="${record.pendrives}"></td>
-                <td th:text="${record.unusedCd}"></td>
-                <td th:text="${record.backupProject}"></td>
-                <td th:text="${record.system}"></td>
-                <td th:text="${record.identityCards}"></td>
-                <td th:text="${record.stipend}"></td>
-                <td th:text="${record.information}"></td>
-                <td th:text="${record.weeklyReport}"></td>
-                <td th:text="${record.attendance}"></td>
-                <td th:text="${record.others}"></td>
+                <td>
+                  <span th:text="${record.identityCards}" class="identity-text"></span>
+                  <select class="form-select identity-dropdown" style="display: none;">
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                  <button class="btn btn-sm btn-primary edit-identity-btn">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                </td>
 
               </tr>
               </tbody>
@@ -238,6 +213,44 @@
                       return $(row).children('td').eq(index).text();
                     }
                   });
+</script>
+<script>
+  $(document).ready(function () {
+    $(".edit-identity-btn").click(function () {
+      var row = $(this).closest("tr");
+      var span = row.find(".identity-text");
+      var select = row.find(".identity-dropdown");
+      var button = $(this);
+
+      // Show dropdown, hide text and button
+      span.hide();
+      select.val(span.text().trim()).show();
+      button.hide();
+
+      // When dropdown value changes, send AJAX request
+      select.change(function () {
+        var newValue = $(this).val();
+        var recordId = row.find("td:first-child a").text().trim(); // Fetch ID from first column
+
+        // Send AJAX request to update database
+        $.ajax({
+          url: "/bisag/hr/updateIdentityCards",  // Update to match your backend API
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({ id: recordId, identityCards: newValue }),
+          success: function (response) {
+            // Update UI after successful update
+            span.text(newValue).show();
+            select.hide();
+            button.show();
+          },
+          error: function () {
+            alert("Error updating identity card status");
+          },
+        });
+      });
+    });
+  });
 </script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
