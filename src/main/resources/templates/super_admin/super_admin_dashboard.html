@@ -40,7 +40,7 @@
 			<h1>Dashboard</h1>
 			<nav>
 				<ol class="breadcrumb">
-					<li class="breadcrumb-item"><a href="index.html">Home</a></li>
+					<li class="breadcrumb-item"><a href="/bisag/super_admin/super_admin_dashboard">Home</a></li>
 					<li class="breadcrumb-item active">Dashboard</li>
 				</ol>
 			</nav>
@@ -74,6 +74,28 @@
 								</div>
 
 							</div>
+							</a>
+						</div>
+
+						<div class="col-xxl-3 col-md-4">
+							<a th:href="@{/bisag/super_admin/hr_list}">
+								<div class="card info-card sales-card">
+
+									<div class="card-body">
+
+										<div class="d-flex align-items-center">
+											<div
+													class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+												<i class="bi bi-people"></i>
+											</div>
+											<div class="ps-3">
+												<h6 th:text="${adminCount}"></h6>
+												<span class="text-success small pt-1 fw-bold">HRs</span>
+											</div>
+										</div>
+									</div>
+
+								</div>
 							</a>
 						</div>
 						<!-- End Sales Card -->
