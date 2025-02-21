@@ -9,41 +9,26 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-          integrity="sha384-T3c6CoIi6uLrA9TneNEoa0Yz1rzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
           crossorigin="anonymous">
 
     <!-- jsPDF Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-    <!-- jsPDF AutoTable Plugin -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
 
+    <!-- SheetJS Library for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
     <style>
-        .form-floating {
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .card-body {
-            padding: 30px;
-        }
-        .breadcrumb-item a {
-            font-weight: bold;
-        }
-        .table-responsive {
-            margin-top: 20px;
-        }
+        .form-group { margin-bottom: 20px; }
+        .card-body { padding: 30px; }
+        .table-responsive { margin-top: 20px; }
     </style>
 </head>
 
 <body>
 <div th:replace="fragments/headerFragment :: header"></div>
-
 <div th:replace="fragments/asideFragment :: aside"></div>
-
 <main id="main" class="main">
-
     <div class="pagetitle">
         <h1>Attendance Records</h1>
         <nav>
@@ -53,19 +38,13 @@
             </ol>
         </nav>
     </div>
-    <!-- End Page Title -->
+
     <section class="section">
         <div class="row">
             <div class="col-lg-12">
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Upload Attendance Sheet</h5>
-
-                        <!-- Success/Error Messages -->
-                        <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
-                        <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
-
-                        <!-- Upload Form -->
                         <form th:action="@{/bisag/admin/upload_attendance}" method="post" enctype="multipart/form-data">
                             <div class="row">
                                 <div class="col-md-8">
@@ -75,23 +54,45 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4 text-center">
-                                    <button type="submit" class="btn btn-primary mt-3">
-                                        Upload Attendance
-                                    </button>
+                                    <button type="submit" class="btn btn-primary mt-3">Upload Attendance</button>
                                 </div>
                             </div>
                         </form>
-                        <!-- End Upload Form -->
 
-                        <!-- PDF Download Button -->
+                        <!-- Filters -->
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <select class="form-control" id="monthFilter">
+                                    <option value="">Select Month</option>
+                                    <option value="January">January</option>
+                                    <option value="February">February</option>
+                                    <option value="March">March</option>
+                                    <option value="April">April</option>
+                                    <option value="May">May</option>
+                                    <option value="June">June</option>
+                                    <option value="July">July</option>
+                                    <option value="August">August</option>
+                                    <option value="September">September</option>
+                                    <option value="October">October</option>
+                                    <option value="November">November</option>
+                                    <option value="December">December</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="number" class="form-control" id="yearFilter" placeholder="Enter Year">
+                            </div>
+                        </div>
+
+                        <!-- Download Buttons -->
                         <div class="text-center mt-4">
                             <button class="btn btn-success" id="downloadPDF">Download as PDF</button>
+                            <button class="btn btn-info" id="downloadExcel">Download as Excel</button>
                         </div>
 
                         <!-- Attendance Table -->
                         <div class="table-responsive">
                             <h5 class="card-title mt-4">Intern Attendance Details</h5>
-                            <table class="table datatable table-bordered" id="attendanceTable">
+                            <table class="table table-bordered" id="attendanceTable">
                                 <thead>
                                 <tr>
                                     <th>Intern ID</th>
@@ -101,10 +102,10 @@
                                     <th>Total Present Days</th>
                                     <th>Total Absent Days</th>
                                     <th>Attendance Percentage</th>
-                                    <th>Total Attendance Percentage</th> <!-- New column for Total Attendance -->
+                                    <th>Total Attendance Percentage</th>
                                 </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="attendanceBody">
                                 <tr th:each="attendance : ${attendances}">
                                     <td th:text="${attendance.internId}"></td>
                                     <td th:text="${attendance.month}"></td>
@@ -113,40 +114,47 @@
                                     <td th:text="${attendance.totalPresentDays}"></td>
                                     <td th:text="${attendance.totalAbsentDays}"></td>
                                     <td th:text="${attendance.attendancePercentage}"></td>
-                                    <!-- Display Total Attendance Percentage for this intern -->
                                     <td th:text="${internTotalAttendanceMap[attendance.internId]}"></td>
                                 </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <!-- End Attendance Table -->
-
                     </div>
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- Include the footer fragment -->
-    <div th:replace="fragments/footerFragment :: footer"></div>
 </main>
-<!-- End #main -->
 
-<!-- JavaScript for PDF Download -->
 <script>
     document.getElementById("downloadPDF").addEventListener("click", function() {
-        const { jsPDF } = window.jspdf;  // Access jsPDF from the global object
-
-        // Create a new instance of jsPDF
+        const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-
-        // Generate the table in the PDF
         doc.autoTable({ html: '#attendanceTable' });
-
-        // Download the PDF
-        doc.save('attendance_records.pdf');
+        doc.save('Attendance_Records.pdf');
     });
-</script>
 
+    document.getElementById("downloadExcel").addEventListener("click", function() {
+        let table = document.getElementById("attendanceTable");
+        let wb = XLSX.utils.table_to_book(table, { sheet: "Attendance" });
+        XLSX.writeFile(wb, "Attendance_Records.xlsx");
+    });
+
+    document.getElementById("monthFilter").addEventListener("change", filterTable);
+    document.getElementById("yearFilter").addEventListener("input", filterTable);
+
+    function filterTable() {
+        let month = document.getElementById("monthFilter").value.toLowerCase();
+        let year = document.getElementById("yearFilter").value;
+        let rows = document.querySelectorAll("#attendanceBody tr");
+
+        rows.forEach(row => {
+            let rowMonth = row.cells[1].textContent.toLowerCase();
+            let rowYear = row.cells[2].textContent;
+            let match = (!month || rowMonth.includes(month)) && (!year || rowYear.includes(year));
+            row.style.display = match ? "" : "none";
+        });
+    }
+</script>
 </body>
 </html>
