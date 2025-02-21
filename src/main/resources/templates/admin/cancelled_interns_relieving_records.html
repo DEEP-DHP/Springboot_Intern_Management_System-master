@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Cancelled Intern Relieving Record Form</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa0Yz1rzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+        crossorigin="anonymous">
+  <style>
+    .form-floating {
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .card-body {
+      padding: 30px;
+    }
+    .breadcrumb-item a {
+      font-weight: bold;
+    }
+    .radio-group {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+<div th:replace="fragments/headerFragment :: header"></div>
+
+<div th:replace="fragments/asideFragment :: aside"></div>
+
+<main id="main" class="main">
+  <div class="pagetitle">
+    <h1>Cancelled Relieving Record Form</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a th:href="@{/bisag/admin/relieving_records_list}">Records</a></li>
+        <li class="breadcrumb-item active">Submit Relieving Record</li>
+      </ol>
+    </nav>
+  </div>
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Enter Details</h5>
+
+            <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+            <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+            <form method="POST" action="/bisag/admin/submit_relieving_record_cancelled">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-floating">
+                    <select class="form-select" id="internId" name="internId">
+                      <option value="">-- Select Intern ID --</option>
+                      <th:block th:each="intern : ${interns}">
+                        <option th:value="${intern.internId}" th:text="${intern.internId}"></option>
+                      </th:block>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- This will display the group ID once the intern is selected -->
+              <div class="col-md-6">
+                <div class="form-group" id="groupIdSection" style="display:none;">
+                  <label for="groupId">Group ID</label>
+                  <input type="text" id="groupId" name="groupId" class="form-control" readonly />
+                </div>
+              </div>
+
+              <input type="hidden" name="id" th:if="${record != null}" th:value="${record.id}">
+
+              <div class="form-group col-md-4">
+                <!-- Text Field for College Name (Auto-filled) -->
+                <label for="FirstName">Intern Name:</label>
+                <input type="text" id="FirstName" name="FirstName" class="form-control" readonly>
+              </div>
+              <div class="form-group col-md-4">
+                <!-- Text Field for College Name (Auto-filled) -->
+                <label for="collegeName">College Name:</label>
+                <input type="text" id="collegeName" name="collegeName" class="form-control" readonly>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-floating">
+                    <input type="date" name="joiningDate" class="form-control" id="joiningDate"
+                           required
+                           th:value="${record != null ? #dates.format(record.joiningDate, 'yyyy-MM-dd') : ''}">
+                    <label for="joiningDate">Joining Date</label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-floating">
+                    <input type="date" name="plannedDate" class="form-control" id="plannedDate"
+                           required
+                           th:value="${record != null ? #dates.format(record.plannedDate, 'yyyy-MM-dd') : ''}">
+                    <label for="plannedDate">Planned Date of relieving from BISAG-N:</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 form-group">
+                  <label>Passwords:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="password" value="Yes" required
+                           th:checked="${record != null and record.password == 'Yes'}"> Yes
+                    <input type="radio" name="password" value="No" required
+                           th:checked="${record != null and record.password == 'No'}"> No
+                    <input type="radio" name="password" value="Not Applicable" required
+                           th:checked="${record != null and record.password == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>CD's/DVD's or Other Media:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="media" value="Yes" required
+                           th:checked="${record != null and record.media == 'Yes'}"> Yes
+                    <input type="radio" name="media" value="No" required
+                           th:checked="${record != null and record.media == 'No'}"> No
+                    <input type="radio" name="media" value="Not Applicable" required
+                           th:checked="${record != null and record.media == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6 form-group">
+                  <label>Status of Projects on hand:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="status" value="Yes" required
+                           th:checked="${record != null and record.status == 'Yes'}"> Yes
+                    <input type="radio" name="status" value="No" required
+                           th:checked="${record != null and record.status == 'No'}"> No
+                    <input type="radio" name="status" value="Not Applicable" required
+                           th:checked="${record != null and record.status == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Paths/Folder arrangements for projects handled/Pending:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="project" value="Yes" required
+                           th:checked="${record != null and record.project == 'Yes'}"> Yes
+                    <input type="radio" name="project" value="No" required
+                           th:checked="${record != null and record.project == 'No'}"> No
+                    <input type="radio" name="project" value="Not Applicable" required
+                           th:checked="${record != null and record.project == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Thesis/Hard binding Submission:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="thesis" value="Yes" required
+                           th:checked="${record != null and record.thesis == 'Yes'}"> Yes
+                    <input type="radio" name="thesis" value="No" required
+                           th:checked="${record != null and record.thesis == 'No'}"> No
+                    <input type="radio" name="thesis" value="Not Applicable" required
+                           th:checked="${record != null and record.thesis == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Books:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="books" value="Yes" required
+                           th:checked="${record != null and record.books == 'Yes'}"> Yes
+                    <input type="radio" name="books" value="No" required
+                           th:checked="${record != null and record.books == 'No'}"> No
+                    <input type="radio" name="books" value="Not Applicable" required
+                           th:checked="${record != null and record.books == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Subscription:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="subscription" value="Yes" required
+                           th:checked="${record != null and record.subscription == 'Yes'}"> Yes
+                    <input type="radio" name="subscription" value="No" required
+                           th:checked="${record != null and record.subscription == 'No'}"> No
+                    <input type="radio" name="subscription" value="Not Applicable" required
+                           th:checked="${record != null and record.subscription == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Access Rights Removal:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="accessRights" value="Yes" required
+                           th:checked="${record != null and record.accessRights == 'Yes'}"> Yes
+                    <input type="radio" name="accessRights" value="No" required
+                           th:checked="${record != null and record.accessRights == 'No'}"> No
+                    <input type="radio" name="accessRights" value="Not Applicable" required
+                           th:checked="${record != null and record.accessRights == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Pendrives:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="pendrives" value="Yes" required
+                           th:checked="${record != null and record.pendrives == 'Yes'}"> Yes
+                    <input type="radio" name="pendrives" value="No" required
+                           th:checked="${record != null and record.pendrives == 'No'}"> No
+                    <input type="radio" name="pendrives" value="Not Applicable" required
+                           th:checked="${record != null and record.pendrives == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Unused Cd's:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="unusedCd" value="Yes" required
+                           th:checked="${record != null and record.unusedCd == 'Yes'}"> Yes
+                    <input type="radio" name="unusedCd" value="No" required
+                           th:checked="${record != null and record.unusedCd == 'No'}"> No
+                    <input type="radio" name="unusedCd" value="Not Applicable" required
+                           th:checked="${record != null and record.unusedCd == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Backups of project:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="backupProject" value="Yes" required
+                           th:checked="${record != null and record.backupProject == 'Yes'}"> Yes
+                    <input type="radio" name="backupProject" value="No" required
+                           th:checked="${record != null and record.backupProject == 'No'}"> No
+                    <input type="radio" name="backupProject" value="Not Applicable" required
+                           th:checked="${record != null and record.backupProject == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>System/Laptop handover:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="system" value="Yes" required
+                           th:checked="${record != null and record.system == 'Yes'}"> Yes
+                    <input type="radio" name="system" value="No" required
+                           th:checked="${record != null and record.system == 'No'}"> No
+                    <input type="radio" name="system" value="Not Applicable" required
+                           th:checked="${record != null and record.system == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Identity Cards:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="identityCards" value="Yes" required
+                           th:checked="${record != null and record.identityCards == 'Yes'}"> Yes
+                    <input type="radio" name="identityCards" value="No" required
+                           th:checked="${record != null and record.identityCards == 'No'}"> No
+                    <input type="radio" name="identityCards" value="Not Applicable" required
+                           th:checked="${record != null and record.identityCards == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Financial/Stipend Outstanding:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="stipend" value="Yes" required
+                           th:checked="${record != null and record.stipend == 'Yes'}"> Yes
+                    <input type="radio" name="stipend" value="No" required
+                           th:checked="${record != null and record.stipend == 'No'}"> No
+                    <input type="radio" name="stipend" value="Not Applicable" required
+                           th:checked="${record != null and record.stipend == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Briefing of Information Security responsibilities after leaving BISAG-N:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="information" value="Yes" required
+                           th:checked="${record != null and record.information == 'Yes'}"> Yes
+                    <input type="radio" name="information" value="No" required
+                           th:checked="${record != null and record.information == 'No'}"> No
+                    <input type="radio" name="information" value="Not Applicable" required
+                           th:checked="${record != null and record.information == 'Not Applicable'}"> Not Applicable
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>End Interview:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="endInterview" value="Yes" required
+                           th:checked="${record != null and record.endInterview == 'Yes'}"> Yes
+                    <input type="radio" name="endInterview" value="No" required
+                           th:checked="${record != null and record.endInterview == 'No'}"> No
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Weekly Report:</label>
+                  <div class="radio-group">
+                    <input type="radio" name="weeklyReport" value="Yes" required
+                           th:checked="${record != null and record.weeklyReport == 'Yes'}"> Yes
+                    <input type="radio" name="weeklyReport" value="No" required
+                           th:checked="${record != null and record.weeklyReport == 'No'}"> No
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Attendance:</label>
+                  <div class="radio-group">
+                    <input type="text" name="attendance" class="form-control" id="attendance"
+                           placeholder="Attendance:" required
+                           th:value="${record != null ? record.attendance : ''}">
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label>Any Other:</label>
+                  <div class="radio-group">
+                    <input type="text" name="others" class="form-control" id="others"
+                           placeholder="Any Other:" required
+                           th:value="${record != null ? record.others : ''}">
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </div>
+            </form>
+          </div>
+          <script>
+            document.getElementById("internId").addEventListener("change", function () {
+              var internId = this.value;
+
+              if (internId) {
+                fetch("/bisag/admin/getCollegeName/" + internId)
+                        .then(response => response.text())
+                        .then(data => {
+                          document.getElementById("collegeName").value = data;
+                        })
+                        .catch(error => console.error("Error fetching college name:", error));
+              } else {
+                document.getElementById("collegeName").value = "";
+              }
+            });
+          </script>
+          <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+          <script>
+            $(document).ready(function() {
+              $('#internId').change(function() {
+                var internId = $(this).val();
+
+                if (internId) {
+                  $.ajax({
+                    url: '/bisag/admin/getGroupId/' + internId,
+                    type: 'GET',
+                    success: function(response) {
+                      if (response !== "Group ID not found") {
+                        $('#groupId').val(response);
+                        $('#groupIdSection').show();
+                      } else {
+                        alert(response);
+                      }
+                    },
+                    error: function() {
+                      alert('Error fetching Group ID');
+                    }
+                  });
+                } else {
+                  $('#groupIdSection').hide();
+                }
+              });
+            });
+
+            // Listen for change event on Intern ID select
+            document.getElementById('internId').addEventListener('change', function() {
+              const internId = this.value;
+              if (internId) {
+                fetch(`/bisag/admin/getInternName/${internId}`)
+                        .then(response => response.json()) // ✅ Parse JSON response
+                        .then(data => {
+                          document.getElementById('FirstName').value = data.internName;
+                        })
+                        .catch(error => {
+                          console.error("Error fetching intern name: ", error);
+                        });
+              }
+            });
+          </script>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+
+</html>

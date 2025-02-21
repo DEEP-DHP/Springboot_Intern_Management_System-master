@@ -99,7 +99,7 @@
     <h1>Relieving Records</h1>
     <nav>
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a th:href="@{/bisag/admin/relieving_records}">Records</a></li>
+        <li class="breadcrumb-item"><a th:href="@{/bisag/admin/ask_records}">Records</a></li>
         <li class="breadcrumb-item active">Relieving Records List</li>
       </ol>
     </nav>
@@ -142,7 +142,9 @@
                 <th>Identity Cards</th>
                 <th>Financial/Stipend Outstanding</th>
                 <th>Briefing of Information Security responsibilities after leaving BISAG-N</th>
+                <th>End Interview</th>
                 <th>Weekly Report</th>
+                <th>Final Report</th>
                 <th>Attendance</th>
                 <th>Any Others</th>
 
@@ -176,7 +178,9 @@
                 <td th:text="${record.identityCards}"></td>
                 <td th:text="${record.stipend}"></td>
                 <td th:text="${record.information}"></td>
+                <td th:text="${record.endInteriew}"></td>
                 <td th:text="${record.weeklyReport}"></td>
+                <td th:text="${record.finalReport}"></td>
                 <td th:text="${record.attendance}"></td>
                 <td th:text="${record.others}"></td>
 

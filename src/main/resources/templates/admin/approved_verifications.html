@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Approved Verifications</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
 <div th:replace="fragments/headerFragment :: header"></div>
@@ -29,17 +30,16 @@
                 <table class="table table-bordered">
                     <thead>
                     <tr>
-<!--                        <th>ID</th>-->
                         <th>Intern ID</th>
                         <th>Company Name</th>
                         <th>Email</th>
                         <th>Approval Date</th>
                         <th>Remarks</th>
+<!--                        <th>Action</th> -->
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:each="verification : ${verifications}">
-<!--                        <td th:text="${verification.id}"></td>-->
                         <td>
                             <a th:href="@{'/bisag/admin/intern_verification_details/' + ${verification.internId}}">
                                 <span th:text="${verification.internId}"></span>
@@ -49,6 +49,12 @@
                         <td th:text="${verification.email}"></td>
                         <td th:text="${verification.verifiedDate}"></td>
                         <td th:text="${verification.remarks}"></td>
+<!--                        <td>-->
+<!--                            <form th:action="@{/bisag/admin/send_to_hr}" method="post">-->
+<!--                                <input type="hidden" name="internId" th:value="${verification.internId}" />-->
+<!--                                <button type="submit" class="btn btn-primary">Send to HR</button>-->
+<!--                            </form>-->
+<!--                        </td>-->
                     </tr>
                     </tbody>
                 </table>
@@ -56,5 +62,30 @@
         </div>
     </section>
 </main>
+
+<script>
+    $(document).ready(function () {
+        $(".sendToHrBtn").click(function () {
+            let verificationId = $(this).attr("data-id");
+
+            if (confirm("Are you sure you want to send this verification to HR?")) {
+                $.ajax({
+                    type: "POST",
+                    url: "/bisag/admin/send_verification_to_hr",
+                    contentType: "application/json",
+                    data: JSON.stringify({ verificationId: verificationId }),
+                    success: function (response) {
+                        alert("Verification sent to HR successfully!");
+                        location.reload();
+                    },
+                    error: function () {
+                        alert("Error sending verification to HR.");
+                    }
+                });
+            }
+        });
+    });
+</script>
+
 </body>
 </html>
