@@ -88,19 +88,19 @@
                   </div>
                 </div>
 
-                  <!-- Department Dropdown with "Others" Option -->
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label for="department" class="form-label">Department:</label>
-                      <select class="form-select" id="department" th:field="*{department}" onchange="toggleInputField('department', 'departmentOtherInput')" required>
-                        <option value="Intern">Intern</option>
-                        <option value="Others">Others</option>
-                      </select>
-                      <input type="text" id="departmentOtherInput" name="department" class="form-control mt-2 d-none" placeholder="Enter Department">
-                    </div>
+                <!-- Department Dropdown with "Others" Option -->
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="department" class="form-label">Department:</label>
+                    <select class="form-select" id="department" th:field="*{department}" onchange="toggleInputField('department', 'departmentOtherInput')" required>
+                      <option value="Intern">Intern</option>
+                      <option value="Others">Others</option>
+                    </select>
+                    <input type="text" id="departmentOtherInput" name="department" class="form-control mt-2 d-none" placeholder="Enter Department">
                   </div>
+                </div>
 
-                  <!-- Purpose Dropdown with "Others" Option -->
+                <!-- Purpose Dropdown with "Others" Option -->
                 <div class="row">
                   <div class="col-md-6">
                     <div class="form-group">
@@ -113,58 +113,58 @@
                     </div>
                   </div>
 
-                <script>
-                  function toggleInputField(dropdownId, inputFieldId) {
-                    var dropdown = document.getElementById(dropdownId);
-                    var inputField = document.getElementById(inputFieldId);
+                  <script>
+                    function toggleInputField(dropdownId, inputFieldId) {
+                      var dropdown = document.getElementById(dropdownId);
+                      var inputField = document.getElementById(inputFieldId);
 
-                    if (dropdown.value === "Others") {
-                      inputField.classList.remove("d-none"); // Show text input
-                      dropdown.style.display = "none"; // Hide dropdown
-                      inputField.focus();
-                    } else {
-                      inputField.classList.add("d-none"); // Hide text input
-                      dropdown.style.display = "block"; // Show dropdown
+                      if (dropdown.value === "Others") {
+                        inputField.classList.remove("d-none"); // Show text input
+                        dropdown.style.display = "none"; // Hide dropdown
+                        inputField.focus();
+                      } else {
+                        inputField.classList.add("d-none"); // Hide text input
+                        dropdown.style.display = "block"; // Show dropdown
+                      }
                     }
-                  }
-                </script>
-                <div class="col-md-6">
-                  <div class="form-group">
-                    <label for="type" class="form-label">Select Type:</label>
-                    <select class="form-select" id="type" th:field="*{type}" required>
-                      <option value="Hardcopy" selected>Hard Copy</option>
-                      <option value="Softcopy">Soft Copy</option>
-                    </select>
+                  </script>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="type" class="form-label">Select Type:</label>
+                      <select class="form-select" id="type" th:field="*{type}" required>
+                        <option value="Hardcopy" selected>Hard Copy</option>
+                        <option value="Softcopy">Soft Copy</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="form-group row border py-4 shadow mt-4 mx-1">
-                <label for="startDate" class="col-form-label">
-                  <h5>Issue Duration:</h5>
-                </label>
-                <div class="col-md-6">
-                  <label for="issueDate" class="col-form-label">Issue Date:</label>
-                  <input type="date" id="issueDate" name="issueDate" value="" min="" max="" readonly />
-                </div>
-                <script>
-                  document.addEventListener('DOMContentLoaded', function () {
-                    var today = new Date();
-                    var dateString = today.toISOString().split('T')[0];
-                    var issueDateField = document.getElementById('issueDate');
-                    // Set the issue date to today's date
-                    issueDateField.value = dateString;
-                    // Optional: Set min and max to today's date
-                    issueDateField.setAttribute('min', dateString);
-                    issueDateField.setAttribute('max', dateString);
-                  });
-                </script>
-                <div class="col-md-6">
-                  <div class="form-floating">
-                    <input type="date" th:field="*{actualReturnDate}" class="form-control" id="actualReturnDate" placeholder="Actual Return Date">
-                    <label for="actualReturnDate">Temporary Actual Return Date</label>
+                <div class="form-group row border py-4 shadow mt-4 mx-1">
+                  <label for="startDate" class="col-form-label">
+                    <h5>Issue Duration:</h5>
+                  </label>
+                  <div class="col-md-6">
+                    <label for="issueDate" class="col-form-label">Issue Date:</label>
+                    <input type="date" id="issueDate" name="issueDate" value="" min="" max="" readonly />
                   </div>
-                </div>
+                  <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                      var today = new Date();
+                      var dateString = today.toISOString().split('T')[0];
+                      var issueDateField = document.getElementById('issueDate');
+                      // Set the issue date to today's date
+                      issueDateField.value = dateString;
+                      // Optional: Set min and max to today's date
+                      issueDateField.setAttribute('min', dateString);
+                      issueDateField.setAttribute('max', dateString);
+                    });
+                  </script>
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input type="date" th:field="*{actualReturnDate}" class="form-control" id="actualReturnDate" placeholder="Actual Return Date">
+                      <label for="actualReturnDate">Temporary Actual Return Date</label>
+                    </div>
+                  </div>
                   <div class="col-md-6">
                     <div class="form-floating">
                       <input type="date" th:field="*{expectedDate}" class="form-control" id="expectedDate" placeholder="Expected Return Date" required>
@@ -178,15 +178,15 @@
                       <label for="location">Location</label>
                     </div>
                   </div>
-              </div>
+                </div>
 
-              <div class="text-center mt-4">
-                <button type="submit" class="btn btn-primary">
+                <div class="text-center mt-4">
+                  <button type="submit" class="btn btn-primary">
       <span class="spinner-border spinner-border-sm visually-hidden"
             role="status" aria-hidden="true"></span>
-                  <span class="visually-hidden">Loading...</span>Submit
-                </button>
-              </div>
+                    <span class="visually-hidden">Loading...</span>Submit
+                  </button>
+                </div>
             </form>
           </div>
         </div>
