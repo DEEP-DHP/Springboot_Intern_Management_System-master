@@ -42,7 +42,18 @@
 				<li><a th:href="@{/bisag/super_admin/admin_list}"><i class="bi bi-circle"></i><span>Manage Admin</span></a></li>
 			</ul>
 		</li>
+		<li class="nav-item">
+			<a class="nav-link collapsed" data-bs-target="#hr-components-nav" data-bs-toggle="collapse" href="#">
+				<i class="bi bi-menu-button-wide"></i><span>HR</span><i class="bi bi-chevron-down ms-auto"></i>
+			</a>
+			<ul id="hr-components-nav" class="nav-content collapse " data-bs-parent="#hr-nav">
+				<li><a th:href="@{/bisag/super_admin/register_hr}"><i class="bi bi-circle"></i><span>Create HR</span></a></li>
+				<li><a th:href="@{/bisag/super_admin/hr_list}"><i class="bi bi-circle"></i><span>Manage HR</span></a></li>
+			</ul>
+		</li>
 	</ul>
+
+
 
 	<!-- Vendor JS Files -->
 	<script th:src="@{/assets/vendor/apexcharts/apexcharts.min.js}"></script>
