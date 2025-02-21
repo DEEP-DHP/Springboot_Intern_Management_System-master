@@ -84,9 +84,15 @@ public class RRecord {
     @Column(name = "attendance")
     private String attendance;
 
+    @Column(name = "end_interview")
+    private String endInteriew;
+
+    @Column(name = "finalReport")
+    private String finalReport;
+
     public RRecord() { super(); }
 
-    public RRecord(Long id, String internId, String FirstName, String groupId, String collegeName, Date joiningDate, Date plannedDate, String password, String media, String project, String thesis, String others, String books, String subscription, String accessRights, String pendrives, String unusedCd, String backupProject, String system, String identityCards, String stipend, String information, String weeklyReport, String attendance) {
+    public RRecord(Long id, String internId, String FirstName, String groupId, String collegeName, Date joiningDate, Date plannedDate, String password, String media, String project, String thesis, String others, String books, String subscription, String accessRights, String pendrives, String unusedCd, String backupProject, String system, String identityCards, String stipend, String information, String weeklyReport, String attendance, String endInteriew, String finalReport) {
         this.id = id;
         this.internId = internId;
         this.FirstName = FirstName;
@@ -111,6 +117,8 @@ public class RRecord {
         this.information = information;
         this.weeklyReport = weeklyReport;
         this.attendance = attendance;
+        this.endInteriew = endInteriew;
+        this.finalReport = finalReport;
     }
 
     public Long getId() {
@@ -301,5 +309,21 @@ public class RRecord {
 
     public void setAttendance(String attendance) {
         this.attendance = attendance;
+    }
+
+    public String getEndInteriew() {
+        return endInteriew;
+    }
+
+    public void setEndInteriew(String endInteriew) {
+        this.endInteriew = endInteriew;
+    }
+
+    public String getFinalReport() {
+        return finalReport;
+    }
+
+    public void setFinalReport(String finalReport) {
+        this.finalReport = finalReport;
     }
 }
