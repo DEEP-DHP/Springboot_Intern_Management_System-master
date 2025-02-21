@@ -171,7 +171,8 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="task : ${tasks}">
+                <tr th:each="task : ${tasks}"
+                    th:classappend="${task.endDate != null and task.endDate.before(#dates.createToday()) and task.proofAttachment == null} ? 'table-warning' : ''">
                   <td>
                     <a th:href="@{/bisag/guide/task_details/{id}(id=${task.id})}">
                       <span th:text="${task.id}"></span>
