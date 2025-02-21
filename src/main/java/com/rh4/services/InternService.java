@@ -158,10 +158,13 @@ public class InternService {
 	    return internRepo.countByCancellationStatus("requested");
 	}
 
-	public List<Intern> getCancelledInterns() {
-		return internRepo.getCancelledIntern();
-	}
+//	public List<Intern> getCancelledInterns() {
+//		return internRepo.getCancelledIntern();
+//	}
 
+	public List<Intern> getCancelledInterns() {
+		return internRepo.findByCancellationStatus("Cancelled");
+	}
 	public List<Intern> getCurrentInterns() {
 		return internRepo.getCurrentInterns();
 	}
