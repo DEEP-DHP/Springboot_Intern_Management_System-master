@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
 
 import com.rh4.repositories.*;
 import com.rh4.entities.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -45,6 +47,7 @@ import org.springframework.web.servlet.view.RedirectView;
 @Controller
 @RequestMapping("/bisag/admin")
 public class AdminController {
+    Logger logger = LoggerFactory.getLogger(HomeController.class);
 
     @Autowired
     HttpSession session;
@@ -122,6 +125,10 @@ public class AdminController {
     private GroupEntity groupEntity;
     @Autowired
     private LogRepo logRepo;
+
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     public static String encodePassword(String rawPassword) {
         return passwordEncoder.encode(rawPassword);
@@ -296,9 +303,130 @@ public class AdminController {
 
     // Intern Management
 
-    @GetMapping("/register_intern")
-    public String registerIntern() {
-        return "admin/InternRegistration";
+//    @GetMapping("/register_intern")
+//    public String registerIntern() {
+//        return "admin/internregistration";
+//    }
+    @GetMapping("/register_internn")
+    public ModelAndView registerInternn() {
+        ModelAndView mv = new ModelAndView("admin/register_internn");
+        List<College> colleges = fieldService.getColleges();
+        List<Domain> domains = fieldService.getDomains();
+        List<Branch> branches = fieldService.getBranches();
+        List<Degree> degrees = fieldService.getDegrees();
+        mv.addObject("colleges", colleges);
+        mv.addObject("domains", domains);
+        mv.addObject("branches", branches);
+        mv.addObject("degrees", degrees);
+
+        return mv;
+    }
+
+    @PostMapping("/register_internn")
+    public String registerInternn(@RequestParam("firstName") String firstName,
+                                  @RequestParam("lastName") String lastName,
+                                  @RequestParam("contactNo") String contactNo,
+                                  @RequestParam("email") String email,
+                                  @RequestParam("collegeName") String collegeName,
+                                  @RequestParam("branch") String branch,
+                                  @RequestParam("passportSizeImage") MultipartFile passportSizeImage,
+                                  @RequestParam("icardImage") MultipartFile icardImage,
+                                  @RequestParam("nocPdf") MultipartFile nocPdf,
+                                  @RequestParam("resumePdf") MultipartFile resumePdf,
+                                  @RequestParam("semester") int semester,
+                                  @RequestParam("password") String password,
+                                  @RequestParam("degree") String degree,
+                                  @RequestParam("domain") String domain,
+                                  @RequestParam("joiningDate") java.sql.Date joiningDate,
+                                  @RequestParam("completionDate") java.sql.Date completionDate, HttpSession session) {
+
+        try {
+            String storageDir = baseDir + email + "/";
+            File directory = new File(storageDir);
+
+            // Create directory if it doesn't exist
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            // Save files to local storage
+            String passportFileName = storageDir + "passportSizeImage.jpg";
+            String icardFileName = storageDir + "collegeIcardImage.jpg";
+            String nocFileName = storageDir + "nocPdf.pdf";
+            String resumeFileName = storageDir + "resumePdf.pdf";
+
+            // Save Passport Size Image
+            Files.write(Paths.get(passportFileName), passportSizeImage.getBytes());
+
+            // Save College Icard Image
+            Files.write(Paths.get(icardFileName), icardImage.getBytes());
+
+            // Save NOC PDF
+            Files.write(Paths.get(nocFileName), nocPdf.getBytes());
+
+            // Save Resume PDF
+            Files.write(Paths.get(resumeFileName), resumePdf.getBytes());
+
+            InternApplication internApplication = new InternApplication();
+            internApplication.setFirstName(firstName);
+            internApplication.setLastName(lastName);
+            internApplication.setContactNo(contactNo);
+            internApplication.setEmail(email);
+            internApplication.setCollegeName(collegeName);
+            internApplication.setBranch(branch);
+            internApplication.setSemester(semester);
+            internApplication.setPassword(password);
+            internApplication.setDegree(degree);
+            internApplication.setDomain(domain);
+            internApplication.setJoiningDate(joiningDate);
+            internApplication.setCompletionDate(completionDate);
+
+            internApplication.setPassportSizeImage(passportSizeImage.getBytes());
+            internApplication.setCollegeIcardImage(icardImage.getBytes());
+            internApplication.setNocPdf(nocPdf.getBytes());
+            internApplication.setResumePdf(resumePdf.getBytes());
+
+            internApplicationRepo.save(internApplication);
+
+            MyUser user = new MyUser();
+            user.setUsername(email);
+            String encryptedPassword = passwordEncoder().encode(password);
+            user.setPassword(encryptedPassword);
+            user.setEnabled(true);
+            user.setUserId(Long.toString(internApplication.getId()));
+            user.setRole("UNDERPROCESSINTERN");
+            userRepo.save(user);
+
+            // Send success email
+            emailService.sendSimpleEmail(
+                    internApplication.getEmail(),
+                    "Notification: Successful Application for BISAG Internship\r\n" +
+                            "\r\n" +
+                            "Dear " + internApplication.getFirstName() + ",\r\n" +
+                            "\r\n" +
+                            "Congratulations! We are pleased to inform you that your application for the BISAG internship has been successful. Your enthusiasm, qualifications, and potential have stood out, and we believe that you will make valuable contributions to our team.\r\n" +
+                            "\r\n" +
+                            "As an intern, you will have the opportunity to learn, grow, and gain hands-on experience in a dynamic and innovative environment. We trust that your time with us will be rewarding, and we look forward to seeing your skills and talents in action.\r\n" +
+                            "\r\n" +
+                            "Please find attached detailed information about the internship program, including your start date, orientation details, and any additional requirements. If you have any questions or need further assistance, feel free to contact [Contact Person/Department].\r\n" +
+                            "\r\n" +
+                            "Once again, congratulations on being selected for the BISAG internship program. We are excited to welcome you to our team and wish you a fulfilling and successful internship experience.\r\n" +
+                            "\r\n" +
+                            "Best regards,\r\n" +
+                            "\r\n" +
+                            "Your Colleague,\r\n" +
+                            "Internship Coordinator\r\n" +
+                            "BISAG INTERNSHIP PROGRAM\r\n" +
+                            "1231231231",
+                    "BISAG ADMINISTRATIVE OFFICE"
+            );
+            session.setAttribute("msg", "Application Submitted Successfully");
+            return "redirect:/bisag/admin/intern_application";
+        } catch (Exception e) {
+            logger.info("Issue while submitting application: " + e.getMessage());
+            session.setAttribute("msg", "Error: " + e.getMessage() + ". Please try again.");
+            return "redirect:/bisag/admin/intern_application";
+        }
     }
 
     @PostMapping("/register_intern")
@@ -2735,6 +2863,13 @@ public ModelAndView cancellationRequests(Model model) {
     }
 
     // ========================== COMPANY VERIFICATION REQUESTS ==========================
+    @PostMapping("/send_to_hr")
+    public String sendToHR(@RequestParam("internId") String internId, RedirectAttributes redirectAttributes) {
+        // Logic to send the intern ID to HR (e.g., update the database, send an email, etc.)
+
+        redirectAttributes.addFlashAttribute("message", "Intern ID " + internId + " sent to HR successfully.");
+        return "redirect:/bisag/admin/approved-verifications"; // Redirect back to the list page
+    }
     //View all pending verification requests
     @GetMapping("/verification_requests")
     public ModelAndView viewVerificationRequests(Model model, HttpSession session) {
@@ -3044,6 +3179,44 @@ public ModelAndView cancellationRequests(Model model) {
     }
 
     // --------------------------------------Display all relieving records---------------------------------------------
+    @GetMapping("/ask_records")
+    public String showVerificationFilterPage() {
+        return "admin/ask_records"; // This should be the name of your Thymeleaf template (HTML file)
+    }
+
+//    @GetMapping("/approved_verifications")
+//    public String showApproved(Model model) {
+//        List<Verification> verifications = verificationService.getApprovedVerifications(); // Fetch data from service
+//        model.addAttribute("verifications", verifications);
+//        return "approved_verifications"; // Name of the Thymeleaf template for "After Internship Completion"
+//    }
+
+//    @GetMapping("/cancelled_interns")
+//    public String showCancelledInterns(Model model) {
+//        List<CancelledIntern> cancelledInterns = verificationService.getCancelledInterns(); // Fetch data from service
+//        model.addAttribute("cancelledInterns", cancelledInterns);
+//        return "cancelled_interns"; // Name of the Thymeleaf template for "Cancelled Intern"
+//    }
+// Display the form for adding a relieving record of cancelled interns
+@GetMapping("/cancelled_interns_relieving_records")
+public String viewCancelRelievingRecords(Model model) {
+    // ✅ Fetch all intern IDs from the Intern table
+    List<College> college = fieldService.getColleges();
+
+    Optional<RRecord> record = recordService.getRecordById(1L);
+
+    Admin admin = getSignedInAdmin();
+    logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Cancelled Relieving Records",
+            "Admin " + admin.getName() + " viewed the Cancelled Relieving Records page.");
+
+    List<Intern> cancelledInterns = internService.getCancelledInterns();
+    model.addAttribute("interns", cancelledInterns);
+    model.addAttribute("college", college);
+    model.addAttribute("records", record);
+    model.addAttribute("admin", adminName(session));
+
+    return "admin/cancelled_interns_relieving_records";
+}
     // Display the form for adding a relieving record
     @GetMapping("/relieving_records")
     public String viewRelievingRecords(Model model) {
@@ -3065,7 +3238,7 @@ public ModelAndView cancellationRequests(Model model) {
         return "admin/relieving_records";
     }
 
-    // Handle relieving record submission
+    // Handle relieving record submission for internship completed
     @PostMapping("/submit_relieving_record")
     public String submitRelievingRecord(
             @RequestParam String internId,
@@ -3087,26 +3260,24 @@ public ModelAndView cancellationRequests(Model model) {
             @RequestParam String unusedCd,
             @RequestParam String backupProject,
             @RequestParam String system,
-            @RequestParam String identityCards,
             @RequestParam String stipend,
             @RequestParam String information,
+            @RequestParam String endInterview,
             @RequestParam String weeklyReport,
             @RequestParam String attendance,
+            @RequestParam String finalReport,
             RedirectAttributes redirectAttributes) {
 
         try {
-            // Check if the intern already has a relieving record
             List<RRecord> existingRecords = recordService.findByInternId(internId);
             if (!existingRecords.isEmpty()) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Intern with ID " + internId + " is already relieved!");
                 return "redirect:/bisag/admin/relieving_records_list";
             }
 
-            // Convert LocalDate to SQL Date
             java.sql.Date joiningDateConverted = java.sql.Date.valueOf(joiningDate);
             java.sql.Date plannedDateConverted = java.sql.Date.valueOf(plannedDate);
 
-            // Creating and saving the record
             RRecord record = new RRecord();
             record.setInternId(internId);
             record.setFirstName(FirstName);
@@ -3127,15 +3298,15 @@ public ModelAndView cancellationRequests(Model model) {
             record.setUnusedCd(unusedCd);
             record.setBackupProject(backupProject);
             record.setSystem(system);
-            record.setIdentityCards(identityCards);
             record.setStipend(stipend);
             record.setInformation(information);
+            record.setEndInteriew(endInterview);
             record.setWeeklyReport(weeklyReport);
             record.setAttendance(attendance);
+            record.setFinalReport(finalReport);
 
             recordService.saveRecord(record);
 
-            // Log action
             Admin admin = getSignedInAdmin();
             if (admin != null) {
                 String id = String.valueOf(admin.getAdminId());
@@ -3143,12 +3314,99 @@ public ModelAndView cancellationRequests(Model model) {
                         "Admin " + admin.getName() + " submitted a relieving record for Intern ID: " + internId);
             }
 
-            // Success message
             redirectAttributes.addFlashAttribute("successMessage", "Relieving record for Intern ID " + internId + " submitted successfully!");
             return "redirect:/bisag/admin/relieving_records_list";
 
         } catch (Exception e) {
-            // Error message handling
+            redirectAttributes.addFlashAttribute("errorMessage", "An error occurred while submitting the relieving record. Please try again.");
+            return "redirect:/bisag/admin/relieving_records_list";
+        }
+    }
+
+    @GetMapping("/submit_relieving_record_cancelled")
+    public String showCancelledRelievingRecordForm(Model model) {
+        List<Intern> cancelledInterns = internService.getCancelledInterns();
+        model.addAttribute("interns", cancelledInterns);
+        return "redirect:/bisag/admin/cancelled_interns_relieving_records";
+    }
+    // Handle relieving record submission for internship cancelled
+    @PostMapping("/submit_relieving_record_cancelled")
+    public String submitCancelRelievingRecord(
+            @RequestParam String internId,
+            @RequestParam String FirstName,
+            @RequestParam String groupId,
+            @RequestParam String collegeName,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate joiningDate,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate plannedDate,
+            @RequestParam String password,
+            @RequestParam String media,
+            @RequestParam String status,
+            @RequestParam String project,
+            @RequestParam String thesis,
+            @RequestParam String others,
+            @RequestParam String books,
+            @RequestParam String subscription,
+            @RequestParam String accessRights,
+            @RequestParam String pendrives,
+            @RequestParam String unusedCd,
+            @RequestParam String backupProject,
+            @RequestParam String system,
+            @RequestParam String stipend,
+            @RequestParam String information,
+            @RequestParam String endInterview,
+            @RequestParam String weeklyReport,
+            @RequestParam String attendance,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            List<RRecord> existingRecords = recordService.findByInternId(internId);
+            if (!existingRecords.isEmpty()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Intern with ID " + internId + " is already relieved!");
+                return "redirect:/bisag/admin/relieving_records_list";
+            }
+
+            java.sql.Date joiningDateConverted = java.sql.Date.valueOf(joiningDate);
+            java.sql.Date plannedDateConverted = java.sql.Date.valueOf(plannedDate);
+
+            RRecord record = new RRecord();
+            record.setInternId(internId);
+            record.setFirstName(FirstName);
+            record.setGroupId(groupId);
+            record.setCollegeName(collegeName);
+            record.setJoiningDate(joiningDateConverted);
+            record.setPlannedDate(plannedDateConverted);
+            record.setPassword(password);
+            record.setMedia(media);
+            record.setStatus(status);
+            record.setProject(project);
+            record.setThesis(thesis);
+            record.setOthers(others);
+            record.setBooks(books);
+            record.setSubscription(subscription);
+            record.setAccessRights(accessRights);
+            record.setPendrives(pendrives);
+            record.setUnusedCd(unusedCd);
+            record.setBackupProject(backupProject);
+            record.setSystem(system);
+            record.setStipend(stipend);
+            record.setInformation(information);
+            record.setEndInteriew(endInterview);
+            record.setWeeklyReport(weeklyReport);
+            record.setAttendance(attendance);
+
+            recordService.saveRecord(record);
+
+            Admin admin = getSignedInAdmin();
+            if (admin != null) {
+                String id = String.valueOf(admin.getAdminId());
+                logService.saveLog(id, "Submitted Cancelled Relieving Record",
+                        "Admin " + admin.getName() + " submitted a relieving record for cancelled Intern ID: " + internId);
+            }
+
+            redirectAttributes.addFlashAttribute("successMessage", "Relieving record for Intern ID " + internId + " submitted successfully!");
+            return "redirect:/bisag/admin/relieving_records_list";
+
+        } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "An error occurred while submitting the relieving record. Please try again.");
             return "redirect:/bisag/admin/relieving_records_list";
         }
@@ -3388,26 +3646,22 @@ public ModelAndView cancellationRequests(Model model) {
     // View Undertaking Forms Page
     @GetMapping("/undertaking")
     public String showUndertakingForm(Model model) {
-        System.out.println("Admin Undertaking page accessed"); // Debugging
+        System.out.println("Admin Undertaking page accessed");
 
-        // Fetch all intern IDs from the Intern table
-        List<String> allInternIds = internRepo.findAllInternIds(); // Assuming this method exists in InternRepo
+        List<String> allInternIds = internRepo.findAllInternIds();
 
-        // Fetch the list of interns who have accepted the undertaking
         List<Undertaking> acceptedForms = undertakingRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
         Set<String> acceptedInternIds = acceptedForms.stream()
-                .map(Undertaking::getIntern) // Assuming `getIntern()` returns intern ID
+                .map(Undertaking::getIntern)
                 .collect(Collectors.toSet());
 
-        // Identify interns who have not accepted the undertaking
         List<String> pendingInternIds = allInternIds.stream()
                 .filter(id -> !acceptedInternIds.contains(id))
                 .collect(Collectors.toList());
 
-        model.addAttribute("acceptedForms", acceptedForms); // Accepted interns
-        model.addAttribute("pendingInternIds", pendingInternIds); // Pending interns
+        model.addAttribute("acceptedForms", acceptedForms);
+        model.addAttribute("pendingInternIds", pendingInternIds);
 
-        // Logging admin activity
         Admin admin = getSignedInAdmin();
         if (admin != null) {
             String adminId = String.valueOf(admin.getAdminId());
@@ -3415,14 +3669,13 @@ public ModelAndView cancellationRequests(Model model) {
                     "Admin " + admin.getName() + " accessed the Undertaking Forms page.");
         }
 
-        return "admin/undertaking_form"; // Ensure the HTML file exists
+        return "admin/undertaking_form";
     }
 
     // Corrected POST method to add undertaking form
     @PostMapping("/add_undertaking")
     public String addUndertaking(@RequestParam String rules, RedirectAttributes redirectAttributes) {
         try {
-            // Create and save new Undertaking
             Undertaking undertaking = new Undertaking();
             undertaking.setContent(rules);
             undertaking.setCreatedAt(LocalDateTime.now());
@@ -3440,7 +3693,7 @@ public ModelAndView cancellationRequests(Model model) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error adding undertaking form. Please try again.");
         }
 
-        return "redirect:/bisag/admin/undertaking"; // Redirect after form submission
+        return "redirect:/bisag/admin/undertaking"; 
     }
 
     // Corrected method for updating the undertaking form

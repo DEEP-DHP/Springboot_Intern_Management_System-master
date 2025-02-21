@@ -3,6 +3,8 @@ package com.rh4.controllers;
 import java.util.List;
 import java.util.Optional;
 
+import com.rh4.entities.HR;
+import com.rh4.services.HRService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +38,8 @@ public class SuperAdminController {
 	}
 	@Autowired
 	private AdminService adminService;
+	@Autowired
+	private HRService hrService;
 	@Autowired
 	private SuperAdminService superAdminService;
 	private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -182,5 +186,113 @@ public class SuperAdminController {
     }
 	
 	//--------------------------------- Admin Delete Completed -------------------------------------//
-    
+
+	//-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_HR-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+	@GetMapping("/register_hr")
+	public String registerHR()
+	{
+		return "super_admin/HR_registration";
+	}
+
+	@PostMapping("/register_hr")
+	public String registerHR(@ModelAttribute("HR") HR hr)
+	{
+		hrService.registerHR(hr);
+		emailService.sendSimpleEmail(
+				hr.getEmailId(),
+				"Notification: Appointment as HR\r\n"
+						+ "\r\n"
+						+ "Dear " + hr.getName() + "\r\n"
+						+ "\r\n"
+						+ "I trust this email finds you well. We are pleased to inform you that you have been appointed as HR within our organization, effective immediately. Your dedication and contributions to the team have not gone unnoticed, and we believe that your new role will bring added value to our operations.\r\n"
+						+ "\r\n"
+						+ "As a HR, you now hold a position of responsibility within the organization. We trust that you will approach your duties with diligence, professionalism, and a commitment to upholding the values of our organization.\r\n"
+						+ "\r\n"
+						+ "It is imperative to recognize the importance of your role and the impact it may have on the functioning of our team. We have confidence in your ability to handle the responsibilities that come with this position and to contribute positively to the continued success of our organization.\r\n"
+						+ "\r\n"
+						+ "We would like to emphasize the importance of maintaining the highest standards of integrity and ethics in your role. It is expected that you will use your HR privileges responsibly and refrain from any misuse.\r\n"
+						+ "\r\n"
+						+ "Should you have any questions or require further clarification regarding your new responsibilities, please do not hesitate to reach out to [Contact Person/Department].\r\n"
+						+ "\r\n"
+						+ "Once again, congratulations on your appointment as an HR. We look forward to your continued contributions and success in this elevated role.\r\n"
+						+ "\r\n"
+						+ "Best regards,\r\n"
+						+ "\r\n"
+						+ "Your Colleague,\r\n"
+						+ "HR\r\n"
+						+ "1231231231",
+				"BISAG HR OFFICE"
+		);
+
+		return "redirect:/bisag/super_admin/register_hr";
+
+	}
+
+	//--------------------------------------- HR List -------------------------------------------//
+
+	@GetMapping("/hr_list")
+	public ModelAndView hrList()
+	{
+		ModelAndView mv = new ModelAndView("super_admin/hr_list");
+		List<HR> hrs = hrService.getAllHr();
+		mv.addObject("hrs", hrs);
+		return mv;
+	}
+	@GetMapping("/hr_list/{id}")
+	public ModelAndView hrList(@PathVariable("id") long id)
+	{
+		System.out.println("id"+id);
+		ModelAndView mv = new ModelAndView();
+		Optional<HR> hr = hrService.getHR(id);
+		mv.addObject("hr",hr);
+		mv.setViewName("super_admin/hr_list_detail");
+		return mv;
+	}
+
+	@PostMapping("/hr_list/ans")
+	public String hrListRedirect()
+	{
+		return "redirect:/bisag/super_admin/hr_list";
+	}
+
+	//-------------------------------------- HR Update ------------------------------------------//
+
+	@GetMapping("/update_hr/{id}")
+	public ModelAndView updateHR(@PathVariable("id") long id) {
+		ModelAndView mv = new ModelAndView("super_admin/update_hr");
+		Optional<HR> hr = hrService.getHR(id);
+		mv.addObject("hr", hr.orElse(new HR()));
+		return mv;
+	}
+
+	@PostMapping("/update_hr/{id}")
+	public String updateHR(@ModelAttribute("hr") HR hr, @PathVariable("id") long id) {
+		Optional<HR> existingHR = hrService.getHR(hr.getHRId());
+
+		if (existingHR.isPresent()) {
+
+			String currentPassword = existingHR.get().getPassword();
+			HR updatedHR = existingHR.get();
+			updatedHR.setName(hr.getName());
+			updatedHR.setLocation(hr.getLocation());
+			updatedHR.setContactNo(hr.getContactNo());
+			updatedHR.setEmailId(hr.getEmailId());
+			if(!currentPassword.equals(encodePassword(hr.getPassword())) && hr.getPassword()!="")
+			{
+				updatedHR.setPassword(encodePassword(hr.getPassword()));
+			}
+			// Save the updated hr entity
+			hrService.updateHR(updatedHR,existingHR);
+		}
+		return "redirect:/bisag/super_admin/hr_list";
+	}
+
+	//-------------------------------------- HR Delete ------------------------------------------//
+
+	// Delete HR
+	@PostMapping("/hr_list/delete/{id}")
+	public String deleteHR(@PathVariable("id") long id) {
+		hrService.deleteHR(id);
+		return "redirect:/bisag/super_admin/hr_list";
+	}
 }
