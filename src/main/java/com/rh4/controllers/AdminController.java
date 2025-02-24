@@ -3641,6 +3641,34 @@ public String viewCancelRelievingRecords(Model model) {
         return "admin/leave_details";
     }
 
+    @GetMapping("/half_leave/{id}")
+    public String getHalfLeaveDetails(@PathVariable("id") String id, Model model) {
+        Optional<LeaveApplication> leaveOptional = leaveApplicationService.getLeaveById(Long.parseLong(id));
+
+        if (leaveOptional.isPresent()) {
+            LeaveApplication leave = leaveOptional.get();
+            Optional<Intern> internOptional = Optional.ofNullable(internService.getInternById(leave.getInternId()));
+
+            if (internOptional.isPresent()) {
+                Intern intern = internOptional.get();
+                model.addAttribute("leave", leave);
+                model.addAttribute("groupId", intern.getGroup() != null ? intern.getGroup().getGroupId() : "N/A");
+                model.addAttribute("internName", intern.getFirstName() + " " + intern.getLastName());
+            } else {
+                model.addAttribute("groupId", "N/A");
+                model.addAttribute("internName", "N/A");
+            }
+
+            Admin admin = getSignedInAdmin();
+            model.addAttribute("adminName", admin.getName());
+
+            logService.saveLog(String.valueOf(admin.getAdminId()), "View Half Day Leave",
+                    "Admin " + admin.getName() + " viewed the details of half day leave with ID: " + id);
+            return "admin/half_leave";
+        } else {
+            return "error/404";
+        }
+    }
     // ========================= Undertaking Form Management ==========================
 
     // View Undertaking Forms Page
