@@ -71,7 +71,7 @@
                             <h5 class="mt-4">College Information</h5>
                             <div class="form-floating">
                                 <select class="form-select" id="college" name="collegeName" required>
-                                    <option value="" disabled selected>Select Degree</option>
+                                    <option value="" disabled selected>Select College</option>
                                     <option th:each="college : ${colleges}" th:text="${college.name}" th:value="${college.name}"></option>
                                 </select>
                                 <label for="collegeName">College Name</label>

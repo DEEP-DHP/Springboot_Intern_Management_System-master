@@ -177,7 +177,7 @@
 								<th><i class="fa-solid fa-sort mx-2"></i>Used Resources</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Created At</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Updated At</th>
-<!--								<th><i class="fa-solid fa-sort mx-2"></i>Cancellation Status</th>-->
+								<!--								<th><i class="fa-solid fa-sort mx-2"></i>Cancellation Status</th>-->
 								<th><i class="fa-solid fa-sort mx-2"></i>Current Status</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Cancel Time</th>
 
@@ -238,13 +238,15 @@
 								<td th:text="${intern.usedResource}"></td>
 								<td th:text="${intern.createdAt}"></td>
 								<td th:text="${intern.updatedAt}"></td>
-<!--								<td th:text="${intern.cancellationStatus}"></td>-->
+								<!--								<td th:text="${intern.cancellationStatus}"></td>-->
 								<td th:with="today=${#dates.createNow()}"
 									th:text="${intern.cancellationStatus == 'Cancelled'} ? 'Cancelled' :
              (${intern.completionDate != null and intern.joiningDate != null} ?
              (${#dates.format(today, 'yyyy-MM-dd') >= #dates.format(intern.joiningDate, 'yyyy-MM-dd') and
                #dates.format(today, 'yyyy-MM-dd') <= #dates.format(intern.completionDate, 'yyyy-MM-dd')} ? 'Working' :
-              (${#dates.format(today, 'yyyy-MM-dd') > #dates.format(intern.completionDate, 'yyyy-MM-dd')} ? 'Completed' : intern.status)) :
+              (${#dates.format(today, 'yyyy-MM-dd') > #dates.format(intern.completionDate, 'yyyy-MM-dd')} ?
+               (${intern.groupEntity?.finalReportStatus == 'approved'} ? 'Completed' : 'Report Pending') :
+               intern.status)) :
              intern.status)">
 								<td th:text="${intern.cancelTime}"></td>
 

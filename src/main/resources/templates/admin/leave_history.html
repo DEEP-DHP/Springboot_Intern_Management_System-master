@@ -83,6 +83,7 @@
             <table class="table table-bordered">
               <thead>
               <tr>
+                <th>ID</th>
                 <th>Intern ID</th>
                 <th>Leave Type</th>
                 <th>Start Date</th>
@@ -96,6 +97,14 @@
               </thead>
               <tbody>
               <tr th:each="leave : ${leaveHistory}">
+                <td>
+                  <a th:if="${leave.leaveType == 'Half Day' and leave.status == 'Approved'}"
+                     th:href="@{/bisag/admin/half_leave/{id}(id=${leave.id})}">
+                    <span th:text="${leave.id}"></span>
+                  </a>
+                  <span th:unless="${leave.leaveType == 'Half Day' and leave.status == 'Approved'}"
+                        th:text="${leave.id}"></span>
+                </td>
                 <td th:text="${leave.internId}"></td>
                 <td th:text="${leave.leaveType}"></td>
                 <td th:text="${leave.fromDate}"></td>
