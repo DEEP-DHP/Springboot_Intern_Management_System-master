@@ -102,7 +102,7 @@ public class AdminController {
     @Autowired
     private LeaveApplicationRepo leaveApplicationRepo;
     @Autowired
-    private UndertakingService undertakingService;
+    private AnnouncementRepo announcementRepo;
     @Autowired
     private UndertakingRepo undertakingRepo;
     @Autowired
@@ -115,6 +115,10 @@ public class AdminController {
     private TaskAssignmentRepo taskAssignmentRepo;
     @Autowired
     private FeedBackService feedbackService;
+    @Autowired
+    private GuideRepo guideRepo;
+    @Autowired
+    private AnnoucementService announcementService;
 
 
     @Value("${app.storage.base-dir}")
@@ -2446,8 +2450,8 @@ public ModelAndView cancellationRequests(Model model) {
         model = countNotifications(model);
 
         Admin admin = getSignedInAdmin();
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Queried Guide",
-                "Admin " + admin.getName() + " queried a guide.");
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Chat",
+                "Admin " + admin.getName() + " viewed chat page.");
 
         mv.addObject("groups", groups);
         mv.addObject("interns", interns);
@@ -3743,52 +3747,39 @@ public String viewCancelRelievingRecords(Model model) {
         }
         return latestContent;
     }
-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_Thesis Storage Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     private static final String STORAGE_PATH = "/Users/pateldeep/Desktop/Coding/Springboot_Intern_Management_System-master-main/src/main/resources/static/files/thesis-storage/";
-
     // Upload Thesis PDF
     @PostMapping("/upload-thesis")
     public String uploadThesis(@RequestParam("thesisTitle") String thesisTitle,
                                @RequestParam("file") MultipartFile file,
                                RedirectAttributes redirectAttributes) {
         try {
-            // Validate file input
             if (file.isEmpty()) {
                 redirectAttributes.addFlashAttribute("errorMessage", "File upload failed! Please select a file.");
                 return "redirect:/bisag/admin/thesis-storage";
             }
-
-            // Ensure directory exists
             File directory = new File(STORAGE_PATH);
             if (!directory.exists() && !directory.mkdirs()) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Failed to create storage directory!");
                 return "redirect:/bisag/admin/thesis-storage";
             }
-
             String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
             String filePath = STORAGE_PATH + fileName;
-
             file.transferTo(new File(filePath));
-
-            // Save thesis metadata in database
             ThesisStorage thesis = new ThesisStorage();
             thesis.setThesisTitle(thesisTitle);
             thesis.setFilePath(filePath);
             thesis.setUploadDate(new Date());
             thesisStorageRepo.save(thesis);
-
-            // Log the action
             Admin admin = getSignedInAdmin();
             if (admin != null) {
                 String adminId = String.valueOf(admin.getAdminId());
                 logService.saveLog(adminId, "Uploaded Thesis",
                         "Admin " + admin.getName() + " uploaded a thesis titled '" + thesisTitle + "'.");
             }
-
-            // Success message
             redirectAttributes.addFlashAttribute("successMessage", "Thesis uploaded successfully!");
             return "redirect:/bisag/admin/thesis-storage";
 
@@ -3802,7 +3793,6 @@ public String viewCancelRelievingRecords(Model model) {
             return "redirect:/bisag/admin/thesis-storage";
         }
     }
-
     // Fetch List of Uploaded Theses
     @GetMapping("/thesis-storage")
     public String viewThesisStorage(Model model) {
@@ -3815,7 +3805,6 @@ public String viewCancelRelievingRecords(Model model) {
             logService.saveLog(adminId, "Viewed Thesis Storage",
                     "Admin " + admin.getName() + " viewed the list of uploaded theses.");
         }
-
         return "admin/thesis_storage";
     }
 
@@ -3827,14 +3816,12 @@ public String viewCancelRelievingRecords(Model model) {
         if (thesis == null) {
             return "Invalid thesis ID";
         }
-
         Admin admin = getSignedInAdmin();
         if (admin != null) {
             String adminId = String.valueOf(admin.getAdminId());
             logService.saveLog(adminId, "Generated Thesis Link",
                     "Admin " + admin.getName() + " generated a shareable link for Thesis ID: " + id);
         }
-
         return "localhost:8080/bisag/admin/view-thesis/" + id;
     }
 
@@ -3845,18 +3832,15 @@ public String viewCancelRelievingRecords(Model model) {
         if (thesis == null) {
             return ResponseEntity.notFound().build();
         }
-
         try {
             Path path = Paths.get(thesis.getFilePath());
             Resource resource = new UrlResource(path.toUri());
-
             Admin admin = getSignedInAdmin();
             if (admin != null) {
                 String adminId = String.valueOf(admin.getAdminId());
                 logService.saveLog(adminId, "Viewed Thesis PDF",
                         "Admin " + admin.getName() + " viewed Thesis ID: " + id);
             }
-
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_PDF)
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + path.getFileName().toString() + "\"")
@@ -3877,13 +3861,10 @@ public String viewCancelRelievingRecords(Model model) {
         if (thesisOptional.isPresent()) {
             ThesisStorage thesisStorage = thesisOptional.get();
 
-            // Only update if Intern ID is provided
             if (newInternId != null && !newInternId.isEmpty()) {
                 thesisStorage.setAllowedInternId(newInternId);
             }
-
             thesisStorageRepo.save(thesisStorage);
-
             Admin admin = getSignedInAdmin();
             if (admin != null) {
                 String adminId = String.valueOf(admin.getAdminId());
@@ -3908,7 +3889,6 @@ public String viewCancelRelievingRecords(Model model) {
     public Map<String, Boolean> removeThesisInternId(@RequestBody Map<String, Long> request) {
         Long thesisId = request.get("thesisId");
         Map<String, Boolean> response = new HashMap<>();
-
         Optional<ThesisStorage> thesisOptional = thesisStorageRepo.findById(thesisId);
         if (thesisOptional.isPresent()) {
             ThesisStorage thesis = thesisOptional.get();
@@ -3926,7 +3906,6 @@ public String viewCancelRelievingRecords(Model model) {
         }
         return response;
     }
-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Messaging Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
@@ -3939,43 +3918,33 @@ public String viewCancelRelievingRecords(Model model) {
             System.out.println("Admin not found or session expired.");
             return "redirect:/login";
         }
-
         model.addAttribute("loggedInAdmin", admin);
-
         List<Admin> admins = adminService.getAdmin();
         List<Guide> guides = guideService.getGuide();
         List<Intern> interns = internService.getAllInterns();
         List<GroupEntity> groups = groupService.getGroups();
-
         model.addAttribute("admins", admins);
         model.addAttribute("guides", guides);
         model.addAttribute("interns", interns);
         model.addAttribute("groups", groups);
-
         String adminId = String.valueOf(admin.getAdminId());
         logService.saveLog(adminId, "Accessed Chat Page",
                 "Admin " + admin.getName() + " accessed the chat page.");
 
         return "admin/query_to_guide";
     }
-
     // Admin sends a message
     @PostMapping("/chat/send")
     public ResponseEntity<Message> sendMessageAsAdmin(
             @RequestParam String receiverId,
             @RequestParam String messageText) {
-
         Admin admin = getSignedInAdmin();
         String senderId = String.valueOf(admin.getAdminId());
-
         Message message = messageService.sendMessage(senderId, receiverId, messageText);
-
         logService.saveLog(senderId, "Sent a Message",
                 "Admin " + admin.getName() + " sent a message to User ID: " + receiverId);
-
         return ResponseEntity.ok(message);
     }
-
     // Admin fetches chat history (both sent and received messages)
     @GetMapping("/chat/history")
     public ResponseEntity<List<Message>> getChatHistoryAsAdmin(@RequestParam String receiverId) {
@@ -4021,16 +3990,12 @@ public String viewCancelRelievingRecords(Model model) {
 
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-
-            // Validate and parse dates
             Date startDate = dateFormat.parse(startDateStr);
             Date endDate = dateFormat.parse(endDateStr);
-
             if (endDate.before(startDate)) {
                 redirectAttributes.addFlashAttribute("errorMessage", "End date cannot be before start date!");
                 return "redirect:/bisag/admin/tasks_assignments";
             }
-
             Optional<Intern> optionalIntern = internService.getIntern(intern);
             if (optionalIntern.isPresent()) {
                 TaskAssignment task = new TaskAssignment();
@@ -4042,9 +4007,7 @@ public String viewCancelRelievingRecords(Model model) {
                 task.setEndDate(endDate);
                 task.setStatus("Pending");
                 task.setApproved(false);
-
                 taskAssignmentService.saveTask(task);
-
                 logService.saveLog(assignedById, "Assigned a Task",
                         "User with ID " + assignedById + " assigned a task to Intern ID: " + intern);
 
@@ -4059,7 +4022,6 @@ public String viewCancelRelievingRecords(Model model) {
             redirectAttributes.addFlashAttribute("errorMessage", "An unexpected error occurred. Please try again.");
             return "redirect:/bisag/admin/tasks_assignments";
         }
-
         return "redirect:/bisag/admin/tasks_assignments";
     }
 
@@ -4069,7 +4031,6 @@ public String viewCancelRelievingRecords(Model model) {
         TaskAssignment tasks = taskAssignmentRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task Assignment Not Found"));
         model.addAttribute("tasks", tasks);
-
         Admin admin = getSignedInAdmin();
         if (admin != null) {
             String adminId = String.valueOf(admin.getAdminId());
@@ -4097,9 +4058,7 @@ public String viewCancelRelievingRecords(Model model) {
             TaskAssignment task = optionalTask.get();
             task.setApproved(true);
             task.setStatus("Completed");
-
             taskAssignmentService.saveTask(task);
-
             logService.saveLog(task.getAssignedById(), "Approved a Task",
                     "User with ID " + task.getAssignedById() + " approved Task ID: " + taskId);
 
@@ -4126,10 +4085,8 @@ public String viewCancelRelievingRecords(Model model) {
             if (!resource.exists()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
-
             logService.saveLog(taskOpt.get().getAssignedById(), "Viewed Task Proof",
                     "Admin with ID " + taskOpt.get().getAssignedById() + " viewed proof for Task ID: " + taskId);
-
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_PDF)
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
@@ -4147,16 +4104,13 @@ public String viewCancelRelievingRecords(Model model) {
             if (newStatus == null || newStatus.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Status cannot be empty"));
             }
-
             Optional<TaskAssignment> optionalTask = taskAssignmentService.getTaskById(id);
             if (optionalTask.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Task not found"));
             }
-
             TaskAssignment task = optionalTask.get();
             task.setStatus(newStatus);
             taskAssignmentService.saveTask(task);
-
             logService.saveLog(task.getAssignedById(), "Updated Task Status",
                     "User with ID " + task.getAssignedById() + " updated Task ID: " + id + " to status: " + newStatus);
 
@@ -4178,5 +4132,119 @@ public String viewCancelRelievingRecords(Model model) {
                 "Admin " + admin.getName() + " accessed the Feedback List page.");
 
         return "admin/feedback_form_list";
+    }
+
+    // =============================Annoucemnet Board Start=================================================
+    @GetMapping("/announcement")
+    public String getAllAnnouncements(Model model) {
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Announcements",
+                "Admin " + admin.getName() + " accessed the Announcements page.");
+        model.addAttribute("announcements", announcementService.getAllAnnouncements());
+        model.addAttribute("newAnnouncement", new Announcement());
+        return "admin/announcement";
+    }
+
+    @PostMapping("/announcement")
+    public String createAnnouncement(@ModelAttribute Announcement announcement, Model model) {
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Created Announcement",
+                "Admin " + admin.getName() + " created a new announcement.");
+        announcementService.createAnnouncement(announcement);
+        return "redirect:/bisag/admin/announcement";
+    }
+
+    @PostMapping("/announcement/delete/{id}")
+    public String deleteAnnouncement(@PathVariable("id") int announcementId, HttpSession session) {
+        Admin admin = getSignedInAdmin();
+        try {
+            announcementRepo.deleteById(announcementId);
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Deleted Announcement",
+                    "Admin " + admin.getName() + " deleted an announcement with ID: " + announcementId);
+            session.setAttribute("msg", "Announcement deleted successfully.");
+        } catch (Exception e) {
+            session.setAttribute("msg", "Error deleting announcement: " + e.getMessage());
+        }
+        return "redirect:/bisag/admin/announcement";
+    }
+    @GetMapping("/update_project_def")
+    public String showAssignProjectDefinitionForm(Model model) {
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Assign Project Definition Form", "Admin " + admin.getName() + " accessed the Assign Project Definition Form page.");
+        List<GroupEntity> groups = groupRepo.findAll();
+        model.addAttribute("groups", groups);
+        return "admin/update_project_def";
+    }
+
+    @PostMapping("/update_project_def")
+    public String assignProjectDefinition(@RequestParam String groupId,
+                                          @RequestParam String projectDefinition,
+                                          @RequestParam String description,
+                                          Model model) {
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Assigned Project Definition", "Admin " + admin.getName() + " assigned project definition to Group ID: " + groupId);
+        GroupEntity group = groupRepo.getByGroupId(groupId);
+        if (group == null) {
+            model.addAttribute("error", "❌ Group not found.");
+            return "admin/update_project_def";
+        }
+        group.setProjectDefinition(projectDefinition);
+        group.setDescription(description);
+        group.setProjectDefinitionStatus("gpending");
+        groupRepo.save(group);
+        List<Guide> guides = guideRepo.findByGroupId(group.getGroupId());
+        if (guides == null || guides.isEmpty()) {
+            model.addAttribute("error", "No guides found for the group.");
+            return "admin/update_project_def";
+        }
+        for (Guide guide : guides) {
+            guide.setDefinitionStatus("Pending");
+            guideRepo.save(guide);
+        }
+        model.addAttribute("success", "Project Definition Assigned and Sent for Approval.");
+        return "admin/update_project_def";
+    }
+
+    @GetMapping("/update_def_ans")
+    public String showPendingProjectDefinitions(Model model) {
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Pending Project Definitions", "Admin " + admin.getName() + " accessed the Pending Project Definitions page.");
+        List<GroupEntity> pendingGroups = groupRepo.findByProjectDefinitionStatus("pending");
+
+        model.addAttribute("groups", pendingGroups);
+        if (pendingGroups.isEmpty()) {
+            model.addAttribute("error", "No pending project definitions found!");
+        }
+        return "admin/update_def_ans";
+    }
+
+    @PostMapping("/update_def_ans")
+    public String updateProjectDefinition(@RequestParam String groupId,
+                                          @RequestParam String status,
+                                          RedirectAttributes redirectAttributes) {
+        Admin admin = getSignedInAdmin();
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Updated Project Definition Status",
+                "Admin " + admin.getName() + " updated project definition status to " + status + " for group " + groupId + ".");
+
+        GroupEntity group = groupRepo.getByGroupId(groupId);
+
+        if (group == null) {
+            redirectAttributes.addFlashAttribute("error", "Group not found.");
+            return "redirect:/bisag/admin/update_def_ans";
+        }
+
+        if (!"pending".equals(group.getProjectDefinitionStatus())) {
+            redirectAttributes.addFlashAttribute("error", "Project definition is not pending approval.");
+            return "redirect:/bisag/admin/update_def_ans";
+        }
+
+        if (!status.equalsIgnoreCase("approved") && !status.equalsIgnoreCase("rejected")) {
+            redirectAttributes.addFlashAttribute("error", "Invalid status. Use 'approved' or 'rejected'.");
+            return "redirect:/bisag/admin/update_def_ans";
+        }
+        group.setProjectDefinitionStatus(status.toLowerCase());
+        groupRepo.save(group);
+        redirectAttributes.addFlashAttribute("success", "Project Definition " + status + ".");
+        return "redirect:/bisag/admin/update_def_ans";
     }
 }

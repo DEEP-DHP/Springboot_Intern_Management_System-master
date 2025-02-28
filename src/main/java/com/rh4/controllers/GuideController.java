@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import com.rh4.entities.*;
+import com.rh4.repositories.GuideRepo;
 import com.rh4.repositories.LeaveApplicationRepo;
 import com.rh4.repositories.TaskAssignmentRepo;
 import com.rh4.services.*;
@@ -52,6 +53,8 @@ public class GuideController {
     private MyUserService myUserService;
     @Autowired
     private LogService logService;
+    @Autowired
+    private GuideRepo guideRepo;
     @Autowired
             private LeaveApplicationRepo leaveApplicationRepo;
     @Autowired
@@ -686,8 +689,6 @@ public class GuideController {
         }
     }
 
-
-
     @PutMapping("/update-task/{id}")
     public ResponseEntity<Map<String, Object>> updateTaskStatus(@PathVariable Long id, @RequestBody Map<String, String> taskData) {
         try {
@@ -823,4 +824,159 @@ public class GuideController {
         }
         return "redirect:/bisag/guide/approved_interns";
     }
+
+    @GetMapping("/approveDefinition")
+    public String showApproveDefinitionForm(Model model) {
+        List<GroupEntity> pendingGroups = groupRepo.findByProjectDefinitionStatus("gpending");
+
+        if (pendingGroups.isEmpty()) {
+            model.addAttribute("error", "No pending project definitions found!");
+        } else {
+            model.addAttribute("groups", pendingGroups);
+        }
+
+        Guide guide = getSignedInGuide();
+        if (guide != null) {
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed Pending Project Definitions", "Guide " + guide.getName() + " accessed the pending project definitions page.");
+        }
+
+        return "guide/guide_pending_def_approvals";
     }
+
+    @PostMapping("/approveDefinition")
+    public ResponseEntity<String> approveProjectDefinition(@RequestParam String groupId,
+                                                           @RequestParam String status) {
+        List<Guide> guides = guideRepo.findByGroupId(groupId);
+        if (!guides.isEmpty()) {
+            for (Guide guide : guides) {
+                guide.setDefinitionStatus(status);
+                guideRepo.save(guide);
+            }
+
+            GroupEntity group = groupRepo.getByGroupId(groupId);
+            if (group != null) {
+                String oldStatus = group.getProjectDefinitionStatus();
+                group.setProjectDefinitionStatus(status.equalsIgnoreCase("Approved") ? "Approved" : "Rejected");
+                groupRepo.save(group);
+
+                Guide guide = getSignedInGuide();
+                if (guide != null) {
+                    logService.saveLog(String.valueOf(guide.getGuideId()), "Updated Project Definition Status",
+                            "Guide " + guide.getName() + " updated Group ID: " + groupId + " from '" + oldStatus + "' to '" + group.getProjectDefinitionStatus() + "'.");
+                }
+            }
+
+            return ResponseEntity.ok("Project Definition " + status);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Guide not found.");
+    }
+
+    @GetMapping("/create_project_def")
+    public String showAssignProjectDefinitionForm(Model model) {
+        Guide guide = getSignedInGuide();
+        List<GroupEntity> groups = guideService.getInternGroups(guide);
+        model.addAttribute("groups", groups);
+
+        if (guide != null) {
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed Assign Project Definition Form",
+                    "Guide " + guide.getName() + " accessed the assign project definition form.");
+        }
+
+        return "guide/create_project_def";
+    }
+
+    @PostMapping("/create_project_def")
+    public String submitProjectDefinition(@RequestParam String groupId,
+                                          @RequestParam String description,
+                                          @RequestParam String projectDefinition,
+                                          Model model) {
+        GroupEntity group = groupRepo.getByGroupId(groupId);
+
+        if (group == null) {
+            model.addAttribute("success", "Group not found.");
+            return "guide/create_project_def";
+        }
+        String oldStatus = group.getProjectDefinitionStatus();
+        group.setProjectDefinition(projectDefinition);
+        group.setDescription(description);
+        group.setProjectDefinitionStatus("pending");
+        groupRepo.save(group);
+
+        Guide guide = getSignedInGuide();
+        if (guide != null) {
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Submitted Project Definition",
+                    "Guide " + guide.getName() + " updated Group ID: " + groupId + " from '" + oldStatus + "' to 'pending'.");
+        }
+
+        return "guide/create_project_def";
+    }
+
+    @GetMapping("/view_weekly_reports/{weekNo}")
+    public ModelAndView chanegWeeklyReportSubmission(@PathVariable("weekNo") int weekNo) {
+        Guide guide = getSignedInGuide();
+        if (guide != null) {
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed Weekly Report",
+                    "Guide " + guide.getName() + " viewed Weekly Report for Week No: " + weekNo);
+        }
+        ModelAndView mv = new ModelAndView("intern/change_weekly_report");
+        Intern inetrn = getSignedInIntern();
+        GroupEntity group = inetrn.getGroup();
+        WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
+        MyUser user = myUserService.getUserByUsername(report.getReplacedBy().getUsername());
+        if (user.getRole().equals("GUIDE")) {
+            String status = "Your Current Weekly report is required some modifications given by guide. Please check it out.";
+            mv.addObject("status", status);
+            mv.addObject("replacedBy", guide.getName());
+        } else if (user.getRole().equals("INTERN")) {
+            Intern intern = internService.getInternByUsername(user.getUsername());
+            mv.addObject("replacedBy", intern.getFirstName() + " " + intern.getLastName());
+            mv.addObject("status",
+                    "Your current weekly report is accepted and if any changes are required then you will be notified.");
+        }
+        mv.addObject("report", report);
+        mv.addObject("group", group);
+        return mv;
+    }
+
+    public Intern getSignedInIntern() {
+        String username = (String) session.getAttribute("username");
+        Intern intern = internService.getInternByUsername(username);
+        if (intern != null && intern.getIsActive()) {
+            return intern;
+        } else {
+            return null;
+        }
+    }
+
+    @GetMapping("/viewPdf/{internId}/{weekNo}")
+    public ResponseEntity<byte[]> viewPdf(@PathVariable String internId, @PathVariable int weekNo) {
+        Guide guide = getSignedInGuide();
+        if (guide != null) {
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed PDF",
+                    "Guide " + guide.getName() + " viewed Weekly Report PDF for Intern ID: " + internId + ", Week No: " + weekNo);
+        }
+        WeeklyReport report = weeklyReportService.getReportByInternIdAndWeekNo(internId, weekNo);
+        byte[] pdfContent = report.getSubmittedPdf();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/viewProjectDefinition/{groupId}")
+    public ResponseEntity<byte[]> viewProjectDefinition(@PathVariable String groupId) {
+        Guide guide = getSignedInGuide();
+        if (guide != null) {
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed Project Definition",
+                    "Guide " + guide.getName() + " viewed Project Definition for Group ID: " + groupId);
+        }
+        GroupEntity group = groupService.getGroupByGroupId(groupId);
+
+        if (group == null || group.getProjectDefinitionDocument() == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        byte[] pdfContent = group.getProjectDefinitionDocument();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+    }
+}
