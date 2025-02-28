@@ -69,6 +69,8 @@ public class Guide {
 	@OneToMany(mappedBy = "guide")
 	private List<GroupEntity> groups;
 
+	private String definitionStatus="pending";
+
 	public List<GroupEntity> getGroups() {
 		return groups;
 	}
@@ -87,7 +89,7 @@ public class Guide {
 			@NotNull @Digits(integer = 10, fraction = 0, message = "Contact number must be a numeric value with up to 10 digits") long floor,
 			@NotNull @Digits(integer = 10, fraction = 0, message = "Contact number must be a numeric value with up to 10 digits") long labNo,
 			@NotNull @Digits(integer = 10, fraction = 0, message = "Contact number must be a numeric value with up to 10 digits") long contactNo,
-			@Email String emailId, Date createdAt, String password) {
+			@Email String emailId, Date createdAt, String password, String definitionStatus) {
 		super();
 		this.guideId = guideId;
 		this.name = name;
@@ -98,6 +100,7 @@ public class Guide {
 		this.emailId = emailId;
 		this.createdAt = createdAt;
 		this.password = password;
+		this.definitionStatus = definitionStatus;
 	}
 
 	public long getGuideId() {
@@ -170,6 +173,12 @@ public class Guide {
 
 	public void setPassword(String password) {
 		this.password = password;
+	}
+	public String getDefinitionStatus() {
+		return definitionStatus;
+	}
+	public void setDefinitionStatus(String definitionStatus) {
+		this.definitionStatus = definitionStatus;
 	}
 
 }
