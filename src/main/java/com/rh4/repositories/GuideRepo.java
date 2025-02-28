@@ -14,6 +14,7 @@ public interface GuideRepo extends JpaRepository<Guide, Long>{
 
 	public Guide findByEmailId(String username);
 	public Optional<Guide> findByName(String name);
-	
+	@Query("SELECT g FROM Guide g JOIN g.groups gr WHERE gr.groupId = :groupId")
+	List<Guide> findByGroupId(@Param("groupId") String groupId);
 
 }
