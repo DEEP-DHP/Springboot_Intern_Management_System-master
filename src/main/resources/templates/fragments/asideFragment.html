@@ -115,6 +115,12 @@
                         <li><a th:href="@{/bisag/admin/admin_pending_def_approvals}">
                             <i class="bi bi-circle"></i><span>Pending Definitions</span>
                         </a></li>
+                        <li><a th:href="@{/bisag/admin/update_project_def}">
+                            <i class="bi bi-circle"></i><span>Update Definitions </span>
+                        </a></li>
+                        <li><a th:href="@{/bisag/admin/update_def_ans}">
+                            <i class="bi bi-circle"></i><span>Pending Update Definitions </span>
+                        </a></li>
                     </ul>
                 </li>
             </ul>
@@ -316,6 +322,24 @@
                             </a>
                         </li>
                     </ul>
+                </li>
+            </ul>
+
+            <ul class="sidebar-nav" id="def-nav">
+                <li class="nav-item">
+                    <a class="nav-link collapsed" data-bs-target="#announcement-nav" data-bs-toggle="collapse" href="#">
+                        <i class="bi bi-menu-button-wide"></i>
+                        <span>Announcement</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <ul id="announcement-nav" class="nav-content collapse" data-bs-parent="#def-nav">
+                        <li>
+                            <a th:href="@{/bisag/admin/announcement}">
+                                <i class="bi bi-circle"></i><span>Announcement Board</span>
+                            </a>
+                        </li>
+                    </ul>
+
                 </li>
             </ul>
         </li>
