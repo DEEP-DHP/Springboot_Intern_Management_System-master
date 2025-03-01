@@ -420,10 +420,16 @@ html, body {
             <div class="modal-body">
                 <th:block>
                     <!-- Apply 'text-success' for success and 'text-danger' for error -->
-                    <p class="text-center"
-                       th:text="${session.msg}"
-                       th:classappend="${session.msg.contains('Error') ? ' text-danger' : ' text-success'}">
-                    </p>
+<!--                    <p class="text-center"-->
+<!--                       th:text="${session.msg}"-->
+<!--                       th:classappend="${session.msg.contains('Error') ? ' text-danger' : ' text-success'}">-->
+<!--                    </p>-->
+                    <div>
+                        <div class="alert alert-danger">
+                            <span th:utext="${session.msg}"></span>
+                            <span th:classappend="${session.msg.contains('Error') ? ' text-danger' : ' text-success'}"></span>
+                        </div>
+                    </div>
                 </th:block>
             </div>
         </div>
