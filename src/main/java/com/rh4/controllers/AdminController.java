@@ -4134,7 +4134,7 @@ public String viewCancelRelievingRecords(Model model) {
         return "admin/feedback_form_list";
     }
 
-    // =============================Annoucemnet Board Start=================================================
+    // =============================Announcement Board=================================================
     @GetMapping("/announcement")
     public String getAllAnnouncements(Model model) {
         Admin admin = getSignedInAdmin();
