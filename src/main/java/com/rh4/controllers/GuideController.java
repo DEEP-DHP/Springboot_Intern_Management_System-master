@@ -88,26 +88,29 @@ public class GuideController {
 
     @GetMapping("/guide_dashboard")
     public ModelAndView guide_dashboard(HttpSession session, Model model) {
-        ModelAndView mv = new ModelAndView("guide/guide_dashboard");
-
         Guide guide = getSignedInGuide();
-        String username = getUsername();
+        ModelAndView mv;
 
-        long gPendingCount = groupService.countGPendingGroups();
-        mv.addObject("gPendingCount", gPendingCount);
+        // Check if it's the guide's first login
+        Guide guideApplication = guideService.getGuideByUsername(guide.getEmailId());
+        if (guideApplication != null && guideApplication.getFirstLogin() == 1) {
+            mv = new ModelAndView("guide/change_passwordd");
+            mv.addObject("forcePasswordChange", true);
+        } else {
+            mv = new ModelAndView("guide/guide_dashboard");
+            long gPendingCount = groupService.countGPendingGroups();
+            mv.addObject("gPendingCount", gPendingCount);
+            mv.addObject("username", getUsername());
+            mv.addObject("guide", guide);
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Guide Accessed Dashboard", "Guide " + guide.getName() + " visited their dashboard.");
+        }
 
         session.setAttribute("id", guide.getGuideId());
-        session.setAttribute("username", username);
-
-        mv.addObject("username", username);
-
-        mv.addObject("guide", guide);
-
-        logService.saveLog(String.valueOf(guide.getGuideId()), "Guide Accessed Dashboard",
-                "Guide " + guide.getName() + " visited their dashboard.");
+        session.setAttribute("username", getUsername());
 
         return mv;
     }
+
 
     //Intern Groups
     @GetMapping("/intern_groups")
@@ -296,7 +299,7 @@ public class GuideController {
             throws IllegalStateException, IOException, Exception {
 
         GroupEntity group = groupService.getGroup(groupId);
-        Guide guide = getSignedInGuide(); // Get the currently signed-in guide
+        Guide guide = getSignedInGuide();
         WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
         CurrentWeekNo = weekNo;
 
@@ -393,6 +396,20 @@ public class GuideController {
         return mv;
     }
 
+    @GetMapping("/change_passwordd")
+    public ModelAndView changePasswordPage(HttpSession session) {
+        String username = (String) session.getAttribute("username");
+
+        if (username == null) {
+            return new ModelAndView("redirect:/bisag/guide/login");
+        }
+
+        ModelAndView mv = new ModelAndView("guide/change_passwordd");
+        mv.addObject("username", username);
+        mv.addObject("forcePasswordChange", true); // This will trigger the auto-show script in HTML
+        return mv;
+    }
+
     @PostMapping("/change_password")
     public String changePassword(@RequestParam("newPassword") String newPassword) {
         Guide guide = getSignedInGuide(); // Get the currently signed-in guide
@@ -405,10 +422,38 @@ public class GuideController {
         return "redirect:/logout";
     }
 
+    @PostMapping("/change_passwordd")
+    public String changePasswordd(@RequestParam("newPassword") String newPassword) {
+        Guide guide = getSignedInGuide(); // Get currently logged-in guide
+
+        // Update password
+        guideService.changePassword(guide, newPassword);
+
+        // Fetch guide entity using guideId or email
+        Guide guideEntity = guideService.getGuideByUsername(guide.getEmailId());
+        if (guideEntity != null) {
+            System.out.println("Before update, firstLogin: " + guideEntity.getFirstLogin());
+
+            // Update firstLogin field
+            guideEntity.setFirstLogin(0); // Mark first login as complete
+            guideService.updateGuidee(guideEntity); // Save changes
+
+            System.out.println("After update, firstLogin: " + guideEntity.getFirstLogin());
+        } else {
+            System.out.println("Guide entity not found for email: " + guide.getEmailId());
+        }
+
+        // Log the password change
+        logService.saveLog(String.valueOf(guide.getGuideId()), "First Password Changed", "Password changed successfully for first time.");
+
+        // Redirect to logout
+        return "redirect:/logout";
+    }
+
     // Fetch pending leaves for guide view
     @GetMapping("/pending_leaves")
     public String viewPendingLeaves(Model model) {
-        Guide guide = getSignedInGuide(); // Get the currently signed-in guide
+        Guide guide = getSignedInGuide();
 
         List<LeaveApplication> pendingLeaves = leaveApplicationRepo.findByStatus("Pending");
         model.addAttribute("pendingLeaves", pendingLeaves);
@@ -416,7 +461,7 @@ public class GuideController {
         logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed Pending Leaves",
                 "Guide " + guide.getName() + " viewed the list of pending leave applications.");
 
-        return "guide/pending_leaves"; // Thymeleaf template
+        return "guide/pending_leaves";
     }
 
     // Approve leave request
@@ -527,27 +572,6 @@ public class GuideController {
 
         return ResponseEntity.ok(messages);
     }
-    // Load chat page for Guide
-//    @GetMapping("/chat")
-//    public String loadGuideMessengerPage(Model model) {
-//        Guide guide = getSignedInGuide();
-//
-//        if (guide == null) {
-//            System.out.println("Guide not found or session expired.");
-//            return "redirect:/login"; // Redirect to login if guide is null
-//        }
-//
-//        model.addAttribute("loggedInGuide", guide);
-//
-//        // Load receivers dynamically
-//        List<Admin> admins = adminService.getAdmin(); // Fetch all admins
-//        List<Intern> interns = internService.getAllInterns(); // Fetch all interns
-//
-//        model.addAttribute("admins", admins);
-//        model.addAttribute("interns", interns);
-//
-//        return "guide/query_to_admin"; // Thymeleaf template for guide chat
-//    }
 
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Task Assignment Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
@@ -768,7 +792,7 @@ public class GuideController {
                     "Guide " + guide.getName() + " accessed the shortlisted intern applications page.");
         } else {
             System.out.println("Error: Guide not found for logging!");
-            mv.addObject("interns", List.of()); // Empty list if guide not found
+            mv.addObject("interns", List.of());
         }
 
         mv.setViewName("guide/approved_interns");
@@ -865,7 +889,6 @@ public class GuideController {
                             "Guide " + guide.getName() + " updated Group ID: " + groupId + " from '" + oldStatus + "' to '" + group.getProjectDefinitionStatus() + "'.");
                 }
             }
-
             return ResponseEntity.ok("Project Definition " + status);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Guide not found.");

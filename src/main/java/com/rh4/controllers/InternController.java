@@ -205,20 +205,19 @@ public class InternController {
 
         Intern intern = getSignedInIntern();
         String internId = intern.getInternId();
-
-        // ✅ Store internId in session to prevent null issues
         session.setAttribute("internId", internId);
 
-        // ✅ Check if the intern has accepted the undertaking
         boolean hasAccepted = undertakingRepo.existsByIntern(internId);
         if (!hasAccepted) {
-            return new ModelAndView("redirect:/bisag/intern/undertaking"); // ✅ Redirect only if not accepted
+            return new ModelAndView("redirect:/bisag/intern/undertaking");
         }
 
-        // ✅ Proceed to dashboard if undertaking is accepted
+        if (intern.getFirstLogin() == 0) {
+            session.setAttribute("username", getUsername());
+            return new ModelAndView("redirect:/bisag/intern/change_passwordd");
+        }
+
         mv = new ModelAndView("intern/intern_dashboard");
-        String username = getUsername();
-        InternApplication internApplication = internService.getInternApplicationByUsername(username);
 
         if (intern.getGroupEntity() != null) {
             mv.addObject("group", intern.getGroupEntity());
@@ -235,10 +234,8 @@ public class InternController {
         }
 
         session.setAttribute("id", internId);
-        session.setAttribute("username", username);
-        mv.addObject("username", username);
+        mv.addObject("username", getUsername());
         mv.addObject("intern", intern);
-        mv.addObject("internApplication", internApplication);
 
         String internFullName = intern.getFirstName() + " " + intern.getLastName();
         logService.saveLog(internId, "Intern Accessed Dashboard", "Intern " + internFullName + " visited their dashboard.");
@@ -251,7 +248,7 @@ public class InternController {
         Intern intern = getSignedInIntern();
 
         intern.setCancellationStatus("requested");
-        intern.setCancelTime(LocalDateTime.now()); // Store current timestamp
+        intern.setCancelTime(LocalDateTime.now());
 
         internService.updateCancellationStatus(intern);
 
@@ -264,11 +261,9 @@ public class InternController {
 
     @GetMapping("/image/{id}")
     public ResponseEntity<InputStreamResource> getImage(@PathVariable String id) {
-        // Fetch intern details by their ID
         Intern intern = internService.getInternById(id);
         String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
 
-        // Fetch the image data
         byte[] imageData = internService.getImageData(id);
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(imageData);
 
@@ -462,7 +457,6 @@ public class InternController {
         WeeklyReport report = weeklyReportService.getReportByInternIdAndWeekNo(internId, weekNo);
         byte[] pdfContent = report.getSubmittedPdf();
 
-        // Log the action of viewing the PDF report
         Intern intern = internService.getInternById(internId);
         String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
         logService.saveLog(internId, "Viewed Weekly Report PDF", internFullName + " viewed the PDF report for week " + weekNo);
@@ -515,7 +509,6 @@ public class InternController {
         ModelAndView mv = new ModelAndView("intern/submit_forms");
         Intern intern = getSignedInIntern();
 
-        // Log the action of accessing the submit forms page
         String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
         String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
         logService.saveLog(internId, "Accessed Submit Forms", internFullName + " accessed the submit forms page.");
@@ -804,11 +797,28 @@ public class InternController {
         return "redirect:/bisag/intern/final_report_submission";
     }
 
+    @GetMapping("/change_passwordd")
+    public ModelAndView changePasswordPage(HttpSession session) {
+        String username = (String) session.getAttribute("username");
+
+        if (username == null) {
+            return new ModelAndView("redirect:/bisag/intern/login");
+        }
+
+        ModelAndView mv = new ModelAndView("intern/change_passwordd");
+        mv.addObject("username", username);
+        mv.addObject("forcePasswordChange", true);
+        return mv;
+    }
+
     @PostMapping("/change_password")
     public String changePassword(@RequestParam("newPassword") String newPassword) {
         Intern intern = getSignedInIntern();
-        logService.saveLog(intern.getInternId(), "Changed Password", "Password Changed successfully.");
+
         internService.changePassword(intern, newPassword);
+        intern.setFirstLogin(1);
+        internService.save(intern);
+        logService.saveLog(intern.getInternId(), "Changed Password", "Password changed successfully.");
         return "redirect:/logout";
     }
 
@@ -885,7 +895,7 @@ public class InternController {
         String internId = (String) session.getAttribute("internId");
         boolean hasAccepted = undertakingRepo.existsByIntern(internId);
         if (hasAccepted) {
-            return new ModelAndView("redirect:/bisag/intern/intern_dashboard"); // Redirect if already accepted
+            return new ModelAndView("redirect:/bisag/intern/intern_dashboard");
         }
         ModelAndView mv = new ModelAndView("intern/undertaking");
         String undertakingContent = undertakingRepo.findLatestUndertakingContent();
@@ -907,11 +917,11 @@ public class InternController {
         if (existingUndertaking.isPresent()) {
             logService.saveLog(internId, "Attempted to Accept Undertaking",
                     "Intern has already accepted the undertaking.");
-            return ResponseEntity.ok(true); // Already accepted, no need to save again
+            return ResponseEntity.ok(true);
         }
         Undertaking undertaking = new Undertaking();
         undertaking.setIntern(internId);
-        undertaking.setAcceptedAt(LocalDateTime.now()); // Set current timestamp
+        undertaking.setAcceptedAt(LocalDateTime.now());
         undertakingRepo.save(undertaking);
         logService.saveLog(internId, "Accepted Undertaking",
                 "Intern successfully accepted the undertaking.");
@@ -943,7 +953,7 @@ public class InternController {
         if (optionalIntern.isEmpty()) {
             logService.saveLog("N/A", "Unauthorized Thesis Access Attempt",
                     "User with username/email " + emailOrUsername + " attempted to access Thesis ID: " + id + " but was not found in the intern database.");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // Intern not found
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         Intern loggedInIntern = optionalIntern.get();
         String loggedInInternId = loggedInIntern.getInternId();

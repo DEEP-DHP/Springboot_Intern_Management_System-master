@@ -119,6 +119,8 @@ public class AdminController {
     private GuideRepo guideRepo;
     @Autowired
     private AnnoucementService announcementService;
+    @Autowired
+    private MyUserService userService;
 
 
     @Value("${app.storage.base-dir}")
@@ -303,14 +305,6 @@ public class AdminController {
         return mv;
     }
 
-    // Group Manage
-
-    // Intern Management
-
-//    @GetMapping("/register_intern")
-//    public String registerIntern() {
-//        return "admin/internregistration";
-//    }
     @GetMapping("/register_internn")
     public ModelAndView registerInternn() {
         ModelAndView mv = new ModelAndView("admin/register_internn");
@@ -348,7 +342,6 @@ public class AdminController {
             String storageDir = baseDir + email + "/";
             File directory = new File(storageDir);
 
-            // Create directory if it doesn't exist
             if (!directory.exists()) {
                 directory.mkdirs();
             }
@@ -1663,6 +1656,8 @@ public class AdminController {
         model = countNotifications(model);
         mv.setViewName("admin/new_interns");
         mv.addObject("admin", adminName(session));
+        List<RRecord> records = recordService.getAllRecords();
+        model.addAttribute("records", records);
 
         String username = (String) session.getAttribute("username");
         Admin admin = adminService.getAdminByUsername(username);
@@ -2004,6 +1999,7 @@ public class AdminController {
                     "Admin " + admin.getName() + " viewed the guide list.");
         }
 
+
         return mv;
     }
 
@@ -2216,6 +2212,8 @@ public class AdminController {
         ModelAndView mv = new ModelAndView("/admin/admin_weekly_report_details");
         model = countNotifications(model);
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         GroupEntity group = groupService.getGroup(groupId);
         WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
         MyUser user = myUserService.getUserByUsername(admin.getEmailId());
@@ -2499,6 +2497,11 @@ public ModelAndView cancellationRequests(Model model) {
     public String getPendingReports(Model model) {
         Map<String, Integer> pendingReports = weeklyReportService.getPendingReports();
         model.addAttribute("pendingReports", pendingReports);
+        Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Weekly Report Form Access", "Admin " + admin.getName() + " accessed the Add Weekly Report form.");
+
         return "admin/pending-weekly-reports";
     }
 
@@ -2695,6 +2698,8 @@ public ModelAndView cancellationRequests(Model model) {
     @GetMapping("thesis/new")
     public String showThesisForm(Model model) {
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         model.addAttribute("thesis", new Thesis());
 
         logService.saveLog(String.valueOf(admin.getAdminId()), "Thesis Form Access", "Admin " + admin.getName() + " accessed the 'Add Thesis' form.");
@@ -2722,7 +2727,7 @@ public ModelAndView cancellationRequests(Model model) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error saving thesis record. Please try again.");
         }
 
-        return "redirect:/bisag/admin/thesis_list"; // Redirect after saving thesis
+        return "redirect:/bisag/admin/thesis_list";
     }
 
     // Show all thesis records
@@ -2731,6 +2736,7 @@ public ModelAndView cancellationRequests(Model model) {
         List<Thesis> thesisList = thesisService.getAllTheses();
         model.addAttribute("thesisList", thesisList);
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
 
         logService.saveLog(String.valueOf(admin.getAdminId()), "Thesis List View", "Admin " + admin.getName() + " viewed the list of thesis.");
 
@@ -2745,6 +2751,8 @@ public ModelAndView cancellationRequests(Model model) {
         model.addAttribute("thesis", thesis);
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         if (admin != null) {
             String adminId = String.valueOf(admin.getAdminId());
             logService.saveLog(adminId, "Accessed Thesis Update Page",
@@ -2780,6 +2788,8 @@ public ModelAndView cancellationRequests(Model model) {
         if (thesis.isPresent()) {
             model.addAttribute("thesis", thesis);
             Admin admin = getSignedInAdmin();
+            model.addAttribute("admin", admin);
+
 
             logService.saveLog(String.valueOf(admin.getAdminId()), "Thesis Details View",
                     "Admin " + admin.getName() + " viewed the details of thesis with ID: " + id);
@@ -2788,36 +2798,6 @@ public ModelAndView cancellationRequests(Model model) {
             return "error/404";
         }
     }
-    // Show form to edit an existing thesis
-//    @GetMapping("/thesis/edit/{id}")
-//    public String editThesis(@PathVariable Long id, Model model) {
-//        Thesis thesis = thesisService.getThesisById(id);
-//        model.addAttribute("thesis", thesis);
-//        return "thesis-form";
-//    }
-
-    // Delete a thesis record
-//    @GetMapping("/thesis/delete/{id}")
-//    public String deleteThesis(@PathVariable Long id) {
-//        thesisService.deleteThesis(id);
-//        return "redirect:/admin/thesis";
-//    }
-
-    //LOGS-----------------------------------------------------------------------------------------
-    // Endpoint to view logs
-//    @GetMapping("/logs")
-//    public String viewLogs(Model model) {
-//        List<Log> logs = logService.getAllLogs();
-//        model.addAttribute("logs", logs);
-//        return "admin/logs"; // This ensures Thymeleaf looks inside templates/admin/logs.html
-//    }
-
-    // If the service returns a List of InternApplication
-//    @PostMapping("/rejectIntern/{id}")
-//    public String rejectIntern(@PathVariable Long id) {
-//        internApplicationService.updateStatusToRejected(id);
-//        return "redirect:/admin/logs";
-//    }
 
     // Show rejected interns in the logs
     @GetMapping("/logs")
@@ -2825,6 +2805,8 @@ public ModelAndView cancellationRequests(Model model) {
         List<InternApplication> rejectedInterns = internApplicationService.getRejectedInterns();
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         String id = String.valueOf(admin.getAdminId());
 
         logService.saveLog(id, "Viewed Rejected Interns", "Admin " + admin.getName() + " accessed the rejected interns list.");
@@ -2844,6 +2826,8 @@ public ModelAndView cancellationRequests(Model model) {
         System.out.println("Logs fetched: " + logs.size());
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         String id = String.valueOf(admin.getAdminId());
 
         logInternAction(id, "Viewed Activity Logs", "Admin " + admin.getName() + " accessed the activity logs.");
@@ -2869,23 +2853,20 @@ public ModelAndView cancellationRequests(Model model) {
     // ========================== COMPANY VERIFICATION REQUESTS ==========================
     @PostMapping("/send_to_hr")
     public String sendToHR(@RequestParam("internId") String internId, RedirectAttributes redirectAttributes) {
-        // Logic to send the intern ID to HR (e.g., update the database, send an email, etc.)
-
         redirectAttributes.addFlashAttribute("message", "Intern ID " + internId + " sent to HR successfully.");
-        return "redirect:/bisag/admin/approved-verifications"; // Redirect back to the list page
+        return "redirect:/bisag/admin/approved-verifications";
     }
     //View all pending verification requests
     @GetMapping("/verification_requests")
     public ModelAndView viewVerificationRequests(Model model, HttpSession session) {
         ModelAndView mv = new ModelAndView("admin/verification_requests");
 
-        // Fetch pending verification requests
         List<Verification> pendingRequests = verificationService.getPendingRequests();
         mv.addObject("requests", pendingRequests);
-
         model = countNotifications(model);
-
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         String id = String.valueOf(admin.getAdminId());
 
         logService.saveLog(id, "Viewed Verification Requests",
@@ -2903,6 +2884,8 @@ public ModelAndView cancellationRequests(Model model) {
         if (verification.isPresent()) {
 
             Admin admin = getSignedInAdmin();
+            model.addAttribute("admin", admin);
+
             String adminId = String.valueOf(admin.getAdminId());
             logService.saveLog(adminId, "Verification Details View",
                     "Admin " + admin.getName() + " viewed the details of verification request with ID: " + id);
@@ -2926,9 +2909,7 @@ public ModelAndView cancellationRequests(Model model) {
 
             Admin admin = getSignedInAdmin();
             String adminId = String.valueOf(admin.getAdminId());
-
             verificationService.approveVerification(id, adminId, remarks);
-
             logService.saveLog(adminId, "Verification Approved",
                     "Admin " + admin.getName() + " approved the verification request with ID: " + id);
 
@@ -2936,7 +2917,6 @@ public ModelAndView cancellationRequests(Model model) {
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Verification request not found.");
         }
-
         return "redirect:/bisag/admin/approved-verifications";
     }
 
@@ -2947,20 +2927,15 @@ public ModelAndView cancellationRequests(Model model) {
         Optional<Verification> verification = verificationService.getVerificationById(id);
         if (verification.isPresent()) {
             Verification v = verification.get();
-
             Admin admin = getSignedInAdmin();
             String adminId = String.valueOf(admin.getAdminId());
-
             verificationService.rejectVerification(id, adminId, remarks);
-
             logService.saveLog(adminId, "Verification Rejected",
                     "Admin " + admin.getName() + " rejected the verification request with ID: " + id);
-
             redirectAttributes.addFlashAttribute("successMessage", "Verification request rejected successfully!");
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Verification request not found.");
         }
-
         return "redirect:/bisag/admin/rejected-verifications";
     }
 
@@ -2968,12 +2943,19 @@ public ModelAndView cancellationRequests(Model model) {
     @GetMapping("/verification_request_form")
     public ModelAndView verificationRequestForm() {
         Admin admin = getSignedInAdmin();
-        String id = String.valueOf(admin.getAdminId());
+        if (admin == null) {
+            return new ModelAndView("redirect:/bisag/admin/login");
+        }
 
+        String id = String.valueOf(admin.getAdminId());
         logService.saveLog(id, "Viewed Verification Request Form", "Admin " + admin.getName() + " accessed the verification request form.");
 
-        return new ModelAndView("admin/verification_request_form");
+        ModelAndView modelAndView = new ModelAndView("admin/verification_request_form");
+        modelAndView.addObject("admin", admin);
+
+        return modelAndView;
     }
+
 
     //for verification module
     @GetMapping("/get-intern-details/{internId}")
@@ -3021,6 +3003,7 @@ public ModelAndView cancellationRequests(Model model) {
         mv.setViewName("admin/intern_verification_details");
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
         if (admin != null && intern.isPresent()) {
             logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Intern Verification Details",
                     "Admin " + admin.getName() + " viewed the details of intern ID: " + id + ", Name: " + intern.get().getFirstName() + " " + intern.get().getLastName());
@@ -3071,15 +3054,12 @@ public ModelAndView cancellationRequests(Model model) {
         verification.setCompanyName(companyName);
         verification.setContact(contact);
         verification.setEmail(email);
-
         verificationService.createVerificationRequest(verification);
-
         Admin admin = getSignedInAdmin();
         String id = String.valueOf(admin.getAdminId());
         logService.saveLog(id, "Submitted Verification Request",
                 "Admin " + admin.getName() + " submitted a verification request for Intern ID: " + internId);
 
-        // Redirect to the verification requests page
         ModelAndView mv = new ModelAndView("admin/verification_requests");
         mv.addObject("success", true);
         mv.addObject("requests", verificationService.getPendingRequests());
@@ -3090,6 +3070,7 @@ public ModelAndView cancellationRequests(Model model) {
     @GetMapping("/verification_success")
     public ModelAndView verificationSuccess() {
         Admin admin = getSignedInAdmin();
+
         String id = String.valueOf(admin.getAdminId());
 
         logService.saveLog(id, "Viewed Verification Success Page",
@@ -3105,6 +3086,8 @@ public ModelAndView cancellationRequests(Model model) {
         model.addAttribute("verifications", approvedVerifications);
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         String id = String.valueOf(admin.getAdminId());
 
         logService.saveLog(id, "Viewed Approved Verifications",
@@ -3120,6 +3103,8 @@ public ModelAndView cancellationRequests(Model model) {
         model.addAttribute("verifications", rejectedVerifications);
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         String id = String.valueOf(admin.getAdminId());
 
         logService.saveLog(id, "Viewed Rejected Verifications",
@@ -3138,16 +3123,13 @@ public ModelAndView cancellationRequests(Model model) {
 
         try {
             attendanceService.processAttendanceFile(file);
-
             Admin admin = getSignedInAdmin();
-
             if (admin != null) {
                 String id = String.valueOf(admin.getAdminId());
 
                 logService.saveLog(id, "Uploaded Attendance Data",
                         "Admin " + admin.getName() + " uploaded a new attendance file.");
             }
-
             redirectAttributes.addFlashAttribute("successMessage", "Attendance data uploaded successfully.");
         } catch (Exception e) {
             e.printStackTrace();
@@ -3161,7 +3143,6 @@ public ModelAndView cancellationRequests(Model model) {
     public String getAllAttendance(Model model) {
         List<Attendance> attendances = attendanceRepo.findAll();
 
-        //  total attendance percentage for each intern
         Map<String, Float> internTotalAttendanceMap = new HashMap<>();
         for (Attendance attendance : attendances) {
             String internId = attendance.getInternId();
@@ -3175,6 +3156,8 @@ public ModelAndView cancellationRequests(Model model) {
         model.addAttribute("internTotalAttendanceMap", internTotalAttendanceMap);
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         String id = String.valueOf(admin.getAdminId());
         logService.saveLog(id, "Viewed Attendance Data",
                 "Admin " + admin.getName() + " accessed the attendance records.");
@@ -3185,31 +3168,19 @@ public ModelAndView cancellationRequests(Model model) {
     // --------------------------------------Display all relieving records---------------------------------------------
     @GetMapping("/ask_records")
     public String showVerificationFilterPage() {
-        return "admin/ask_records"; // This should be the name of your Thymeleaf template (HTML file)
+        return "admin/ask_records";
     }
 
-//    @GetMapping("/approved_verifications")
-//    public String showApproved(Model model) {
-//        List<Verification> verifications = verificationService.getApprovedVerifications(); // Fetch data from service
-//        model.addAttribute("verifications", verifications);
-//        return "approved_verifications"; // Name of the Thymeleaf template for "After Internship Completion"
-//    }
-
-//    @GetMapping("/cancelled_interns")
-//    public String showCancelledInterns(Model model) {
-//        List<CancelledIntern> cancelledInterns = verificationService.getCancelledInterns(); // Fetch data from service
-//        model.addAttribute("cancelledInterns", cancelledInterns);
-//        return "cancelled_interns"; // Name of the Thymeleaf template for "Cancelled Intern"
-//    }
 // Display the form for adding a relieving record of cancelled interns
 @GetMapping("/cancelled_interns_relieving_records")
 public String viewCancelRelievingRecords(Model model) {
-    // ✅ Fetch all intern IDs from the Intern table
     List<College> college = fieldService.getColleges();
 
     Optional<RRecord> record = recordService.getRecordById(1L);
 
     Admin admin = getSignedInAdmin();
+    model.addAttribute("admin", admin);
+
     logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Cancelled Relieving Records",
             "Admin " + admin.getName() + " viewed the Cancelled Relieving Records page.");
 
@@ -3224,13 +3195,14 @@ public String viewCancelRelievingRecords(Model model) {
     // Display the form for adding a relieving record
     @GetMapping("/relieving_records")
     public String viewRelievingRecords(Model model) {
-        // ✅ Fetch all intern IDs from the Intern table
         List<Intern> interns = internService.getAllInterns();
         List<College> college = fieldService.getColleges();
 
         Optional<RRecord> record = recordService.getRecordById(1L);
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Relieving Records",
                 "Admin " + admin.getName() + " viewed the Relieving Records page.");
 
@@ -3312,6 +3284,7 @@ public String viewCancelRelievingRecords(Model model) {
             recordService.saveRecord(record);
 
             Admin admin = getSignedInAdmin();
+
             if (admin != null) {
                 String id = String.valueOf(admin.getAdminId());
                 logService.saveLog(id, "Submitted Relieving Record",
@@ -3399,7 +3372,6 @@ public String viewCancelRelievingRecords(Model model) {
             record.setAttendance(attendance);
 
             recordService.saveRecord(record);
-
             Admin admin = getSignedInAdmin();
             if (admin != null) {
                 String id = String.valueOf(admin.getAdminId());
@@ -3422,16 +3394,15 @@ public String viewCancelRelievingRecords(Model model) {
             model.addAttribute("records", records);
 
             Admin admin = getSignedInAdmin();
+            model.addAttribute("admin", admin);
 
             if (admin != null) {
                 String id = String.valueOf(admin.getAdminId());
 
-                // Log Action
                 logService.saveLog(id, "Viewed Relieving Records",
                         "Admin " + admin.getName() + " accessed the relieving records list.");
             }
 
-            // Set success message if records are found
             if (!records.isEmpty()) {
                 redirectAttributes.addFlashAttribute("successMessage", "Relieving records loaded successfully!");
             } else {
@@ -3439,11 +3410,10 @@ public String viewCancelRelievingRecords(Model model) {
             }
 
         } catch (Exception e) {
-            // Set error message
             redirectAttributes.addFlashAttribute("errorMessage", "Error loading relieving records. Please try again.");
         }
 
-        return "admin/relieving_records_list"; // Redirect to the page
+        return "admin/relieving_records_list";
     }
 
     //Show records ID wise-------------------
@@ -3452,6 +3422,7 @@ public String viewCancelRelievingRecords(Model model) {
         Optional<RRecord> record = recordService.getRecordById(Long.parseLong(id));
         if (record.isPresent()) {
             model.addAttribute("records", record);
+
             logService.saveLog(id, "Relieving Records Details View",
                     "Admin viewed the details of records with ID: " + id);
             return "admin/relieving_records_detail";
@@ -3460,7 +3431,7 @@ public String viewCancelRelievingRecords(Model model) {
         }
     }
 
-    // Automcatically fetches the group id when the intern id is being selected
+    // Automatically fetches the group id when the intern id is being selected
     @GetMapping("/getGroupId/{internId}")
     @ResponseBody
     public ResponseEntity<String> getGroupId(@PathVariable String internId) {
@@ -3538,18 +3509,16 @@ public String viewCancelRelievingRecords(Model model) {
     @GetMapping("/pending_leaves")
     public String viewPendingLeaves(Model model, HttpSession session) {
         List<LeaveApplication> pendingLeaves = leaveApplicationRepo.findByStatus("Pending");
-
-        // Get the role from the session (ensure it is set during login)
         String role = (String) session.getAttribute("role");
-
         model = countNotifications(model);
-
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Pending Leave Applications",
                 "Admin " + admin.getName() + " viewed pending leave applications.");
 
         model.addAttribute("pendingLeaves", pendingLeaves);
-        model.addAttribute("role", role); // Pass role to Thymeleaf
+        model.addAttribute("role", role);
 
         return "admin/pending_leaves";
     }
@@ -3561,7 +3530,7 @@ public String viewCancelRelievingRecords(Model model) {
 
         if (optionalLeave.isPresent()) {
             LeaveApplication leave = optionalLeave.get();
-            leave.setAdminApproval(true); // Admin approves leave
+            leave.setAdminApproval(true);
 
             // If both admin and guide have approved, set status to "Approved"
             if (leave.isAdminApproval() && leave.isGuideApproval()) {
@@ -3569,26 +3538,23 @@ public String viewCancelRelievingRecords(Model model) {
             }
 
             leaveApplicationRepo.save(leave);
-
             Admin admin = getSignedInAdmin();
+
             if (admin != null) {
                 String adminId = String.valueOf(admin.getAdminId());
                 logService.saveLog(adminId, "Approved Leave Application",
                         "Admin " + admin.getName() + " approved leave application for intern ID: " + leave.getInternId());
             }
-
             redirectAttributes.addFlashAttribute("successMessage", "Leave application approved successfully!");
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Leave application not found!");
         }
-
         return "redirect:/bisag/admin/pending_leaves";
     }
 
     @PostMapping("/reject_leave/{id}")
     public String rejectLeave(@PathVariable Long id, @RequestParam("remarks") String remarks, RedirectAttributes redirectAttributes) {
         Optional<LeaveApplication> optionalLeave = leaveApplicationRepo.findById(id);
-
         if (optionalLeave.isPresent()) {
             LeaveApplication leave = optionalLeave.get();
             leave.setStatus("Rejected");
@@ -3619,6 +3585,8 @@ public String viewCancelRelievingRecords(Model model) {
         model.addAttribute("leaveHistory", leaveHistory);
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         if (admin != null) {
             String adminId = String.valueOf(admin.getAdminId());
             logService.saveLog(adminId, "Viewed Leave History",
@@ -3636,6 +3604,8 @@ public String viewCancelRelievingRecords(Model model) {
         model.addAttribute("leave", leave);
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         if (admin != null) {
             String adminId = String.valueOf(admin.getAdminId());
             logService.saveLog(adminId, "Viewed Leave Details",
@@ -3664,8 +3634,8 @@ public String viewCancelRelievingRecords(Model model) {
             }
 
             Admin admin = getSignedInAdmin();
+            model.addAttribute("admin", admin);
             model.addAttribute("adminName", admin.getName());
-
             logService.saveLog(String.valueOf(admin.getAdminId()), "View Half Day Leave",
                     "Admin " + admin.getName() + " viewed the details of half day leave with ID: " + id);
             return "admin/half_leave";
@@ -3679,9 +3649,7 @@ public String viewCancelRelievingRecords(Model model) {
     @GetMapping("/undertaking")
     public String showUndertakingForm(Model model) {
         System.out.println("Admin Undertaking page accessed");
-
         List<String> allInternIds = internRepo.findAllInternIds();
-
         List<Undertaking> acceptedForms = undertakingRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
         Set<String> acceptedInternIds = acceptedForms.stream()
                 .map(Undertaking::getIntern)
@@ -3695,6 +3663,8 @@ public String viewCancelRelievingRecords(Model model) {
         model.addAttribute("pendingInternIds", pendingInternIds);
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         if (admin != null) {
             String adminId = String.valueOf(admin.getAdminId());
             logService.saveLog(adminId, "Viewed Undertaking Forms",
@@ -3734,8 +3704,9 @@ public String viewCancelRelievingRecords(Model model) {
         Undertaking undertaking = undertakingRepo.findById(id).orElseThrow(() -> new RuntimeException("Undertaking not found"));
         undertaking.setContent(content);
         undertakingRepo.save(undertaking);
-        return "redirect:/bisag/admin/undertaking"; // Redirect to avoid form resubmission issues
+        return "redirect:/bisag/admin/undertaking";
     }
+
     // Fetch the latest Undertaking Form content for Interns
     @GetMapping("/undertaking-content")
     @ResponseBody
@@ -3743,7 +3714,7 @@ public String viewCancelRelievingRecords(Model model) {
         String latestContent = undertakingRepo.findLatestUndertakingContent();
 
         if (latestContent == null || latestContent.isEmpty()) {
-            return "No undertaking content available."; // Avoid empty response issues
+            return "No undertaking content available.";
         }
         return latestContent;
     }
@@ -3800,6 +3771,8 @@ public String viewCancelRelievingRecords(Model model) {
         model.addAttribute("theses", thesisList);
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         if (admin != null) {
             String adminId = String.valueOf(admin.getAdminId());
             logService.saveLog(adminId, "Viewed Thesis Storage",
@@ -3913,6 +3886,8 @@ public String viewCancelRelievingRecords(Model model) {
     @GetMapping("/chat")
     public String loadMessengerPage(Model model) {
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
 
         if (admin == null) {
             System.out.println("Admin not found or session expired.");
@@ -3971,6 +3946,8 @@ public String viewCancelRelievingRecords(Model model) {
         model.addAttribute("tasks", tasks);
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Task Assignments",
                 "Admin " + admin.getName() + " accessed the Task Assignments page.");
 
@@ -4032,6 +4009,8 @@ public String viewCancelRelievingRecords(Model model) {
                 .orElseThrow(() -> new RuntimeException("Task Assignment Not Found"));
         model.addAttribute("tasks", tasks);
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         if (admin != null) {
             String adminId = String.valueOf(admin.getAdminId());
             logService.saveLog(adminId, "Viewed Task Details",
@@ -4064,7 +4043,6 @@ public String viewCancelRelievingRecords(Model model) {
 
             return ResponseEntity.ok("Task approved successfully.");
         }
-
         return ResponseEntity.badRequest().body("Task not found.");
     }
 
@@ -4128,6 +4106,8 @@ public String viewCancelRelievingRecords(Model model) {
         model.addAttribute("feedbacks", feedbacks);
 
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Feedback List",
                 "Admin " + admin.getName() + " accessed the Feedback List page.");
 
@@ -4138,6 +4118,8 @@ public String viewCancelRelievingRecords(Model model) {
     @GetMapping("/announcement")
     public String getAllAnnouncements(Model model) {
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Announcements",
                 "Admin " + admin.getName() + " accessed the Announcements page.");
         model.addAttribute("announcements", announcementService.getAllAnnouncements());
@@ -4170,6 +4152,8 @@ public String viewCancelRelievingRecords(Model model) {
     @GetMapping("/update_project_def")
     public String showAssignProjectDefinitionForm(Model model) {
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Assign Project Definition Form", "Admin " + admin.getName() + " accessed the Assign Project Definition Form page.");
         List<GroupEntity> groups = groupRepo.findAll();
         model.addAttribute("groups", groups);
@@ -4208,6 +4192,8 @@ public String viewCancelRelievingRecords(Model model) {
     @GetMapping("/update_def_ans")
     public String showPendingProjectDefinitions(Model model) {
         Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Pending Project Definitions", "Admin " + admin.getName() + " accessed the Pending Project Definitions page.");
         List<GroupEntity> pendingGroups = groupRepo.findByProjectDefinitionStatus("pending");
 
@@ -4246,5 +4232,59 @@ public String viewCancelRelievingRecords(Model model) {
         groupRepo.save(group);
         redirectAttributes.addFlashAttribute("success", "Project Definition " + status + ".");
         return "redirect:/bisag/admin/update_def_ans";
+    }
+
+    @GetMapping("/generate_credentials")
+    public String showGenerateCredentialsForm(Model model) {
+        // Fetch all interns for email updates
+        List<Intern> internList = internService.getAllInterns();
+
+        // Fetch only users with role 'INTERN'
+        List<MyUser> userList = userService.findAllInterns();
+
+        // Add both lists to the model
+        model.addAttribute("internList", internList);
+        model.addAttribute("userList", userList);
+
+        return "admin/generate_credentials";
+    }
+
+    @PostMapping("/update_credentials")
+    public String updateCredentials(@RequestParam("internId") String internId,
+                                    @RequestParam("internEmail") String internEmail) {
+
+        Optional<Intern> internOptional = internService.findById(internId);
+        if (internOptional.isPresent()) {
+            Intern intern = internOptional.get();
+            System.out.println("Intern email set to: " + internEmail);
+            intern.setEmail(internEmail);
+
+            String encryptedPassword = encodePassword("Bisag@123");
+            intern.setPassword(encryptedPassword);
+
+            internService.save(intern);
+
+            Optional<MyUser> userOptional = userRepo.findByUserId(intern.getInternId());
+            if (userOptional.isPresent()) {
+                MyUser user = userOptional.get();
+                user.setUsername(internEmail);
+                user.setPassword(encryptedPassword);
+                userRepo.save(user);
+            } else {
+                MyUser user = new MyUser();
+                user.setUsername(internEmail);
+                user.setPassword(encryptedPassword);
+                user.setEnabled(true);
+                user.setUserId(intern.getInternId());
+                user.setRole("UNDERPROCESSINTERN");
+                userRepo.save(user);
+            }
+
+            logService.saveLog(internId, "Updated Credentials",
+                    "Admin updated Intern login credentials for "
+                            + intern.getFirstName() + " " + intern.getLastName());
+        }
+
+        return "redirect:/bisag/admin/intern_application/new_interns";
     }
 }

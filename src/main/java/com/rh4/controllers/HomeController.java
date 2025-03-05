@@ -228,6 +228,7 @@ public class HomeController {
             @RequestParam("domain") String domain,
             @RequestParam("joiningDate") Date joiningDate,
             @RequestParam("completionDate") Date completionDate,
+//            @RequestParam("securityPin") String securityPin,
             HttpSession session) {
 
         try {
@@ -274,6 +275,7 @@ public class HomeController {
             internApplication.setCollegeIcardImage(icardImage.getBytes());
             internApplication.setNocPdf(nocPdf.getBytes());
             internApplication.setResumePdf(resumePdf.getBytes());
+//            internApplication.setSecurityPin(securityPin);
 
             internApplicationRepo.save(internApplication);
 
@@ -284,6 +286,7 @@ public class HomeController {
             user.setPassword(encryptedPassword);
             user.setEnabled(true);
             user.setUserId(Long.toString(internApplication.getId()));
+//            user.setSecurityPin(securityPin);
             user.setRole("UNDERPROCESSINTERN");
             userRepo.save(user);
 
