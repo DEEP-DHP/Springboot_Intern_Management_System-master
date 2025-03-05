@@ -21,6 +21,7 @@ public class MyUser {
 	private boolean enabled;
 	@Column(name="userId")
 	private String userId;
+	private String securityPin;
 	
 
 	public String getUserId() {
@@ -59,11 +60,17 @@ public class MyUser {
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}
+	public String getSecurityPin() {
+		return securityPin;
+	}
+	public void setSecurityPin(String securityPin) {
+		this.securityPin = securityPin;
+	}
 	
 	public MyUser() {
 		super();
 	}
-	public MyUser(long id, String username, String password, String role, boolean enabled, String userId) {
+	public MyUser(long id, String username, String password, String role, boolean enabled, String userId, String securityPin) {
 		super();
 		this.id = id;
 		this.username = username;
@@ -71,6 +78,7 @@ public class MyUser {
 		this.role = role;
 		this.enabled = enabled;
 		this.userId = userId;
+		this.securityPin = securityPin;
 	}
 	
 }

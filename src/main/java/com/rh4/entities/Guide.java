@@ -69,6 +69,9 @@ public class Guide {
 	@OneToMany(mappedBy = "guide")
 	private List<GroupEntity> groups;
 
+	@Column(name = "first_login", nullable = false, columnDefinition = "INT DEFAULT 1")
+	private Integer firstLogin = 1; // Use Integer instead of int
+
 	private String definitionStatus="pending";
 
 	public List<GroupEntity> getGroups() {
@@ -181,4 +184,11 @@ public class Guide {
 		this.definitionStatus = definitionStatus;
 	}
 
+	public int getFirstLogin() {
+		return firstLogin;
+	}
+
+	public void setFirstLogin(int firstLogin) {
+		this.firstLogin = firstLogin;
+	}
 }

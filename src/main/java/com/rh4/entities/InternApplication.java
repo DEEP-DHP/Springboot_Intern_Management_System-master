@@ -107,7 +107,10 @@ public class InternApplication {
         createdAt = LocalDateTime.now();
     }
 
-	public long getId() {
+    @Column(nullable = false)
+    private String securityPin; // Hashed 6-digit pin
+
+    public long getId() {
 		// TODO Auto-generated method stub
 		return id;  // changes-----------------------------------------------
 	}

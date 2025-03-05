@@ -141,6 +141,18 @@ public class Intern {
 
     private LocalDateTime cancelTime;
 
+    @Column(name = "first_login", nullable = false)
+    private Integer firstLogin = 0; // Default value set to 0
+
+    // Getters and setters (if Lombok isn't used)
+    public Integer getFirstLogin() {
+        return firstLogin;
+    }
+
+    public void setFirstLogin(Integer firstLogin) {
+        this.firstLogin = firstLogin;
+    }
+
     public Intern() {
         super();
     }
