@@ -60,6 +60,8 @@
                         class="bi bi-circle"></i><span>Approved Interns</span></a></li>
                 <li><a th:href="@{/bisag/admin/logs}"><i
                         class="bi bi-circle"></i><span>Rejected Interns</span></a></li>
+                <li><a th:href="@{/bisag/admin/generate_credentials}">
+                    <i class="bi bi-circle"></i><span>Generate Credentials</span></a></li>
                 <li><a th:href="@{/bisag/admin/add_fields}"><i
                         class="bi bi-circle"></i><span>Add Fields</span></a></li>
                 <li><a th:href="@{/bisag/admin/cancellation_requests}"><i
@@ -68,6 +70,8 @@
                         class="bi bi-circle"></i><span>Feedback Applications</span></a></li>
                 <li><a th:href="@{/bisag/admin/undertaking}"><i
                         class="bi bi-circle"></i><span>Add Undertaking</span></a></li>
+                <li><a th:href="@{/bisag/admin/announcement}">
+                        <i class="bi bi-circle"></i><span>Announcement Board</span></a></li>
 
             </ul>
 
@@ -325,23 +329,6 @@
                 </li>
             </ul>
 
-            <ul class="sidebar-nav" id="def-nav">
-                <li class="nav-item">
-                    <a class="nav-link collapsed" data-bs-target="#announcement-nav" data-bs-toggle="collapse" href="#">
-                        <i class="bi bi-menu-button-wide"></i>
-                        <span>Announcement</span>
-                        <i class="bi bi-chevron-down ms-auto"></i>
-                    </a>
-                    <ul id="announcement-nav" class="nav-content collapse" data-bs-parent="#def-nav">
-                        <li>
-                            <a th:href="@{/bisag/admin/announcement}">
-                                <i class="bi bi-circle"></i><span>Announcement Board</span>
-                            </a>
-                        </li>
-                    </ul>
-
-                </li>
-            </ul>
         </li>
     </ul>
 
