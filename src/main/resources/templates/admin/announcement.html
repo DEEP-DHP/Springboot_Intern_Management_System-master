@@ -96,7 +96,7 @@
 <main id="main" class="main">
 
     <div class="pagetitle">
-        <h1>Annoucement Board</h1>
+        <h1>Announcement Board</h1>
         <nav>
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/bisag/admin/admin_dashboard">Home</a></li>
@@ -104,14 +104,8 @@
             </ol>
         </nav>
     </div>
-    <!-- End Page Title -->
-
     <section class="section">
         <div class="row">
-
-
-
-            <h2>Add New Announcement</h2>
             <form  th:action="@{/bisag/admin/announcement}" th:object="${newAnnouncement}" method="post">
                 <div>
                     <label for="title">Title:</label>
@@ -128,7 +122,9 @@
 
 
             <table class="table datatable table-bordered">
-                <h3>Announcement List</h3>
+                <div class="pagetitle">
+                <h3 class="pagetitle">Announcement List</h3>
+                </div>
               <thead>
                 <tr>
                     <th>Title</th>
