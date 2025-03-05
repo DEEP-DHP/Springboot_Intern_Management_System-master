@@ -141,4 +141,8 @@ public class GuideService {
 	public Optional<Guide> findById(Long guideId) {
 		return guideRepo.findById(guideId);
 	}
+
+	public void updateGuidee(Guide guide) {
+		guideRepo.save(guide);
+	}
 }
