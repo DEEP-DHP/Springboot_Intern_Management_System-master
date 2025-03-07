@@ -245,7 +245,7 @@
              (${#dates.format(today, 'yyyy-MM-dd') >= #dates.format(intern.joiningDate, 'yyyy-MM-dd') and
                #dates.format(today, 'yyyy-MM-dd') <= #dates.format(intern.completionDate, 'yyyy-MM-dd')} ? 'Working' :
               (${#dates.format(today, 'yyyy-MM-dd') > #dates.format(intern.completionDate, 'yyyy-MM-dd')} ?
-               (${intern.groupEntity?.finalReportStatus == 'approved'} ? 'Completed' : 'Report Pending') :
+               (${finalReportStatuses[intern.internId] == 'Yes'} ? 'Completed' : 'Report Pending') :
                intern.status)) :
              intern.status)">
 								</td>
