@@ -32,4 +32,7 @@ public class RecordService {
     public RRecord saveRecord(RRecord record) {
         return recordRepo.save(record);
     }
+    public String findFinalReportByInternId(String internId) {
+        return recordRepo.findFinalReportByInternId(internId);
+    }
 }
