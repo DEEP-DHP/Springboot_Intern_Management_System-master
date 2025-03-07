@@ -1648,26 +1648,55 @@ public class AdminController {
         return "redirect:/bisag/admin/intern_application/approved_interns";
     }
 
-    @GetMapping("/intern_application/new_interns")
-    public ModelAndView newInterns(Model model) {
-        ModelAndView mv = new ModelAndView();
-        List<Intern> intern = internService.getInterns();
-        mv.addObject("intern", intern);
-        model = countNotifications(model);
-        mv.setViewName("admin/new_interns");
-        mv.addObject("admin", adminName(session));
-        List<RRecord> records = recordService.getAllRecords();
-        model.addAttribute("records", records);
+//    @GetMapping("/intern_application/new_interns")
+//    public ModelAndView newInterns(Model model) {
+//        ModelAndView mv = new ModelAndView();
+//        List<Intern> intern = internService.getInterns();
+//        mv.addObject("intern", intern);
+//        model = countNotifications(model);
+//        mv.setViewName("admin/new_interns");
+//        mv.addObject("admin", adminName(session));
+//        List<RRecord> records = recordService.getAllRecords();
+//        model.addAttribute("records", records);
+//
+//        String username = (String) session.getAttribute("username");
+//        Admin admin = adminService.getAdminByUsername(username);
+//        if (admin != null) {
+//            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed New Interns",
+//                    "Admin " + admin.getName() + " accessed the new interns page.");
+//        }
+//
+//        return mv;
+//    }
+@GetMapping("/intern_application/new_interns")
+public ModelAndView newInterns(Model model) {
+    ModelAndView mv = new ModelAndView();
+    List<Intern> intern = internService.getInterns();
+    mv.addObject("intern", intern);
+    model = countNotifications(model);
+    mv.setViewName("admin/new_interns");
+    mv.addObject("admin", adminName(session));
+    List<RRecord> records = recordService.getAllRecords();
+    model.addAttribute("records", records);
 
-        String username = (String) session.getAttribute("username");
-        Admin admin = adminService.getAdminByUsername(username);
-        if (admin != null) {
-            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed New Interns",
-                    "Admin " + admin.getName() + " accessed the new interns page.");
-        }
-
-        return mv;
+    // Fetch final report statuses for each intern
+    Map<String, String> finalReportStatuses = new HashMap<>();
+    for (Intern i : intern) {
+        String finalReport = recordService.findFinalReportByInternId(i.getInternId());
+        finalReportStatuses.put(i.getInternId(), finalReport != null ? finalReport : "no");
     }
+    model.addAttribute("finalReportStatuses", finalReportStatuses);
+
+    String username = (String) session.getAttribute("username");
+    Admin admin = adminService.getAdminByUsername(username);
+    if (admin != null) {
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed New Interns",
+                "Admin " + admin.getName() + " accessed the new interns page.");
+    }
+
+    return mv;
+}
+
 
     // Group Creation
 
