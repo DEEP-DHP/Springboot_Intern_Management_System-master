@@ -95,12 +95,14 @@
 						<textarea id="body" name="body" class="form-control" rows="6"
 								  placeholder="Respected [Recipient's Name],
 
-[Body Paragraph 1].
-[Body Paragraph 2].
-Your Sincerely,
-[Your Name]
-[Your Roll No]
-[Your Group ID]"></textarea>
+							[Body Paragraph 1].
+							[Body Paragraph 2].
+							Your Sincerely,
+							[Your Name]
+							[Your Roll No]
+							[Your Group ID]">
+
+						</textarea>
 					</div>
 
 					<div class="form-group row">
@@ -116,16 +118,44 @@ Your Sincerely,
 					</div>
 					<div class="form-group">
 						<label for="leaveType">Leave Type:</label>
-						<select id="leaveType" name="leaveType" class="form-control" required>
+						<select id="leaveType" name="leaveType" class="form-control" required onchange="setDates()">
 							<option value="Full Day">Full Day</option>
 							<option value="Half Day">Half Day</option>
 						</select>
 					</div>
-					<!--					<div class="form-group">-->
-					<!--						<label for="proofDocument" class="form-label">Proof Doc (If Any):</label>-->
-					<!--						<input type="file" class="form-control" id="proofDocument" name="proofDocument">-->
-					<!--					</div>-->
 
+					<script>
+						document.addEventListener('DOMContentLoaded', function () {
+							const leaveType = document.getElementById('leaveType');
+							const fromDate = document.getElementById('fromDate');
+							const toDate = document.getElementById('toDate');
+
+							// Function to set today's date in YYYY-MM-DD format
+							function getTodayDate() {
+								const today = new Date();
+								const yyyy = today.getFullYear();
+								const mm = String(today.getMonth() + 1).padStart(2, '0');
+								const dd = String(today.getDate()).padStart(2, '0');
+								return `${yyyy}-${mm}-${dd}`;
+							}
+
+							// Event listener for leave type change
+							leaveType.addEventListener('change', function () {
+								if (this.value === 'Half Day') {
+									const today = getTodayDate();
+									fromDate.value = today;
+									toDate.value = today;
+									fromDate.setAttribute('readonly', true);
+									toDate.setAttribute('readonly', true);
+								} else {
+									fromDate.removeAttribute('readonly');
+									toDate.removeAttribute('readonly');
+									fromDate.value = ''; // Clear previous values
+									toDate.value = '';
+								}
+							});
+						});
+					</script>
 					<div class="form-group mt-4">
 						<p>
 							<span><b>Note: </b></span>
@@ -167,10 +197,6 @@ Your Sincerely,
 						<td th:text="${leave.submittedOn}"></td>
 						<td th:text="${leave.fromDate}"></td>
 						<td th:text="${leave.toDate}"></td>
-
-						<!--						<td th:text="${#dates.format(leave.submittedOn, 'dd/MM/yyyy')}"></td>-->
-						<!--						<td th:text="${#dates.format(leave.fromDate, 'dd/MM/yyyy - hh:mm a')}"></td>-->
-						<!--						<td th:text="${#dates.format(leave.toDate, 'dd/MM/yyyy - hh:mm a')}"></td>-->
 						<td>
                                     <span th:class="${leave.status == 'Approved' ? 'text-success' : (leave.status == 'Rejected' ? 'text-danger' : 'text-warning')}"
 										  th:text="${leave.status}">
