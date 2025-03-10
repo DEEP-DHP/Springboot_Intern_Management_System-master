@@ -81,6 +81,8 @@ public class InternController {
     @Autowired
     private AnnoucementService announcementService;
     @Autowired
+    private UserRepo userRepo;
+    @Autowired
     HttpSession session;
     @Autowired
     GroupRepo groupRepo;
@@ -217,6 +219,10 @@ public class InternController {
             return new ModelAndView("redirect:/bisag/intern/change_passwordd");
         }
 
+        if (intern.getSecurityVerified() == 0) {
+            return new ModelAndView("redirect:/bisag/intern/verify_pin");
+        }
+
         mv = new ModelAndView("intern/intern_dashboard");
 
         if (intern.getGroupEntity() != null) {
@@ -241,6 +247,27 @@ public class InternController {
         logService.saveLog(internId, "Intern Accessed Dashboard", "Intern " + internFullName + " visited their dashboard.");
 
         return mv;
+    }
+
+    @GetMapping("/verify_pin")
+    public String showVerifyPinPage() {
+        return "intern/verify_pin";
+    }
+
+    @PostMapping("/verify_pin")
+    public String verifyPin(@RequestParam("securityPin") String securityPin, HttpSession session) {
+        String username = (String) session.getAttribute("username");
+        MyUser user = userRepo.findByUsername(username);
+
+        if (user != null && user.getSecurityPin().equals(securityPin)) {
+            Intern intern = getSignedInIntern();
+            intern.setSecurityVerified(1);
+            internRepo.save(intern);
+            return "redirect:/bisag/intern/intern_dashboard";
+        } else {
+            session.setAttribute("pinError", "Invalid security pin.");
+            return "redirect:/bisag/intern/verify_pin";
+        }
     }
 
     @PostMapping("/requestCancellation")
@@ -538,26 +565,20 @@ public class InternController {
             directory.mkdirs();
         }
 
-        // Save files to local storage
         String registrationFormName = storageDir + "registrationForm.pdf";
         String securityFormName = storageDir + "securityForm.pdf";
         String icardFormName = storageDir + "icardForm.pdf";
         String projectDefinitionFormName = storageDir + "projectDefinitnionForm.pdf";
         String extraForm = storageDir + "extraForm.pdf";
 
-        // Save Passport Size Image
         Files.write(Paths.get(registrationFormName), registrationForm.getBytes());
 
-        // Save College Icard Image
         Files.write(Paths.get(securityFormName), securityForm.getBytes());
 
-        // Save NOC PDF
         Files.write(Paths.get(icardFormName), icardForm.getBytes());
 
-        //Save Project Definition form
         Files.write(Paths.get(projectDefinitionFormName), projectDefinitionFormName.getBytes());
 
-        //Save Project Definition form
         Files.write(Paths.get(extraForm), extraForm.getBytes());
 
         intern.setPermanentAddress(permanentAddress);

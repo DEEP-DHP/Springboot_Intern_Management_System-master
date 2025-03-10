@@ -336,7 +336,9 @@ public class AdminController {
                                   @RequestParam("degree") String degree,
                                   @RequestParam("domain") String domain,
                                   @RequestParam("joiningDate") java.sql.Date joiningDate,
-                                  @RequestParam("completionDate") java.sql.Date completionDate, HttpSession session) {
+                                  @RequestParam("completionDate") java.sql.Date completionDate,
+                                  @RequestParam("securityPin") String securityPin,
+                                  HttpSession session) {
 
         try {
             String storageDir = baseDir + email + "/";
@@ -377,6 +379,7 @@ public class AdminController {
             internApplication.setDomain(domain);
             internApplication.setJoiningDate(joiningDate);
             internApplication.setCompletionDate(completionDate);
+            internApplication.setSecurityPin(securityPin);
 
             internApplication.setPassportSizeImage(passportSizeImage.getBytes());
             internApplication.setCollegeIcardImage(icardImage.getBytes());
@@ -389,6 +392,7 @@ public class AdminController {
             user.setUsername(email);
             String encryptedPassword = passwordEncoder().encode(password);
             user.setPassword(encryptedPassword);
+            user.setSecurityPin(securityPin);
             user.setEnabled(true);
             user.setUserId(Long.toString(internApplication.getId()));
             user.setRole("UNDERPROCESSINTERN");
@@ -1648,26 +1652,6 @@ public class AdminController {
         return "redirect:/bisag/admin/intern_application/approved_interns";
     }
 
-//    @GetMapping("/intern_application/new_interns")
-//    public ModelAndView newInterns(Model model) {
-//        ModelAndView mv = new ModelAndView();
-//        List<Intern> intern = internService.getInterns();
-//        mv.addObject("intern", intern);
-//        model = countNotifications(model);
-//        mv.setViewName("admin/new_interns");
-//        mv.addObject("admin", adminName(session));
-//        List<RRecord> records = recordService.getAllRecords();
-//        model.addAttribute("records", records);
-//
-//        String username = (String) session.getAttribute("username");
-//        Admin admin = adminService.getAdminByUsername(username);
-//        if (admin != null) {
-//            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed New Interns",
-//                    "Admin " + admin.getName() + " accessed the new interns page.");
-//        }
-//
-//        return mv;
-//    }
 @GetMapping("/intern_application/new_interns")
 public ModelAndView newInterns(Model model) {
     ModelAndView mv = new ModelAndView();
@@ -1679,7 +1663,6 @@ public ModelAndView newInterns(Model model) {
     List<RRecord> records = recordService.getAllRecords();
     model.addAttribute("records", records);
 
-    // Fetch final report statuses for each intern
     Map<String, String> finalReportStatuses = new HashMap<>();
     for (Intern i : intern) {
         String finalReport = recordService.findFinalReportByInternId(i.getInternId());
@@ -1696,8 +1679,6 @@ public ModelAndView newInterns(Model model) {
 
     return mv;
 }
-
-
     // Group Creation
 
     @GetMapping("/create_group")
@@ -1723,7 +1704,6 @@ public ModelAndView newInterns(Model model) {
     public String createGroup(@RequestParam("selectedInterns") List<Long> selectedInterns) {
 
         System.out.println("Selected Intern IDs: " + selectedInterns);
-        // generate group id
         String id = generateGroupId();
         GroupEntity group = new GroupEntity();
         Optional<InternApplication> internoptional = internService.getInternApplication(selectedInterns.get(0));
@@ -1750,7 +1730,6 @@ public ModelAndView newInterns(Model model) {
                 intern.setInternId(generateInternId());
                 internService.addIntern(intern);
 
-                // Log action for each intern registration
                 String username = (String) session.getAttribute("username");
                 Admin admin = adminService.getAdminByUsername(username);
                 if (admin != null) {
@@ -1762,7 +1741,6 @@ public ModelAndView newInterns(Model model) {
         }
         return "redirect:/bisag/admin/create_group";
     }
-
     // Add dynamic fields(college, branch)
 
     @GetMapping("/add_fields")
@@ -1846,7 +1824,7 @@ public ModelAndView newInterns(Model model) {
         return "redirect:/bisag/admin/add_fields";
     }
 
-    // Guide Allocation///////////////////////////
+    // Guide Allocation
     @GetMapping("/manage_group")
     public ModelAndView allocateGuide(Model model) {
         ModelAndView mv = new ModelAndView("admin/manage_group");
@@ -1868,7 +1846,6 @@ public ModelAndView newInterns(Model model) {
         fieldService.deleteDegree(id);
         return "redirect:/bisag/admin/add_fields";
     }
-
 
     @GetMapping("/delete_branch/{id}")
     public String deleteBranch(@PathVariable("id") long id, Model model) {
@@ -1960,10 +1937,7 @@ public ModelAndView newInterns(Model model) {
         }
         return "redirect:/bisag/admin/add_fields";
     }
-
-
     // ----------------------------------- Guide registration
-    // ---------------------------------------//
 
     @GetMapping("/register_guide")
     public ModelAndView registerGuide(Model model) {
@@ -1985,7 +1959,6 @@ public ModelAndView newInterns(Model model) {
     public String registerGuide(@ModelAttribute("guide") Guide guide) {
         guideService.registerGuide(guide);
 
-        // Send notification email to the guide
         emailService.sendSimpleEmail(guide.getEmailId(), "Notification: Appointment as Administrator\r\n" + "\r\n"
                         + "Dear " + guide.getName() + "\r\n" + "\r\n"
                         + "I trust this email finds you well. We are pleased to inform you that you have been appointed as an administrator within our organization, effective immediately. Your dedication and contributions to the team have not gone unnoticed, and we believe that your new role will bring value to our operations.\r\n"
@@ -2012,7 +1985,6 @@ public ModelAndView newInterns(Model model) {
         return "redirect:/bisag/admin/guide_list";
     }
 
-
     @GetMapping("/guide_list")
     public ModelAndView guideList(Model model) {
         ModelAndView mv = new ModelAndView("admin/guide_list");
@@ -2027,8 +1999,6 @@ public ModelAndView newInterns(Model model) {
             logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Guide List",
                     "Admin " + admin.getName() + " viewed the guide list.");
         }
-
-
         return mv;
     }
 
@@ -3009,7 +2979,6 @@ public ModelAndView cancellationRequests(Model model) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
-
     @GetMapping("/intern_verification_details/{id}")
     public ModelAndView internverificationDetails(@PathVariable("id") String id, Model model) {
         ModelAndView mv = new ModelAndView();
@@ -3256,7 +3225,7 @@ public String viewCancelRelievingRecords(Model model) {
             @RequestParam String media,
             @RequestParam String status,
             @RequestParam String project,
-            @RequestParam String thesis,
+//            @RequestParam String thesis,
             @RequestParam String others,
             @RequestParam String books,
             @RequestParam String subscription,
@@ -3294,7 +3263,7 @@ public String viewCancelRelievingRecords(Model model) {
             record.setMedia(media);
             record.setStatus(status);
             record.setProject(project);
-            record.setThesis(thesis);
+//            record.setThesis(thesis);
             record.setOthers(others);
             record.setBooks(books);
             record.setSubscription(subscription);
@@ -3348,7 +3317,7 @@ public String viewCancelRelievingRecords(Model model) {
             @RequestParam String media,
             @RequestParam String status,
             @RequestParam String project,
-            @RequestParam String thesis,
+//            @RequestParam String thesis,
             @RequestParam String others,
             @RequestParam String books,
             @RequestParam String subscription,
@@ -3385,7 +3354,7 @@ public String viewCancelRelievingRecords(Model model) {
             record.setMedia(media);
             record.setStatus(status);
             record.setProject(project);
-            record.setThesis(thesis);
+//            record.setThesis(thesis);
             record.setOthers(others);
             record.setBooks(books);
             record.setSubscription(subscription);
@@ -3451,7 +3420,8 @@ public String viewCancelRelievingRecords(Model model) {
         Optional<RRecord> record = recordService.getRecordById(Long.parseLong(id));
         if (record.isPresent()) {
             model.addAttribute("records", record);
-
+            Admin admin = getSignedInAdmin();
+            model.addAttribute("admin", admin);
             logService.saveLog(id, "Relieving Records Details View",
                     "Admin viewed the details of records with ID: " + id);
             return "admin/relieving_records_detail";
@@ -3485,6 +3455,16 @@ public String viewCancelRelievingRecords(Model model) {
         }
     }
 
+    @GetMapping("/getJoiningDate/{internId}")
+    @ResponseBody
+    public String getJoiningDate(@PathVariable String internId) {
+        Intern intern = internService.findByInternId(internId);
+        if (intern != null && intern.getJoiningDate() != null) {
+            LocalDate joiningDate = intern.getJoiningDate().toLocalDate();
+            return joiningDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        }
+        return "";
+    }
     @GetMapping("/getInternName/{internId}")
     @ResponseBody
     public ResponseEntity<Map<String, String>> fetchInternDetailsById(@PathVariable String internId) {
@@ -4265,13 +4245,13 @@ public String viewCancelRelievingRecords(Model model) {
 
     @GetMapping("/generate_credentials")
     public String showGenerateCredentialsForm(Model model) {
-        // Fetch all interns for email updates
         List<Intern> internList = internService.getAllInterns();
-
-        // Fetch only users with role 'INTERN'
         List<MyUser> userList = userService.findAllInterns();
 
-        // Add both lists to the model
+        Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Generate Credentials", "Admin " + admin.getName() + " accessed the Generate Credentials page.");
         model.addAttribute("internList", internList);
         model.addAttribute("userList", userList);
 

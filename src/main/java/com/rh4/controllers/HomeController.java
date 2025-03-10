@@ -228,36 +228,28 @@ public class HomeController {
             @RequestParam("domain") String domain,
             @RequestParam("joiningDate") Date joiningDate,
             @RequestParam("completionDate") Date completionDate,
-//            @RequestParam("securityPin") String securityPin,
+            @RequestParam("securityPin") String securityPin,
             HttpSession session) {
 
         try {
-            // Check if email already exists
-//            InternApplication existingIntern = internApplicationRepo.findByEmail(email);
-//            if (existingIntern != null) {
-//                session.setAttribute("msg", "Error: Email already registered. Please use a different email.");
+            // Check for existing email
+//            if (internApplicationRepo.findByEmail(email).isPresent()) {
+//                session.setAttribute("msg", "Error: Email already registered.");
 //                return "redirect:/bisag_internship";
 //            }
 
-
-            // File Storage
+            // File storage setup
             String storageDir = baseDir + email + "/";
             File directory = new File(storageDir);
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
+            if (!directory.exists()) directory.mkdirs();
 
-            String passportFileName = storageDir + "passportSizeImage.jpg";
-            String icardFileName = storageDir + "collegeIcardImage.jpg";
-            String nocFileName = storageDir + "nocPdf.pdf";
-            String resumeFileName = storageDir + "resumePdf.pdf";
+            // Save files
+            Files.write(Paths.get(storageDir + "passportSizeImage.jpg"), passportSizeImage.getBytes());
+            Files.write(Paths.get(storageDir + "collegeIcardImage.jpg"), icardImage.getBytes());
+            Files.write(Paths.get(storageDir + "nocPdf.pdf"), nocPdf.getBytes());
+            Files.write(Paths.get(storageDir + "resumePdf.pdf"), resumePdf.getBytes());
 
-            Files.write(Paths.get(passportFileName), passportSizeImage.getBytes());
-            Files.write(Paths.get(icardFileName), icardImage.getBytes());
-            Files.write(Paths.get(nocFileName), nocPdf.getBytes());
-            Files.write(Paths.get(resumeFileName), resumePdf.getBytes());
-
-            // Save Intern Application Data
+            // Save InternApplication data
             InternApplication internApplication = new InternApplication();
             internApplication.setFirstName(firstName);
             internApplication.setLastName(lastName);
@@ -275,74 +267,38 @@ public class HomeController {
             internApplication.setCollegeIcardImage(icardImage.getBytes());
             internApplication.setNocPdf(nocPdf.getBytes());
             internApplication.setResumePdf(resumePdf.getBytes());
-//            internApplication.setSecurityPin(securityPin);
+            internApplication.setSecurityPin(securityPin);
 
             internApplicationRepo.save(internApplication);
 
-            // Save User Credentials
+            // Save User credentials
             MyUser user = new MyUser();
             user.setUsername(email);
             String encryptedPassword = passwordEncoder().encode(password);
             user.setPassword(encryptedPassword);
+            user.setSecurityPin(securityPin);
             user.setEnabled(true);
             user.setUserId(Long.toString(internApplication.getId()));
-//            user.setSecurityPin(securityPin);
             user.setRole("UNDERPROCESSINTERN");
             userRepo.save(user);
 
-            // Send Confirmation Email
+            // Confirmation email
             emailService.sendSimpleEmail(
-                    internApplication.getEmail(),
-                    "Notification: Successful Application for BISAG Internship\r\n" +
-                            "\r\n" +
-                            "Dear " + internApplication.getFirstName() + ",\r\n" +
-                            "\r\n" +
-                            "Congratulations! We are pleased to inform you that your application for the BISAG internship has been successful. Your enthusiasm, qualifications, and potential have stood out, and we believe that you will make valuable contributions to our team.\r\n" +
-                            "\r\n" +
-                            "As an intern, you will have the opportunity to learn, grow, and gain hands-on experience in a dynamic and innovative environment. We trust that your time with us will be rewarding, and we look forward to seeing your skills and talents in action.\r\n" +
-                            "\r\n" +
-                            "Please find attached detailed information about the internship program, including your start date, orientation details, and any additional requirements. If you have any questions or need further assistance, feel free to contact [Contact Person/Department].\r\n" +
-                            "\r\n" +
-                            "Once again, congratulations on being selected for the BISAG internship program. We are excited to welcome you to our team and wish you a fulfilling and successful internship experience.\r\n" +
-                            "\r\n" +
-                            "Best regards,\r\n" +
-                            "\r\n" +
-                            "Your Colleague,\r\n" +
-                            "Internship Coordinator\r\n" +
-                            "BISAG INTERNSHIP PROGRAM\r\n" +
-                            "1231231231",
-                    "BISAG ADMINISTRATIVE OFFICE"
+                    email,
+                    "Congratulations! Your BISAG Internship application was successful.",
+                    "BISAG Administrative Office"
             );
-            session.setAttribute("msg", "Application Submitted Successfully");
-            return "redirect:/bisag_internship";
 
+            session.setAttribute("msg", "Application submitted successfully.");
+            return "redirect:/bisag_internship";
 
         } catch (DataIntegrityViolationException e) {
-            // Handles duplicate email constraint violation
-            String errorMessage = "Error: <ul>";
-            if (e.getMessage().contains("Duplicate entry")) {
-                errorMessage += "<li>Email ID already exists. Please use a different email.</li>";
-            }
-            errorMessage += "</ul>";
-            session.setAttribute("msg", errorMessage);
+            // Detailed error message for debugging
+            Throwable rootCause = e.getRootCause();
+            session.setAttribute("msg", "Error: " + (rootCause != null ? rootCause.getMessage() : "Unknown data integrity violation."));
             return "redirect:/bisag_internship";
-
-        } catch (ConstraintViolationException e) {
-            // Handles validation errors
-            StringBuilder errorMessage = new StringBuilder("Error: Validation failed due to the following reasons:<br><ul>");
-            for (ConstraintViolation<?> violation : e.getConstraintViolations()) {
-                errorMessage.append("<li>").append(violation.getMessage()).append("</li>");
-            }
-            errorMessage.append("</ul>");
-            session.setAttribute("msg", errorMessage.toString());
-            return "redirect:/bisag_internship";
-
         } catch (Exception e) {
-            // Handles all other errors
-            String errorMessage = "Error: Validation failed due to the following reasons:<br><ul>";
-            errorMessage += "<li>" + e.getMessage() + "</li>";
-            errorMessage += "</ul>";
-            session.setAttribute("msg", errorMessage);
+            session.setAttribute("msg", "Error: " + e.getMessage());
             return "redirect:/bisag_internship";
         }
     }
@@ -351,7 +307,7 @@ public class HomeController {
     @PostMapping("/remove-session-msg")
     @ResponseBody
     public void removeSessionMsg(HttpSession session) {
-        session.removeAttribute("msg");  // Remove the 'msg' attribute from the session
+        session.removeAttribute("msg");
     }
 
     @GetMapping("/logout")
