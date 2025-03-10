@@ -73,5 +73,6 @@ public interface InternRepo extends JpaRepository<Intern, String> {
 
 	@Query("SELECT i FROM Intern i WHERE i.firstName = :internName")
 	Intern findByFirstName(@Param("internName") String internName);
+	Intern findByInternId(String internId); // Custom query method
 
 }
