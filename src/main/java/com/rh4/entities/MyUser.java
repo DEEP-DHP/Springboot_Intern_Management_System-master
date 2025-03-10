@@ -78,7 +78,6 @@ public class MyUser {
 		this.role = role;
 		this.enabled = enabled;
 		this.userId = userId;
-		this.securityPin = securityPin;
 	}
 	
 }

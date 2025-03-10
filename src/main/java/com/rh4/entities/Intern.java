@@ -144,7 +144,23 @@ public class Intern {
     @Column(name = "first_login", nullable = false)
     private Integer firstLogin = 0; // Default value set to 0
 
-    // Getters and setters (if Lombok isn't used)
+    @Column(name = "security_verified", nullable = false)
+    private int securityVerified; // 0 = not verified, 1 = verified
+
+    @Column(name = "cancellation_remarks")
+    private String cancellationRemarks;
+
+    @Column(name = "cancel_file_path")
+    private String cancelFilePath;
+
+    public int getSecurityVerified() {
+        return securityVerified;
+    }
+
+    public void setSecurityVerified(int securityVerified) {
+        this.securityVerified = securityVerified;
+    }
+
     public Integer getFirstLogin() {
         return firstLogin;
     }
