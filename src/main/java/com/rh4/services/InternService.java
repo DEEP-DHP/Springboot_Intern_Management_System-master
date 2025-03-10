@@ -90,26 +90,52 @@ public class InternService {
 		return internRepo.findDistinctProjectDefinitionNames(); // Custom query to fetch distinct values
 	}
 
-	public void addIntern(Intern intern)
-	{
-		String encryptedPassword = passwordEncoder().encode(intern.getPassword());
-		intern.setPassword(encryptedPassword);
-		internRepo.save(intern);		
-		//save to user table
-		String email = intern.getEmail();
-		String role = "UNDERPROCESSINTERN";
-		userRepo.deleteByUsername(email, role);
-		MyUser user = new MyUser();
-		user.setUsername(intern.getEmail());
-		//encrypt password
-		user.setPassword(encryptedPassword);
-		user.setRole("INTERN");
-		user.setEnabled(true);
-		//from long to string
-		String userId = intern.getInternId();
-		user.setUserId(userId);
-		userRepo.save(user);
+//	public void addIntern(Intern intern)
+//	{
+//		String encryptedPassword = passwordEncoder().encode(intern.getPassword());
+//		intern.setPassword(encryptedPassword);
+//		internRepo.save(intern);
+//		//save to user table
+//		String email = intern.getEmail();
+//		String role = "UNDERPROCESSINTERN";
+//		userRepo.deleteByUsername(email, role);
+//		MyUser user = new MyUser();
+//		user.setUsername(intern.getEmail());
+//		//encrypt password
+//		user.setPassword(encryptedPassword);
+//		user.setRole("INTERN");
+//		user.setEnabled(true);
+//		//from long to string
+//		String userId = intern.getInternId();
+//		user.setUserId(userId);
+//		userRepo.save(user);
+//	}
+public void addIntern(Intern intern)
+{
+	String encryptedPassword = passwordEncoder().encode(intern.getPassword());
+	intern.setPassword(encryptedPassword);
+	internRepo.save(intern);
+	//save to user table
+	String email = intern.getEmail();
+	String role = "UNDERPROCESSINTERN";
+	userRepo.deleteByUsername(email, role);
+	MyUser user = new MyUser();
+	user.setUsername(intern.getEmail());
+	//encrypt password
+	user.setPassword(encryptedPassword);
+	user.setRole("INTERN");
+	user.setEnabled(true);
+	//from long to string
+	String userId = intern.getInternId();
+	user.setUserId(userId);
+	// Set security pin from internapplication
+	InternApplication internApplication = internApplicationRepo.findByEmail(intern.getEmail());
+	if (internApplication != null) {
+		user.setSecurityPin(internApplication.getSecurityPin());
 	}
+	userRepo.save(user);
+}
+
 
 	public void updateCancellationStatus(Intern intern) {
         internRepo.save(intern);
@@ -243,6 +269,8 @@ public class InternService {
 	public Intern getInternByName(String internName) {
 		return internRepo.findByFirstName(internName);
 	}
-
+	public Intern findByInternId(String internId) {
+		return internRepo.findByInternId(internId);
+	}
 
 }
