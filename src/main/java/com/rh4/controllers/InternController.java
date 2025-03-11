@@ -35,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import jakarta.servlet.http.HttpSession;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/bisag/intern")
@@ -82,6 +83,8 @@ public class InternController {
     private AnnoucementService announcementService;
     @Autowired
     private UserRepo userRepo;
+    @Autowired
+    private MyUserService userService;
     @Autowired
     HttpSession session;
     @Autowired
@@ -250,7 +253,17 @@ public class InternController {
     }
 
     @GetMapping("/verify_pin")
-    public String showVerifyPinPage() {
+    public String showVerifyPinPage(HttpSession session, Model model) {
+        String pinError = (String) session.getAttribute("pinError");
+        String pinSuccess = (String) session.getAttribute("pinSuccess");
+
+        model.addAttribute("pinError", pinError);
+        model.addAttribute("pinSuccess", pinSuccess);
+
+        // Clear session attributes after showing the alert
+        session.removeAttribute("pinError");
+        session.removeAttribute("pinSuccess");
+
         return "intern/verify_pin";
     }
 
@@ -263,7 +276,8 @@ public class InternController {
             Intern intern = getSignedInIntern();
             intern.setSecurityVerified(1);
             internRepo.save(intern);
-            return "redirect:/bisag/intern/intern_dashboard";
+            session.setAttribute("pinSuccess", "Security pin verified successfully!");
+            return "redirect:/bisag/intern/verify_pin";
         } else {
             session.setAttribute("pinError", "Invalid security pin.");
             return "redirect:/bisag/intern/verify_pin";
@@ -833,14 +847,36 @@ public class InternController {
     }
 
     @PostMapping("/change_password")
-    public String changePassword(@RequestParam("newPassword") String newPassword) {
-        Intern intern = getSignedInIntern();
+    public String changePassword(@RequestParam("newPassword") String newPassword,
+                                 @RequestParam("renewPassword") String renewPassword,
+                                 @RequestParam("securityPin") String securityPin,
+                                 HttpSession session,
+                                 RedirectAttributes redirectAttributes) {
+        String username = (String) session.getAttribute("username");
 
+        if (username == null) {
+            return "redirect:/bisag/intern/login";
+        }
+
+        Optional<MyUser> userOptional = userService.findByUsername(username);
+        if (userOptional.isEmpty() || !userOptional.get().getSecurityPin().equals(securityPin)) {
+            redirectAttributes.addFlashAttribute("error", "Invalid security pin!");
+            return "redirect:/bisag/intern/change_passwordd";
+        }
+
+        if (!newPassword.equals(renewPassword)) {
+            redirectAttributes.addFlashAttribute("error", "Passwords do not match!");
+            return "redirect:/bisag/intern/change_passwordd";
+        }
+
+        Intern intern = getSignedInIntern();
         internService.changePassword(intern, newPassword);
         intern.setFirstLogin(1);
         internService.save(intern);
         logService.saveLog(intern.getInternId(), "Changed Password", "Password changed successfully.");
-        return "redirect:/logout";
+
+        redirectAttributes.addFlashAttribute("success", "Password changed successfully!");
+        return "redirect:/bisag/intern/change_passwordd";
     }
 
     @GetMapping("/apply_leave")

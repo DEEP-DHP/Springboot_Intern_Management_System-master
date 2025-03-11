@@ -1463,7 +1463,7 @@ public class AdminController {
 
 
     @PostMapping("/intern/update")
-    public String updateIntern(@RequestParam String id, Intern internApplication, @RequestParam("groupId") String groupId, MultipartHttpServletRequest req) throws IllegalStateException, IOException, Exception {
+    public String updateIntern(@RequestParam String id, Intern internApplication, @RequestParam("groupId") String groupId, @RequestParam("cancellationRemarks") String cancellationRemarks, MultipartHttpServletRequest req) throws IllegalStateException, IOException, Exception {
         Optional<Intern> intern = internService.getIntern(id);
 
         if (groupId.equals("createOwnGroup")) {
@@ -1504,26 +1504,58 @@ public class AdminController {
             intern.get().setDegree(internApplication.getDegree());
             intern.get().setAggregatePercentage(internApplication.getAggregatePercentage());
             intern.get().setUsedResource(internApplication.getUsedResource());
+            intern.get().setCancellationRemarks(cancellationRemarks);
 
             logService.saveLog(id, "Updated intern details", "Intern Update");
         }
 
         if (!internApplication.getIsActive()) {
-            intern.get().setIsActive(false);
-            intern.get().setCancellationStatus("Cancelled");
-            Cancelled cancelledEntry = new Cancelled();
-            cancelledEntry.setTableName("intern");
-            cancelledEntry.setCancelId(intern.get().getInternId());
-            cancelledRepo.save(cancelledEntry);
+            Intern internData = intern.get();
 
-            logService.saveLog(id, "Cancelled intern", "Intern Cancellation");
+            if (internData.getFirstName() != null &&
+                    internData.getLastName() != null &&
+                    internData.getContactNo() != null &&
+                    internData.getEmail() != null &&
+                    internData.getCollegeName() != null &&
+                    internData.getBranch() != null &&
+                    internData.getDomain() != null &&
+                    internData.getJoiningDate() != null &&
+                    internData.getCompletionDate() != null &&
+                    internData.getPermanentAddress() != null &&
+                    internData.getDateOfBirth() != null &&
+                    internData.getGender() != null &&
+                    internData.getCollegeGuideHodName() != null &&
+                    internData.getDegree() != null &&
+                    internData.getAggregatePercentage() != null &&
+                    internData.getUsedResource() != null &&
+                    internData.getIcardForm() != null &&
+                    internData.getDegree() != null &&
+                    internData.getGender() != null &&
+                    internData.getNocPdf() != null &&
+                    internData.getProjectDefinitionName() != null &&
+                    internData.getRegistrationForm() != null &&
+                    internData.getResumePdf() != null &&
+                    internData.getSecurityForm() != null &&
+                    internData.getProjectDefinitionForm() != null) {
+
+                internData.setIsActive(false);
+                internData.setCancellationStatus("Cancelled");
+
+                Cancelled cancelledEntry = new Cancelled();
+                cancelledEntry.setTableName("intern");
+                cancelledEntry.setCancelId(internData.getInternId());
+                cancelledRepo.save(cancelledEntry);
+
+                logService.saveLog(id, "Cancelled intern", "Intern Cancellation");
+            } else {
+                System.out.println("All fields must be filled to cancel intern.");
+            }
         }
 
         intern.get().setUpdatedAt(LocalDateTime.now());
         internRepo.save(intern.get());
         return "redirect:/bisag/admin/intern/" + id;
     }
-
 
     @GetMapping("/intern_application/approved_interns")
     public ModelAndView approvedInterns(Model model) {
@@ -3240,8 +3272,13 @@ public String viewCancelRelievingRecords(Model model) {
             @RequestParam String weeklyReport,
             @RequestParam String attendance,
             @RequestParam String finalReport,
+            @RequestParam(required = false) String submissionTime,
             RedirectAttributes redirectAttributes) {
 
+        // Parse submission time or use current time if not provided
+        LocalDateTime timestamp = (submissionTime != null && !submissionTime.isEmpty())
+                ? LocalDateTime.parse(submissionTime)
+                : LocalDateTime.now();
         try {
             List<RRecord> existingRecords = recordService.findByInternId(internId);
             if (!existingRecords.isEmpty()) {
@@ -3278,6 +3315,7 @@ public String viewCancelRelievingRecords(Model model) {
             record.setWeeklyReport(weeklyReport);
             record.setAttendance(attendance);
             record.setFinalReport(finalReport);
+            record.setSubmissionTimestamp(timestamp);
 
             recordService.saveRecord(record);
 
