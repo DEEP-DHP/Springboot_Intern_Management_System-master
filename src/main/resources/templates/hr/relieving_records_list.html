@@ -142,8 +142,8 @@
                 <td th:text="${record.firstName}"></td>
                 <td th:text="${record.groupId}"></td>
                 <td th:text="${record.collegeName}"></td>
-                <td th:text="${record.joiningDate}"></td>
-                <td th:text="${record.plannedDate}"></td>
+                <td th:text="${#dates.format(T(java.util.Date).from(record.joiningDate.toLocalDate().atStartOfDay(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy')}"></td>
+                <td th:text="${#dates.format(T(java.util.Date).from(record.plannedDate.toLocalDate().atStartOfDay(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy')}"></td>
                 <td>
                   <span th:text="${record.identityCards}" class="identity-text"></span>
                   <select class="form-select identity-dropdown" style="display: none;">
