@@ -147,6 +147,10 @@
       <th>Any Other</th>
       <td th:text="${records.get().others}">1</td>
     </tr>
+      <tr>
+        <th>TimeStamp</th>
+        <td th:text="${#temporals.format(records.get().submissionTimestamp, 'dd-MM-yyyy HH:mm:ss')}">1</td>
+      </tr>
       <tr class="d-none">
         <td>
           <input id="guideId" type="number" name="guideId"

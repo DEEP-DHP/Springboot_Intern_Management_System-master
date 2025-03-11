@@ -47,7 +47,7 @@
                         </td>
                         <td th:text="${verification.companyName}"></td>
                         <td th:text="${verification.email}"></td>
-                        <td th:text="${verification.verifiedDate}"></td>
+                        <td th:text="${#dates.format(T(java.util.Date).from(verification.verifiedDate.toInstant()), 'dd-MM-yyyy HH:mm:ss')}"></td>
                         <td th:text="${verification.remarks}"></td>
 <!--                        <td>-->
 <!--                            <form th:action="@{/bisag/admin/send_to_hr}" method="post">-->

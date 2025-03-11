@@ -199,8 +199,8 @@
                   <td th:text="${task.intern}"></td>
                   <td th:text="${task.assignedByRole}"></td>
                   <td th:text="${task.taskDescription}"></td>
-                  <td th:text="${#dates.format(task.startDate, 'yyyy-MM-dd')}"></td>
-                  <td th:text="${#dates.format(task.endDate, 'yyyy-MM-dd')}"></td>
+                  <td th:text="${#dates.format(task.startDate, 'dd-MM-yyyy')}"></td>
+                  <td th:text="${#dates.format(task.endDate, 'dd-MM-yyyy')}"></td>
                   <td>
                     <span th:if="${task.proofAttachment != null}">
                       <a th:href="@{'/bisag/admin/tasks/proof/' + ${task.id}}" target="_blank">View</a>

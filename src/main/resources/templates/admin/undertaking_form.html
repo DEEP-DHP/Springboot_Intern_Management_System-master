@@ -99,7 +99,7 @@
                                 <tbody>
                                 <tr th:each="form : ${acceptedForms}" th:if="${form.intern != null}">
                                     <td th:text="${form.intern}"></td>
-                                    <td th:text="${form.acceptedAt}"></td>
+                                    <td th:text="${form.acceptedAt != null ? #dates.format(T(java.util.Date).from(form.acceptedAt.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss') : 'N/A'}"></td>
                                 </tr>
                                 </tbody>
                             </table>

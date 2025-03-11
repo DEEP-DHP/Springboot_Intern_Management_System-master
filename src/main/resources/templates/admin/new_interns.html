@@ -227,17 +227,17 @@
 								<td th:text="${intern.domain}"></td>
 								<td th:text="${intern.semester}"></td>
 								<td th:text="${intern.permanentAddress}"></td>
-								<td th:text="${intern.dateOfBirth}"></td>
+								<td th:text="${#dates.format(intern.dateOfBirth, 'dd-MM-yyyy')}"></td>
 								<td th:text="${intern.gender}"></td>
 								<td th:text="${intern.collegeGuideHodName}"></td>
 								<td th:text="${intern.degree}"></td>
 								<td th:text="${intern.aggregatePercentage}"></td>
 								<td th:text="${intern.projectDefinitionName}"></td>
-								<td th:text="${intern.joiningDate}"></td>
-								<td th:text="${intern.completionDate}"></td>
+								<td th:text="${#dates.format(intern.joiningDate, 'dd-MM-yyyy')}"></td>
+								<td th:text="${#dates.format(intern.completionDate, 'dd-MM-yyyy')}"></td>
 								<td th:text="${intern.usedResource}"></td>
-								<td th:text="${intern.createdAt}"></td>
-								<td th:text="${intern.updatedAt}"></td>
+								<td th:text="${#dates.format(T(java.util.Date).from(intern.createdAt.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss')}"></td>
+								<td th:text="${intern.updatedAt != null ? #dates.format(T(java.util.Date).from(intern.updatedAt.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss') : 'N/A'}"></td>
 								<!--								<td th:text="${intern.cancellationStatus}"></td>-->
 								<td th:with="today=${#dates.createNow()}"
 									th:text="${intern.cancellationStatus == 'Cancelled'} ? 'Cancelled' :
@@ -249,7 +249,8 @@
                intern.status)) :
              intern.status)">
 								</td>
-								<td th:text="${intern.cancelTime}"></td>
+								<td th:text="${intern.cancelTime != null ? #dates.format(T(java.util.Date).from(intern.cancelTime.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss') : 'N/A'}"></td>
+
 
 
 							</tr>

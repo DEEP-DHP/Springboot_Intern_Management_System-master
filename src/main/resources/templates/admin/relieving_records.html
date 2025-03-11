@@ -317,6 +317,10 @@
                             </div>
                         </form>
                     </div>
+                    <input type="hidden" id="submissionTime" name="submissionTime">
+                    <script>
+                        document.getElementById('submissionTime').value = new Date().toISOString();
+                    </script>
                     <script>
                         document.getElementById("internId").addEventListener("change", function () {
                             var internId = this.value; // Get selected intern ID

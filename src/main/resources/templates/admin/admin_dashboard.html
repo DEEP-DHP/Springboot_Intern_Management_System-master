@@ -20,32 +20,21 @@
             font-size: 40px;
             border: solid;
             border-radius: 50%;
-            /* Make the border-radius 50% to create a circle */
             width: 80px;
-            /* Adjust the width and height to fit your content */
             height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
             background-color: white;
-            /* Set your desired background color */
         }
 
     </style>
 </head>
 
 <body>
-
-
-<!-- Include the header fragment -->
 <div th:replace="fragments/headerFragment :: header"></div>
-
-<!-- Include the aside fragment -->
 <div th:replace="fragments/asideFragment :: aside"></div>
-
-
 <main id="main" class="main">
-
     <div class="pagetitle">
         <h1>Dashboard</h1>
         <nav>
@@ -55,16 +44,12 @@
             </ol>
         </nav>
     </div>
-    <!-- End Page Title -->
-
     <section class="section dashboard">
         <div class="row">
 
-            <!-- Left side columns -->
             <div class="col-lg-12">
                 <div class="row">
 
-                    <!-- Sales Card -->
                     <div class="col-xxl-3 col-md-4">
                         <a th:href="@{/bisag/admin/intern_application}">
                             <div class="card info-card sales-card glowing-card">
@@ -89,9 +74,6 @@
                             </div>
                         </a>
                     </div>
-                    <!-- End Sales Card -->
-
-                    <!-- Revenue Card -->
                     <div class="col-xxl-3 col-md-4">
                         <a th:href="@{/bisag/admin/intern_application/approved_interns}">
                             <div class="card info-card revenue-card glowing-card">
@@ -117,9 +99,6 @@
                             </div>
                         </a>
                     </div>
-                    <!-- End Revenue Card -->
-
-                    <!-- Interns Card -->
                     <div class="col-xxl-3 col-md-4">
                         <a th:href="@{/bisag/admin/intern_application/new_interns}">
                             <div class="card info-card interns-card glowing-card">
@@ -144,10 +123,6 @@
                             </div>
                         </a>
                     </div>
-                    <!-- End Interns Card -->
-
-
-                    <!-- Customers Card -->
                     <div class="col-xxl-3 col-xl-4">
                         <a th:href="@{/bisag/admin/guide_list}">
                             <div class="card info-card customers-card glowing-card">
@@ -172,9 +147,6 @@
                             </div>
                         </a>
                     </div>
-                    <!-- End Customers Card -->
-
-                    <!-- Interns Card -->
                     <div class="col-xxl-4 col-md-4">
                         <a th:href="@{/bisag/admin/create_group}">
                             <div class="card info-card interns-card glowing-card">
@@ -198,9 +170,6 @@
                             </div>
                         </a>
                     </div>
-                    <!-- End Interns Card -->
-
-                    <!-- Customers Card -->
                     <div class="col-xxl-4 col-xl-4">
                         <a th:href="@{/bisag/admin/cancellation_requests}">
                             <div class="card info-card customers-card glowing-card">
@@ -225,9 +194,6 @@
                             </div>
                         </a>
                     </div>
-                    <!-- End Customers Card -->
-
-                    <!-- Sales Card -->
                     <div class="col-xxl-4 col-md-4">
                         <a th:href="@{/bisag/admin/admin_pending_def_approvals}">
                             <div class="card info-card sales-card glowing-card">
@@ -252,7 +218,6 @@
                             </div>
                         </a>
                     </div>
-                    <!-- End Sales Card -->
 
                     <section class="section profile">
                         <div class="row">
@@ -269,29 +234,21 @@
                                         <h3>Admin</h3>
                                     </div>
                                 </div>
-
                             </div>
-
-
                             <div class="col-xl-8">
-
                                 <div class="card">
                                     <div class="card-body pt-3">
-                                        <!-- Bordered Tabs -->
                                         <ul class="nav nav-tabs nav-tabs-bordered">
-
                                             <li class="nav-item">
                                                 <button class="nav-link active" data-bs-toggle="tab"
                                                         data-bs-target="#profile-overview">Overview
                                                 </button>
                                             </li>
-
                                             <li class="nav-item">
                                                 <button class="nav-link" data-bs-toggle="tab"
                                                         data-bs-target="#profile-edit">Edit Profile
                                                 </button>
                                             </li>
-
                                             <li class="nav-item">
                                                 <button class="nav-link" data-bs-toggle="tab"
                                                         data-bs-target="#profile-change-password">Change
@@ -340,8 +297,6 @@
 
                                             <div class="tab-pane fade profile-edit pt-3"
                                                  id="profile-edit">
-
-                                                <!-- Profile Edit Form -->
                                                 <form
                                                         th:action="@{'/bisag/admin/update_admin/' + ${admin.adminId}}"
                                                         th:object="${admin}" method="post">
@@ -426,12 +381,9 @@
 
                                                     </div>
                                                 </form>
-                                                <!-- End Profile Edit Form -->
-
                                             </div>
 
                                             <div class="tab-pane fade pt-3" id="profile-change-password">
-                                                <!-- Change Password Form -->
                                                 <form th:action="@{'/bisag/admin/change_password'}"
                                                       method="post" onsubmit="return validatePasswords()">
 
@@ -455,7 +407,6 @@
                                                             </div>
                                                         </div>
                                                     </div>
-
 
                                                     <div class="row mb-3">
                                                         <label for="renewPassword"
@@ -481,13 +432,9 @@
                                                         </button>
                                                     </div>
                                                 </form>
-                                                <!-- End Change Password Form -->
-
                                             </div>
 
                                         </div>
-                                        <!-- End Bordered Tabs -->
-
                                     </div>
                                 </div>
 
@@ -497,17 +444,12 @@
 
                 </div>
             </div>
-            <!-- End Left side columns -->
-
-
         </div>
     </section>
 
-    <!-- Include the footer fragment -->
     <div th:replace="fragments/footerFragment :: footer"></div>
 
 </main>
-<!-- End #main -->
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"
         integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8="
         crossorigin="anonymous"></script>

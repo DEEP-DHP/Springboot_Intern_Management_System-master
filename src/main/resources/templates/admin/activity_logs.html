@@ -75,12 +75,11 @@
 
     .table th {
       cursor: pointer;
-      background-image: url('default-icon.png'); /* Default icon image */
-      background-size: 16px 16px; /* Adjust the size of the icon */
+      background-image: url('default-icon.png');
+      background-size: 16px 16px;
       background-repeat: no-repeat;
       background-position: right center;
-      /* Position the icon to the right center */
-      padding-right: 20px; /* Add some padding to accommodate the icon */
+      padding-right: 20px;
     }
   </style>
 </head>
@@ -128,7 +127,7 @@
                 <td th:text="${log.internId}"></td>
                 <td th:text="${log.actionType}"></td>
                 <td th:text="${log.details}"></td>
-                <td th:text="${log.timestamp}"></td>
+                <td th:text="${#dates.format(T(java.util.Date).from(log.timestamp.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss')}"></td>
               </tr>
               </tbody>
             </table>
@@ -139,19 +138,14 @@
     </div>
 
   </section>
-
-
-  <!-- Include the footer fragment -->
   <div th:replace="fragments/footerFragment :: footer"></div>
 </main>
-<!-- End #main -->
 <script
         src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
   $(document)
           .ready(
                   function() {
-                    // Add click event listener to table headers for sorting
                     $('.table th').click(
                             function() {
                               var table = $(this).parents('table')
@@ -169,7 +163,6 @@
                               }
                             });
 
-                    // Function to compare rows based on the selected column
                     function comparer(index) {
                       return function(a, b) {
                         var valA = getCellValue(a, index), valB = getCellValue(
@@ -181,13 +174,10 @@
                       };
                     }
 
-                    // Function to get the value of a cell
                     function getCellValue(row, index) {
                       return $(row).children('td').eq(index).text();
                     }
                   });
-</script>
-<script>
   document.addEventListener('DOMContentLoaded', function() {
     var searchInput = document.getElementById('searchInput');
     var tableRows = document.querySelectorAll('.table tbody tr');

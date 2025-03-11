@@ -156,9 +156,9 @@
                 <td th:text="${thesis.department}"></td>
                 <td th:text="${thesis.purpose}"></td>
                 <td th:text="${thesis.type}"></td>
-                <td th:text="${thesis.issueDate}"></td>
-                <td th:text="${thesis.expectedDate}"></td> <!-- Expected return date -->
-                <td th:text="${thesis.actualReturnDate}"></td>
+                <td th:text="${#dates.format(thesis.issueDate, 'dd-MM-yyyy')}"></td>
+                <td th:text="${#dates.format(thesis.expectedDate, 'dd-MM-yyyy')}"></td>
+                <td th:text="${#dates.format(thesis.actualReturnDate, 'dd-MM-yyyy')}"></td>
                 <td th:text="${thesis.location}"></td>
                 <td>
                   <a th:href="@{/bisag/admin/thesis/update/{id}(id=${thesis.id})}" class="btn btn-primary">

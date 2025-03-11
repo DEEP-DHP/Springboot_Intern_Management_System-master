@@ -133,7 +133,7 @@
         <td th:text="${feedback.researchAreas}"></td>
         <td th:text="${feedback.topics}"></td>
         <td th:text="${feedback.magazine}"></td>
-        <td th:text="${feedback.feedbackDate}"></td>
+        <td th:text="${#temporals.format(feedback.feedbackDate, 'dd-MM-yyyy')}"></td>
       </tr>
       </tbody>
     </table>

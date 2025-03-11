@@ -92,7 +92,7 @@
                                 <tbody>
                                 <tr th:each="thesis : ${theses}">
                                     <td th:text="${thesis.thesisTitle}"></td>
-                                    <td th:text="${thesis.uploadDate}"></td>
+                                    <td th:text="${#dates.format(T(java.util.Date).from(thesis.uploadDate.toInstant()), 'dd-MM-yyyy HH:mm:ss')}"></td>
                                     <td>
                                         <span th:id="'internIdSpan_' + ${thesis.id}" th:text="${thesis.allowedInternId}"></span>
                                         <input type="text" th:id="'internIdInput_' + ${thesis.id}" th:value="${thesis.allowedInternId}" class="form-control d-none" />

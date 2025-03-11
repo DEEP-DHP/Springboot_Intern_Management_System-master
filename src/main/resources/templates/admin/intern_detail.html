@@ -243,13 +243,42 @@
 				</tr>
 				<tr>
 					<th>Is Active</th>
-					<td><label><input type="radio" name="isActive"
-									  value="true" th:checked="${intern.get().isActive}"
-									  class="no-border" readonly> Working</label> <label><input
-							type="radio" name="isActive" value="false"
-							th:checked="${!intern.get().isActive}" class="no-border"
-							readonly> Cancel</label></td>
+					<td>
+						<label>
+							<input type="radio" name="isActive" value="true" th:checked="${intern.get().isActive}" class="no-border" onclick="toggleCancelFields(false)"> Working
+						</label>
+						<label>
+							<input type="radio" name="isActive" value="false" th:checked="${!intern.get().isActive}" class="no-border" onclick="toggleCancelFields(true)"> Cancel
+						</label>
+					</td>
 				</tr>
+
+				<!-- Hidden by default: Cancellation Remarks and File Attachment -->
+				<tr id="cancelFields" style="display: none;">
+					<th>Cancellation Remarks</th>
+					<td>
+						<textarea name="cancellationRemarks" class="form-control" rows="3" placeholder="Enter remarks..."></textarea>
+					</td>
+				</tr>
+				<tr id="cancelFileRow" style="display: none;">
+					<th>Attach File</th>
+					<td>
+						<input type="file" name="cancelFile" class="form-control">
+					</td>
+				</tr>
+
+				<script>
+					function toggleCancelFields(isCancel) {
+						document.getElementById('cancelFields').style.display = isCancel ? 'table-row' : 'none';
+						document.getElementById('cancelFileRow').style.display = isCancel ? 'table-row' : 'none';
+					}
+
+					// Auto-show fields if 'Cancel' is already selected
+					window.onload = function() {
+						const isActive = document.querySelector('input[name="isActive"]:checked').value;
+						toggleCancelFields(isActive === 'false');
+					};
+				</script>
 				<tr class="d-none">
 					<td><input type="text" name="id"
 							   th:value="${intern.get().internId}" hidden></td>

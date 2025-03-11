@@ -37,8 +37,6 @@
           <tr>
             <th>ID</th>
             <th>Intern ID</th>
-            <!--            <th>Intern Name</th>-->
-            <!--            <th>Intern Contact</th>-->
             <th>Company</th>
             <th>Email</th>
           </tr>
@@ -50,11 +48,9 @@
                 <span th:text="${request.id}"></span>
               </a>
             </td>
-            <td th:text="${request.internId}"></td> <!-- Displays Intern ID -->
-            <!--            <td th:text="${request.internName}"></td> &lt;!&ndash; Displays Intern Name &ndash;&gt;-->
-            <!--            <td th:text="${request.internContact}"></td> &lt;!&ndash; Displays Intern Contact &ndash;&gt;-->
-            <td th:text="${request.companyName}"></td> <!-- Displays Company Name -->
-            <td th:text="${request.email}"></td> <!-- Displays Company Email -->
+            <td th:text="${request.internId}"></td>
+            <td th:text="${request.companyName}"></td>
+            <td th:text="${request.email}"></td>
           </tr>
           </tbody>
         </table>
