@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.sql.Date;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "record")
@@ -90,9 +91,12 @@ public class RRecord {
     @Column(name = "finalReport")
     private String finalReport;
 
+    @Column(name = "submission_timestamp")
+    private LocalDateTime submissionTimestamp;
+
     public RRecord() { super(); }
 
-    public RRecord(Long id, String internId, String FirstName, String groupId, String collegeName, Date joiningDate, Date plannedDate, String password, String media, String project, String thesis, String others, String books, String subscription, String accessRights, String pendrives, String unusedCd, String backupProject, String system, String identityCards, String stipend, String information, String weeklyReport, String attendance, String endInteriew, String finalReport) {
+    public RRecord(Long id, String internId, String FirstName, String groupId, String collegeName, Date joiningDate, Date plannedDate, String password, String media, String project, String thesis, String others, String books, String subscription, String accessRights, String pendrives, String unusedCd, String backupProject, String system, String identityCards, String stipend, String information, String weeklyReport, String attendance, String endInteriew, String finalReport, LocalDateTime submissionTimestamp) {
         this.id = id;
         this.internId = internId;
         this.FirstName = FirstName;
@@ -119,6 +123,7 @@ public class RRecord {
         this.attendance = attendance;
         this.endInteriew = endInteriew;
         this.finalReport = finalReport;
+        this.submissionTimestamp = submissionTimestamp;
     }
 
     public Long getId() {
@@ -325,5 +330,13 @@ public class RRecord {
 
     public void setFinalReport(String finalReport) {
         this.finalReport = finalReport;
+    }
+
+    public LocalDateTime getSubmissionTimestamp() {
+        return submissionTimestamp;
+    }
+
+    public void setSubmissionTimestamp(LocalDateTime submissionTimestamp) {
+        this.submissionTimestamp = submissionTimestamp;
     }
 }

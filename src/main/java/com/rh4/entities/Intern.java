@@ -569,4 +569,20 @@ public class Intern {
     public void setCancelTime(LocalDateTime cancelTime) {
         this.cancelTime = cancelTime;
     }
+
+    public String getCancellationRemarks() {
+        return cancellationRemarks;
+    }
+
+    public void setCancellationRemarks(String cancellationRemarks) {
+        this.cancellationRemarks = cancellationRemarks;
+    }
+
+    public String getCancelFilePath() {
+        return cancelFilePath;
+    }
+
+    public void setCancelFilePath(String cancelFilePath) {
+        this.cancelFilePath = cancelFilePath;
+    }
 }
