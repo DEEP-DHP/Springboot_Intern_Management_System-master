@@ -89,11 +89,11 @@
           </tr>
           <tr>
             <th>Start Date</th>
-            <td th:text="${leave.fromDate}"></td>
+            <td th:text="${#temporals.format(leave.fromDate, 'dd-MM-yyyy')}"></td>
           </tr>
           <tr>
             <th>End Date</th>
-            <td th:text="${leave.toDate}"></td>
+            <td th:text="${#temporals.format(leave.toDate, 'dd-MM-yyyy')}"></td>
           </tr>
           <tr>
             <th>Reason</th>
