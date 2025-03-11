@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -10,6 +9,16 @@
 <body>
 <div class="container">
   <h2 class="mt-5">Verify Your Security Pin</h2>
+
+  <!-- Success and Error Alert Boxes -->
+  <div th:if="${pinError}" class="alert alert-danger" role="alert">
+    <span th:text="${pinError}"></span>
+  </div>
+
+  <div th:if="${pinSuccess}" class="alert alert-success" role="alert">
+    <span th:text="${pinSuccess}"></span>
+  </div>
+
   <form th:action="@{/bisag/intern/verify_pin}" method="post">
     <div class="form-group">
       <label for="securityPin">Enter Security Pin:</label>
@@ -17,7 +26,13 @@
     </div>
     <button type="submit" class="btn btn-primary">Verify</button>
   </form>
+
   <p th:if="${error}" class="text-danger mt-3" th:text="${error}"></p>
 </div>
+<script th:if="${pinSuccess}">
+  setTimeout(function() {
+    window.location.href = '/bisag/intern/intern_dashboard';
+  }, 1000); // 1 second delay
+</script>
 </body>
 </html>

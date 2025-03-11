@@ -82,8 +82,8 @@
             <td th:text="${task.id}"></td>
             <td th:text="${task.assignedByRole}"></td>
             <td th:text="${task.taskDescription}"></td>
-            <td th:text="${#dates.format(task.startDate, 'yyyy-MM-dd')}"></td>
-            <td th:text="${#dates.format(task.endDate, 'yyyy-MM-dd')}"></td>
+            <td th:text="${#dates.format(task.startDate, 'dd-MM-yyyy')}"></td>
+            <td th:text="${#dates.format(task.endDate, 'dd-MM-yyyy')}"></td>
             <td th:text="${task.status}"></td>
 
             <!-- Proof Attachment Upload & View -->

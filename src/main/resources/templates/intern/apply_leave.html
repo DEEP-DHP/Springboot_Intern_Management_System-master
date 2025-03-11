@@ -194,9 +194,9 @@
 					<tr th:each="leave : ${leaveHistory}" th:if="${leaveHistory != null and not #lists.isEmpty(leaveHistory)}">
 						<td th:text="${leave.id}"></td>
 						<td th:text="${leave.subject}"></td>
-						<td th:text="${leave.submittedOn}"></td>
-						<td th:text="${leave.fromDate}"></td>
-						<td th:text="${leave.toDate}"></td>
+						<td th:text="${#dates.format(T(java.util.Date).from(leave.submittedOn.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss')}"></td>
+						<td th:text="${#temporals.format(leave.fromDate, 'dd-MM-yyyy')}"></td>
+						<td th:text="${#temporals.format(leave.toDate, 'dd-MM-yyyy')}"></td>
 						<td>
                                     <span th:class="${leave.status == 'Approved' ? 'text-success' : (leave.status == 'Rejected' ? 'text-danger' : 'text-warning')}"
 										  th:text="${leave.status}">
