@@ -1,6 +1,8 @@
 package com.rh4.entities;
 
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -13,19 +15,15 @@ public class TaskAssignment {
     @Column(name = "intern_id", nullable = false)
     private String intern;
 
-    private String assignedById;  // Stores Admin/Guide ID
-    private String assignedByRole; // Stores "Admin" or "Guide"
-
+    private String assignedById;
+    private String assignedByRole;
     private String taskDescription;
     private Date startDate;
     private Date endDate;
-
     private String status;
-
-    private String proofAttachment; // Uploaded proof by intern
-
-    private boolean isApproved; // True when Admin/Guide approves the proof
-
+    private String proofAttachment;
+    private boolean isApproved;
+    private LocalDateTime completionTimestamp;
     public TaskAssignment() { super();}
 
     public TaskAssignment(Long id, String intern, String assignedById, String assignedByRole, String taskDescription, Date startDate, Date endDate, String status, String proofAttachment, boolean isApproved) {
@@ -120,5 +118,13 @@ public class TaskAssignment {
 
     public void setApproved(boolean approved) {
         isApproved = approved;
+    }
+
+    public LocalDateTime getCompletionTimestamp() {
+        return completionTimestamp;
+    }
+
+    public void setCompletionTimestamp(LocalDateTime completionTimestamp) {
+        this.completionTimestamp = completionTimestamp;
     }
 }

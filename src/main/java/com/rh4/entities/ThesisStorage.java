@@ -10,8 +10,6 @@ public class ThesisStorage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-//    private String internId;
     private String fileName;
     private String thesisTitle;
     private String filePath;
@@ -21,7 +19,6 @@ public class ThesisStorage {
 
     public ThesisStorage(Long id, String fileName, String thesisTitle, String filePath, Date uploadDate, String allowedInternId) {
         this.id = id;
-//        this.internId = internId;
         this.fileName = fileName;
         this.thesisTitle = thesisTitle;
         this.filePath = filePath;

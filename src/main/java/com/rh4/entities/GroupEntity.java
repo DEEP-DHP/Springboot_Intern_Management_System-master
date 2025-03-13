@@ -42,13 +42,19 @@ public class GroupEntity {
 	@JoinColumn(name = "guide_id")
 	@ManyToOne
 	public Guide guide;
+
+	@Column(name = "confirmation_letter", nullable = false)
+	private String confirmationLetter = "pending";
+
+	@Column(name = "confirmation_letter_path")
+	private String confirmationLetterPath;
 		
    public GroupEntity() {
 			super();
 		}
   	
 	public GroupEntity(long id, String groupId, String projectDefinition, String description, byte[] finalReport, String finalReportStatus,
-		String projectDefinitionStatus, byte[] projectDefinitionDocument, String domain, Guide guide) {
+		String projectDefinitionStatus, byte[] projectDefinitionDocument, String domain, Guide guide, String confirmationLetter, String confirmationLetterPath) {
 	super();
 	this.id = id;
 	this.groupId = groupId;
@@ -60,6 +66,8 @@ public class GroupEntity {
 	this.projectDefinitionStatus = projectDefinitionStatus;
 	this.projectDefinitionDocument = projectDefinitionDocument;
 	this.guide = guide;
+	this.confirmationLetter = confirmationLetter;
+	this.confirmationLetterPath = confirmationLetterPath;
 }
 	public String getFinalReportStatus() {
 		return finalReportStatus;
@@ -140,5 +148,21 @@ public class GroupEntity {
 
 	public void setProjectDefinitionDocument(byte[] projectDefinitionDocument) {
 		this.projectDefinitionDocument = projectDefinitionDocument;
+	}
+
+	public String getConfirmationLetter() {
+		return confirmationLetter;
+	}
+
+	public void setConfirmationLetter(String confirmationLetter) {
+		this.confirmationLetter = confirmationLetter;
+	}
+
+	public String getConfirmationLetterPath() {
+		return confirmationLetterPath;
+	}
+
+	public void setConfirmationLetterPath(String confirmationLetterPath) {
+		this.confirmationLetterPath = confirmationLetterPath;
 	}
 }
