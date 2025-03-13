@@ -273,4 +273,8 @@ public void addIntern(Intern intern)
 		return internRepo.findByInternId(internId);
 	}
 
+	public List<Intern> findInternsByGroupId(String groupId) {
+		return internRepo.findInternsByGroupId(groupId);
+	}
+
 }

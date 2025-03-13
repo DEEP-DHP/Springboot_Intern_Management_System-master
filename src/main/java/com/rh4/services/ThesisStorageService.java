@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ThesisStorageService {
@@ -55,5 +56,11 @@ public class ThesisStorageService {
             }
             thesisStorageRepo.delete(thesis);
         });
+    }
+
+    public List<String> getAllThesisTitles() {
+        return thesisStorageRepo.findAll().stream()
+                .map(ThesisStorage::getThesisTitle)
+                .collect(Collectors.toList());
     }
 }

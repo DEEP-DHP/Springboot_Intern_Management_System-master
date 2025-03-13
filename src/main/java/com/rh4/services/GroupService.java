@@ -93,4 +93,8 @@ public class GroupService {
 	public GroupEntity getGroupById(Long groupId) {
 		return groupRepo.findById(groupId).orElse(null);
 	}
+
+	public List<String> getAllGroupIds() {
+		return groupRepo.findAllGroupIds();
+	}
 }
