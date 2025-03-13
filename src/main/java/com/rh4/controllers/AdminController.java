@@ -6,16 +6,18 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
-
 import com.rh4.repositories.*;
 import com.rh4.entities.*;
+import org.apache.catalina.Group;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +44,6 @@ import com.rh4.services.*;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.web.servlet.view.RedirectView;
 
 @Controller
 @RequestMapping("/bisag/admin")
@@ -121,6 +122,8 @@ public class AdminController {
     private AnnoucementService announcementService;
     @Autowired
     private MyUserService userService;
+    @Autowired
+    private ThesisStorageService thesisStorageService;
 
 
     @Value("${app.storage.base-dir}")
@@ -131,6 +134,8 @@ public class AdminController {
     private GroupEntity groupEntity;
     @Autowired
     private LogRepo logRepo;
+    @Autowired
+    private GroupEntity group;
 
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -295,7 +300,6 @@ public class AdminController {
             long countInterns = internService.countInterns();
             model.addAttribute("countInterns", countInterns);
 
-            // Add the username to the ModelAndView
             mv.addObject("username", username);
             mv.addObject("admin", admin);
         } else {
@@ -1694,7 +1698,24 @@ public ModelAndView newInterns(Model model) {
     mv.addObject("admin", adminName(session));
     List<RRecord> records = recordService.getAllRecords();
     model.addAttribute("records", records);
-
+    List<College> college = fieldService.getColleges();
+    List<Branch> branch = fieldService.getBranches();
+    List<Domain> domain = fieldService.getDomains();
+    List<Guide> guide = guideService.getGuide();
+    List<Degree> degree = fieldService.getDegrees();
+    List<GroupEntity> groupEntities = groupService.getGroups();
+    List<String> projectDefinitions = internService.getDistinctProjectDefinitions();
+    List<Intern> interns = internService.getAllInterns();
+    List<String> genders = internService.getDistinctGenders();
+    mv.addObject("interns", interns);
+    mv.addObject("project_definition_name", projectDefinitions);
+    mv.addObject("colleges", college);
+    mv.addObject("branches", branch);
+    mv.addObject("domains", domain);
+    mv.addObject("guides", guide);
+    mv.addObject("degrees", degree);
+    mv.addObject("genders", genders);
+    mv.addObject("admin", adminName(session));
     Map<String, String> finalReportStatuses = new HashMap<>();
     for (Intern i : intern) {
         String finalReport = recordService.findFinalReportByInternId(i.getInternId());
@@ -2730,7 +2751,8 @@ public ModelAndView cancellationRequests(Model model) {
     public String showThesisForm(Model model) {
         Admin admin = getSignedInAdmin();
         model.addAttribute("admin", admin);
-
+        List<String> thesisTitles = thesisStorageService.getAllThesisTitles();
+        model.addAttribute("thesisTitles", thesisTitles);
         model.addAttribute("thesis", new Thesis());
 
         logService.saveLog(String.valueOf(admin.getAdminId()), "Thesis Form Access", "Admin " + admin.getName() + " accessed the 'Add Thesis' form.");
@@ -2986,7 +3008,12 @@ public ModelAndView cancellationRequests(Model model) {
 
         return modelAndView;
     }
-
+    @GetMapping("/get-intern-suggestions")
+    @ResponseBody
+    public List<String> getInternSuggestions(@RequestParam String name) {
+        List<Intern> interns = internRepo.findByFirstNameStartingWithIgnoreCase(name);
+        return interns.stream().map(Intern::getFirstName).collect(Collectors.toList());
+    }
 
     //for verification module
     @GetMapping("/get-intern-details/{internId}")
@@ -4122,6 +4149,7 @@ public String viewCancelRelievingRecords(Model model) {
     }
 
     // Update Task Status
+    // Update Task Status
     @PutMapping("/update-task/{id}")
     public ResponseEntity<Map<String, Object>> updateTaskStatus(@PathVariable Long id, @RequestBody Map<String, String> taskData) {
         try {
@@ -4135,6 +4163,11 @@ public String viewCancelRelievingRecords(Model model) {
             }
             TaskAssignment task = optionalTask.get();
             task.setStatus(newStatus);
+
+            if ("Completed".equalsIgnoreCase(newStatus)) {
+                task.setCompletionTimestamp(LocalDateTime.now());
+            }
+
             taskAssignmentService.saveTask(task);
             logService.saveLog(task.getAssignedById(), "Updated Task Status",
                     "User with ID " + task.getAssignedById() + " updated Task ID: " + id + " to status: " + newStatus);
@@ -4333,5 +4366,116 @@ public String viewCancelRelievingRecords(Model model) {
         }
 
         return "redirect:/bisag/admin/intern_application/new_interns";
+    }
+    //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_Confirmation Module-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+    @GetMapping("/group_selection")
+    public String showGroupSelectionPage(Model model) {
+        List<String> groupIds = groupService.getAllGroupIds();
+        model.addAttribute("groupIds", groupIds);
+
+        // Fetch group details with confirmation letter status and file path
+        List<GroupEntity> generatedConfirmationLetters = groupRepo.findAll();
+        model.addAttribute("generatedConfirmationLetters", generatedConfirmationLetters);
+
+        Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Groups", "Admin " + admin.getName() + " accessed the Groups for confirmation page.");
+
+        return "admin/group_selection";
+    }
+
+    @PostMapping("/upload_confirmation_letter")
+    public String uploadConfirmationLetter(@RequestParam("groupId") String groupId,
+                                           @RequestParam("file") MultipartFile file,
+                                           RedirectAttributes redirectAttributes) {
+        if (file.isEmpty()) {
+            redirectAttributes.addFlashAttribute("message", "Please select a file to upload.");
+            return "redirect:/bisag/admin/group_selection";
+        }
+
+        try {
+            // Define the base directory where group folders are stored
+            String baseDir = "/Users/pateldeep/Desktop/Coding/Springboot_Intern_Management_System-master-main/E:/User/IMS/Springboot_Intern_Management_System/src/main/resources/static/files/Group Docs";
+            Path groupFolderPath = Paths.get(baseDir, groupId);
+
+            // Ensure the group folder exists
+            if (!Files.exists(groupFolderPath)) {
+                redirectAttributes.addFlashAttribute("message", "Group folder not found for Group ID: " + groupId);
+                return "redirect:/bisag/admin/group_selection";
+            }
+
+            // Save the file in the correct group's folder
+            Path filePath = groupFolderPath.resolve("confirmation_letter.pdf");
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // Update group confirmationLetter and path in the database
+            GroupEntity group = groupRepo.findByGroupId(groupId);
+            if (group != null) {
+                group.setConfirmationLetter("yes");
+                group.setConfirmationLetterPath(filePath.toString());
+                groupRepo.save(group);
+            }
+
+            redirectAttributes.addFlashAttribute("message", "Confirmation letter uploaded successfully for Group ID: " + groupId);
+
+        } catch (IOException e) {
+            redirectAttributes.addFlashAttribute("message", "Failed to upload confirmation letter.");
+        }
+
+        return "redirect:/bisag/admin/group_selection";
+    }
+
+    @GetMapping("/view_confirmation_letter")
+    public ResponseEntity<Resource> viewConfirmationLetter(@RequestParam("groupId") String groupId) throws IOException {
+        GroupEntity group = groupRepo.findByGroupId(groupId);
+        if (group == null || group.getConfirmationLetterPath() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        Path filePath = Paths.get(group.getConfirmationLetterPath());
+        if (!Files.exists(filePath)) {
+            return ResponseEntity.notFound().build();
+        }
+        Resource fileResource = new UrlResource(filePath.toUri());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileResource.getFilename() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(fileResource);
+    }
+    @GetMapping("/confirmation_letter")
+    public String showConfirmationLetter(@RequestParam("groupId") String groupId, Model model) {
+        List<Intern> interns = internService.findInternsByGroupId(groupId);
+        model.addAttribute("interns", interns);
+        model.addAttribute("groupId", groupId);
+        model.addAttribute("currentDate", LocalDate.now());
+
+        // Update confirmation letter status to 'yes'
+        GroupEntity group = groupRepo.findByGroupId(groupId);
+        if (group != null && !"yes".equals(group.getConfirmationLetter())) {
+            group.setConfirmationLetter("yes");
+            groupRepo.save(group);
+        }
+
+        Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Generate Confirmation Page", "Admin " + admin.getName() + " Generated Confirmation Letter for Group ID: " + groupId + ".");
+
+        return "admin/confirmation";
+    }
+
+
+    //Update status column automatically in the total interns page
+    @PostMapping("/update-status")
+    public ResponseEntity<?> updateInternStatus(@RequestBody Map<String, String> payload) {
+        String internId = payload.get("internId");
+        String newStatus = payload.get("status");
+
+        Intern intern = internRepo.findById(internId).orElse(null);
+        if (intern != null) {
+            intern.setStatus(newStatus);
+            intern.setUpdatedAt(LocalDateTime.now());
+            internRepo.save(intern);
+            return ResponseEntity.ok("Status and timestamp updated");
+        }
+        return ResponseEntity.badRequest().body("Intern not found");
     }
 }
