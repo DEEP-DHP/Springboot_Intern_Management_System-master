@@ -108,6 +108,26 @@
 			margin-left: auto; /* Align the input to the right */
 			margin-right: 20px;
 		}
+		.filter-container {
+			display: grid;
+			grid-template-columns: repeat(2, 1fr); /* Two filters per row */
+			gap: 1.5rem;
+			max-width: 800px;
+			margin: auto;
+		}
+		.filter-group {
+			display: flex;
+			flex-direction: column;
+		}
+		.filter-container label {
+			font-weight: bold;
+			margin-bottom: 0.25rem;
+		}
+		.filter-container select {
+			padding: 0.5rem;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+		}
 	</style>
 </head>
 
@@ -142,7 +162,111 @@
 						<input type="text" id="searchInput" placeholder="Search...">
 					</div>
 					<div class="card-body table-wrapper">
+						<div class="filter-container">
+							<div class="filter-group">
+							<label for="filter-guide">Guide:</label>
+							<select id="filter-guide">
+								<option value="">All</option>
+								<option th:each="guide : ${guides}" th:value="${guide.name}" th:text="${guide.name}"></option>
+							</select>
+							</div>
 
+							<div class="filter-group">
+							<label for="filter-college">College:</label>
+							<select id="filter-college">
+								<option value="">All</option>
+								<option th:each="college : ${colleges}" th:value="${college.name}" th:text="${college.name}"></option>
+							</select>
+							</div>
+
+							<div class="filter-group">
+							<label for="filter-degree">Degree:</label>
+							<select id="filter-degree">
+								<option value="">All</option>
+								<option th:each="degree : ${degrees}" th:value="${degree.name}" th:text="${degree.name}"></option>
+							</select>
+							</div>
+
+							<div class="filter-group">
+							<label for="filter-branch">Branch:</label>
+							<select id="filter-branch">
+								<option value="">All</option>
+								<option th:each="branch : ${branches}" th:value="${branch.name}" th:text="${branch.name}"></option>
+							</select>
+							</div>
+
+							<div class="filter-group">
+							<label for="filter-domain">Domain:</label>
+							<select id="filter-domain">
+								<option value="">All</option>
+								<option th:each="domain : ${domains}" th:value="${domain.name}" th:text="${domain.name}"></option>
+							</select>
+							</div>
+
+							<div class="filter-group">
+							<label for="filter-gender">Gender:</label>
+							<select id="filter-gender">
+								<option value="">All</option>
+								<option th:each="gender : ${genders}" th:value="${gender}" th:text="${gender}"></option>
+							</select>
+							</div>
+
+							<div class="filter-group">
+							<label for="filter-intern">Intern ID:</label>
+							<select id="filter-intern">
+								<option value="">All</option>
+								<option th:each="intern : ${interns}" th:value="${intern.internId}" th:text="${intern.internId}"></option>
+							</select>
+							</div>
+
+							<div class="filter-group">
+							<label for="filter-project">Project Definition Name:</label>
+							<select id="filter-project">
+								<option value="">All</option>
+								<option th:each="project : ${project_definition_name}" th:value="${project}" th:text="${project}"></option>
+							</select>
+							</div>
+						</div>
+
+						<script>
+							document.querySelectorAll('.filter-container select').forEach(select => {
+								select.addEventListener('change', function() {
+									const filters = {
+										guide: document.getElementById('filter-guide').value.toLowerCase(),
+										college: document.getElementById('filter-college').value.toLowerCase(),
+										degree: document.getElementById('filter-degree').value.toLowerCase(),
+										branch: document.getElementById('filter-branch').value.toLowerCase(),
+										domain: document.getElementById('filter-domain').value.toLowerCase(),
+										gender: document.getElementById('filter-gender').value.toLowerCase(),
+										intern: document.getElementById('filter-intern').value.toLowerCase(),
+										project: document.getElementById('filter-project').value.toLowerCase()
+									};
+
+									document.querySelectorAll('tbody tr').forEach(row => {
+										const rowData = {
+											guide: row.querySelector('td:nth-child(8)')?.innerText.toLowerCase() || '',
+											college: row.querySelector('td:nth-child(10)')?.innerText.toLowerCase() || '',
+											degree: row.querySelector('td:nth-child(19)')?.innerText.toLowerCase() || '',
+											branch: row.querySelector('td:nth-child(11)')?.innerText.toLowerCase() || '',
+											domain: row.querySelector('td:nth-child(9)')?.innerText.toLowerCase() || '',
+											gender: row.querySelector('td:nth-child(17)')?.innerText.toLowerCase() || '',
+											intern: row.querySelector('td:nth-child(1)')?.innerText.toLowerCase() || '',
+											aggregate: row.querySelector('td:nth-child(20)')?.innerText.toLowerCase() || '',
+											project: row.querySelector('td:nth-child(21)')?.innerText.toLowerCase() || ''
+										};
+
+										let showRow = true;
+										for (const key in filters) {
+											if (filters[key] && !rowData[key].includes(filters[key])) {
+												showRow = false;
+												break;
+											}
+										}
+										row.style.display = showRow ? '' : 'none';
+									});
+								});
+							});
+						</script>
 						<table class="table table-bordered datatable">
 							<thead>
 							<tr>
@@ -158,15 +282,11 @@
 								<th><i class="fa-solid fa-sort mx-2"></i>College</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Branch</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Semester</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Programming
-									Language</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Semester</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Permanent
 									Address</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Date of Birth</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Gender</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>College Guide
-									HOD Name</th>
+								<th><i class="fa-solid fa-sort mx-2"></i>College Guide/HOD Name</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Degree</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Aggregate
 									Percentage</th>
@@ -187,7 +307,7 @@
 							<tr th:each="intern : ${intern}"
 								th:class="${intern.cancellationStatus == 'Cancelled' ? 'table-danger' : ''}"
 								th:classappend="${intern.firstName == null or intern.firstName == '' or
-                     intern.lastName == null or intern.lastName == '' or
+
                      intern.contactNo == null or intern.contactNo == '' or
                      intern.email == null or intern.email == '' or
                      intern.group.groupId == null or intern.group.groupId == '' or
@@ -224,8 +344,6 @@
 								<td th:text="${intern.collegeName}"></td>
 								<td th:text="${intern.branch}"></td>
 								<td th:text="${intern.semester}"></td>
-								<td th:text="${intern.domain}"></td>
-								<td th:text="${intern.semester}"></td>
 								<td th:text="${intern.permanentAddress}"></td>
 								<td th:text="${#dates.format(intern.dateOfBirth, 'dd-MM-yyyy')}"></td>
 								<td th:text="${intern.gender}"></td>
@@ -250,7 +368,8 @@
              intern.status)">
 								</td>
 								<td th:text="${intern.cancelTime != null ? #dates.format(T(java.util.Date).from(intern.cancelTime.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss') : 'N/A'}"></td>
-
+								<input type="hidden" class="intern-id" th:value="${intern.internId}" />
+								<input type="hidden" class="current-status" th:value="${intern.status}" />
 
 
 							</tr>
@@ -334,6 +453,32 @@
 					row.style.display = 'none';
 				}
 			});
+		});
+	});
+</script>
+
+<script>
+	document.addEventListener("DOMContentLoaded", function () {
+		document.querySelectorAll("td[th\\:text]").forEach(function (td) {
+			let oldStatus = td.textContent.trim();
+			let internId = td.closest("tr").querySelector(".intern-id").value;
+
+			setInterval(() => {
+				let newStatus = td.textContent.trim();
+				if (oldStatus !== newStatus) {
+					oldStatus = newStatus;
+					// AJAX call to update the timestamp in the backend
+					fetch(`/bisag/admin/update-status`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ internId: internId, status: newStatus })
+					}).then(response => {
+						if (response.ok) {
+							console.log("Timestamp updated successfully");
+						}
+					}).catch(error => console.error("Error:", error));
+				}
+			}, 2000); // Check every 2 seconds
 		});
 	});
 </script>

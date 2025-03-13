@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Confirmation Letter</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 2cm;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+    }
+    h2 {
+      text-align: center;
+      text-decoration: underline;
+      font-size: 1.5em;
+    }
+    .date {
+      text-align: right;
+      margin-bottom: 20px;
+    }
+    .subject {
+      font-weight: bold;
+      text-decoration: underline;
+      font-size: 1.2em;
+      text-align: center;
+    }
+    .content {
+      margin-bottom: 30px;
+      font-size: 1em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+      font-size: 1em;
+    }
+    th, td {
+      border: 1px solid black;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .signature {
+      margin-top: 50px;
+      font-size: 1em;
+    }
+    #downloadBtn {
+      margin-bottom: 20px;
+      padding: 10px 20px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+
+<button id="downloadBtn">Download as PDF</button>
+
+<h2>Bhaskaracharya National Institute for Space Applications & Geo-Informatics (BISAG-N)</h2>
+<div class="date">
+  <b><u><p>Date: <span th:text="${#temporals.format(currentDate, 'dd-MM-yyyy')}"></span></p></u></b>
+</div>
+
+<p class="subject">Sub: Confirmation Letter for Project Training</p>
+
+<div class="content">
+  <p>Respected Sir,</p>
+  <p>As per our recent discussion, we are delighted to offer the following students Project Training with BISAG-N Gandhinagar starting from
+    <b><u><span th:text="${#dates.format(interns[0]?.joiningDate, 'dd-MM-yyyy')}"></span></u></b> to
+    <b><u><span th:text="${#dates.format(interns[0]?.completionDate, 'dd-MM-yyyy')}"></span></u></b>.
+  </p>
+  <p>We would like to offer them Project Training on <b><span th:text="${interns[0]?.domain}"></span></b>.</p>
+</div>
+
+<table>
+  <thead>
+  <tr>
+    <th>Sr. No</th>
+    <th>Student Name</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr th:each="intern, iterStat : ${interns}">
+    <td th:text="${iterStat.index + 1}"></td>
+    <td th:text="${intern.firstName + ' ' + intern.lastName}"></td>
+  </tr>
+  </tbody>
+</table>
+
+<div class="signature">
+  <p>________________________</p>
+  <p>Training Cell</p>
+  <p>BISAG-N, Gandhinagar</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.0/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+  document.getElementById('downloadBtn').addEventListener('click', function () {
+    const downloadBtn = document.getElementById('downloadBtn');
+    downloadBtn.style.display = 'none'; // Hide the button
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+    h2 { font-size: 34px !important; }
+    p.subject { font-size: 32px !important; }
+    body *:not(h2):not(p.subject) { font-size: 30px !important; }
+  `;
+    document.head.appendChild(style);
+
+    html2canvas(document.body, {
+      scale: 1,
+      useCORS: true
+    }).then(function (canvas) {
+      const pdf = new jspdf.jsPDF('portrait', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/jpeg', 0.6);
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 30;
+
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= (pageHeight - 30);
+
+      while (heightLeft > 0) {
+        pdf.addPage();
+        position = heightLeft - imgHeight;
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save('Confirmation Letter.pdf');
+      downloadBtn.style.display = 'block';
+      document.head.removeChild(style);
+    });
+  });
+</script>
+
+</body>
+</html>

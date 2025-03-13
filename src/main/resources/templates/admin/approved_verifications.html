@@ -6,7 +6,11 @@
     <title>Approved Verifications</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/xlsx.full.min.js"></script>
 </head>
+
 <body>
 <div th:replace="fragments/headerFragment :: header"></div>
 <div th:replace="fragments/asideFragment :: aside"></div>
@@ -27,7 +31,9 @@
             <div class="card-body">
                 <h5 class="card-title">List of Approved Verifications</h5>
 
-                <table class="table table-bordered">
+                <button class="btn btn-primary mb-3" onclick="downloadPDF()">Download PDF</button>
+
+                <table id="verificationTable" class="table table-bordered">
                     <thead>
                     <tr>
                         <th>Intern ID</th>
@@ -35,7 +41,6 @@
                         <th>Email</th>
                         <th>Approval Date</th>
                         <th>Remarks</th>
-<!--                        <th>Action</th> -->
                     </tr>
                     </thead>
                     <tbody>
@@ -49,42 +54,111 @@
                         <td th:text="${verification.email}"></td>
                         <td th:text="${#dates.format(T(java.util.Date).from(verification.verifiedDate.toInstant()), 'dd-MM-yyyy HH:mm:ss')}"></td>
                         <td th:text="${verification.remarks}"></td>
-<!--                        <td>-->
-<!--                            <form th:action="@{/bisag/admin/send_to_hr}" method="post">-->
-<!--                                <input type="hidden" name="internId" th:value="${verification.internId}" />-->
-<!--                                <button type="submit" class="btn btn-primary">Send to HR</button>-->
-<!--                            </form>-->
-<!--                        </td>-->
                     </tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </section>
+    <div th:replace="fragments/footerFragment :: footer"></div>
+
 </main>
+<!-- Add SheetJS library for Excel export -->
 
 <script>
-    $(document).ready(function () {
-        $(".sendToHrBtn").click(function () {
-            let verificationId = $(this).attr("data-id");
+    function downloadExcel() {
+        const table = document.getElementById('verificationTable');
+        let csvContent = '';
 
-            if (confirm("Are you sure you want to send this verification to HR?")) {
-                $.ajax({
-                    type: "POST",
-                    url: "/bisag/admin/send_verification_to_hr",
-                    contentType: "application/json",
-                    data: JSON.stringify({ verificationId: verificationId }),
-                    success: function (response) {
-                        alert("Verification sent to HR successfully!");
-                        location.reload();
-                    },
-                    error: function () {
-                        alert("Error sending verification to HR.");
-                    }
-                });
-            }
+        // Get table headers
+        const headers = [];
+        table.querySelectorAll('thead th').forEach(header => {
+            headers.push('"' + header.textContent.trim() + '"');
         });
+        csvContent += headers.join(',') + '\n';
+
+        // Get table rows
+        table.querySelectorAll('tbody tr').forEach(row => {
+            const rowData = [];
+            row.querySelectorAll('td').forEach(cell => {
+                rowData.push('"' + cell.textContent.trim() + '"');
+            });
+            csvContent += rowData.join(',') + '\n';
+        });
+
+        // Create a blob and trigger download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Approved_Verifications.csv';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Add Excel download button
+    document.addEventListener('DOMContentLoaded', () => {
+        const downloadBtn = document.createElement('button');
+        downloadBtn.textContent = 'Download Excel';
+        downloadBtn.classList.add('btn', 'btn-success', 'mb-3', 'ms-2');
+        downloadBtn.onclick = downloadExcel;
+
+        const pdfBtn = document.querySelector('button[onclick="downloadPDF()"]');
+        pdfBtn.parentNode.insertBefore(downloadBtn, pdfBtn.nextSibling);
     });
+</script>
+<script>
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'pt', 'a4');
+
+        doc.setFontSize(18);
+        doc.text('List of Approved Verifications', 210, 30, null, null, 'center');
+
+        const currentDate = new Date();
+        const formattedDate = currentDate.toLocaleString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+        });
+
+        doc.setFontSize(10);
+        doc.text('Generated on: ' + formattedDate, 40, 50);
+
+        const table = document.getElementById('verificationTable');
+        const rows = [];
+        const headers = [];
+
+        table.querySelectorAll('thead tr th').forEach(header => {
+            headers.push(header.textContent.trim());
+        });
+
+        table.querySelectorAll('tbody tr').forEach(row => {
+            const rowData = [];
+            row.querySelectorAll('td').forEach(cell => {
+                rowData.push(cell.textContent.trim());
+            });
+            rows.push(rowData);
+        });
+
+        // Add table to PDF
+        doc.autoTable({
+            head: [headers],
+            body: rows,
+            startY: 70,
+            styles: { fontSize: 10, cellPadding: 8 },
+            headStyles: { fillColor: [100, 120, 200], textColor: [255, 255, 255] },
+            alternateRowStyles: { fillColor: [240, 240, 240] },
+            theme: 'striped',
+        });
+
+        const filename = `Approved Verifications.pdf`;
+        doc.save(filename);
+    }
 </script>
 
 </body>

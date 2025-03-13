@@ -113,8 +113,8 @@
                                     <td th:text="${attendance.totalWorkingDays}"></td>
                                     <td th:text="${attendance.totalPresentDays}"></td>
                                     <td th:text="${attendance.totalAbsentDays}"></td>
-                                    <td th:text="${attendance.attendancePercentage}"></td>
-                                    <td th:text="${internTotalAttendanceMap[attendance.internId]}"></td>
+                                    <td th:text="${#numbers.formatDecimal(attendance.attendancePercentage, 1, 2)}"></td>
+                                    <td th:text="${#numbers.formatDecimal(internTotalAttendanceMap[attendance.internId], 1, 2)}"></td>
                                 </tr>
                                 </tbody>
                             </table>

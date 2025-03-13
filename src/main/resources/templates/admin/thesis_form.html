@@ -64,10 +64,13 @@
             <form th:action="@{/bisag/admin/thesis/save}" th:object="${thesis}" method="post">
               <div class="row">
                 <div class="col-md-6">
-                  <div class="form-floating">
-                    <input type="text" th:field="*{title}" class="form-control" id="title"
-                           placeholder="Title" required>
-                    <label for="title">Title</label>
+                  <div class="form-group">
+                    <label for="title" class="form-label">Title:</label>
+                    <select class="form-select" id="title" th:field="*{title}" onchange="toggleTitleInput()" required>
+                      <option th:each="thesis : ${thesisTitles}" th:value="${thesis}" th:text="${thesis}"></option>
+                      <option value="Others">Others</option>
+                    </select>
+                    <input type="text" id="titleOtherInput" name="title" class="form-control mt-2 d-none" placeholder="Enter Title">
                   </div>
                 </div>
                 <div class="col-md-6">
@@ -112,22 +115,6 @@
                       <input type="text" id="purposeOtherInput" name="purpose" class="form-control mt-2 d-none" placeholder="Enter Purpose">
                     </div>
                   </div>
-
-                  <script>
-                    function toggleInputField(dropdownId, inputFieldId) {
-                      var dropdown = document.getElementById(dropdownId);
-                      var inputField = document.getElementById(inputFieldId);
-
-                      if (dropdown.value === "Others") {
-                        inputField.classList.remove("d-none"); // Show text input
-                        dropdown.style.display = "none"; // Hide dropdown
-                        inputField.focus();
-                      } else {
-                        inputField.classList.add("d-none"); // Hide text input
-                        dropdown.style.display = "block"; // Show dropdown
-                      }
-                    }
-                  </script>
                   <div class="col-md-6">
                     <div class="form-group">
                       <label for="type" class="form-label">Select Type:</label>
@@ -147,18 +134,6 @@
                     <label for="issueDate" class="col-form-label">Issue Date:</label>
                     <input type="date" id="issueDate" name="issueDate" value="" min="" max="" readonly />
                   </div>
-                  <script>
-                    document.addEventListener('DOMContentLoaded', function () {
-                      var today = new Date();
-                      var dateString = today.toISOString().split('T')[0];
-                      var issueDateField = document.getElementById('issueDate');
-                      // Set the issue date to today's date
-                      issueDateField.value = dateString;
-                      // Optional: Set min and max to today's date
-                      issueDateField.setAttribute('min', dateString);
-                      issueDateField.setAttribute('max', dateString);
-                    });
-                  </script>
                   <div class="col-md-6">
                     <div class="form-floating">
                       <input type="date" th:field="*{actualReturnDate}" class="form-control" id="actualReturnDate" placeholder="Actual Return Date">
@@ -193,8 +168,45 @@
       </div>
     </div>
   </section>
+
   <script>
-    // If form submission is successful, show alert
+    function toggleTitleInput() {
+      const titleDropdown = document.getElementById('title');
+      const titleOtherInput = document.getElementById('titleOtherInput');
+      if (titleDropdown.value === 'Others') {
+        titleOtherInput.classList.remove('d-none');
+        titleOtherInput.focus();
+        titleDropdown.name = "";
+        titleOtherInput.name = "title";
+      } else {
+        titleOtherInput.classList.add('d-none');
+        titleDropdown.name = "title";
+        titleOtherInput.name = "";
+      }
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      var today = new Date();
+      var dateString = today.toISOString().split('T')[0];
+      var issueDateField = document.getElementById('issueDate');
+      // Set the issue date to today's date
+      issueDateField.value = dateString;
+      // Optional: Set min and max to today's date
+      issueDateField.setAttribute('min', dateString);
+      issueDateField.setAttribute('max', dateString);
+    });
+    function toggleInputField(dropdownId, inputFieldId) {
+      var dropdown = document.getElementById(dropdownId);
+      var inputField = document.getElementById(inputFieldId);
+
+      if (dropdown.value === "Others") {
+        inputField.classList.remove("d-none"); // Show text input
+        dropdown.style.display = "none"; // Hide dropdown
+        inputField.focus();
+      } else {
+        inputField.classList.add("d-none"); // Hide text input
+        dropdown.style.display = "block"; // Show dropdown
+      }
+    }
     const successMessage = /*[[${successMessage}]]*/ '';
     if (successMessage) {
       alert(successMessage);

@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rejected Verifications</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.0/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.29/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 <div th:replace="fragments/headerFragment :: header"></div>
@@ -26,7 +28,10 @@
       <div class="card-body">
         <h5 class="card-title">List of Rejected Verifications</h5>
 
-        <table class="table table-bordered">
+        <button class="btn btn-danger mb-3" onclick="downloadRejectedVerificationsPDF()">Download PDF</button>
+        <button class="btn btn-success mb-3" onclick="downloadRejectedVerificationsExcel()">Download Excel</button>
+
+        <table id="rejectedVerificationTable" class="table table-bordered">
           <thead>
           <tr>
             <th>ID</th>
@@ -51,6 +56,85 @@
       </div>
     </div>
   </section>
+  <div th:replace="fragments/footerFragment :: footer"></div>
+
 </main>
+
+
+<script>
+  function downloadRejectedVerificationsExcel() {
+    const table = document.getElementById('rejectedVerificationTable');
+    let csvContent = "data:text/csv;charset=utf-8,";
+
+    // Add table headers
+    const headers = Array.from(table.querySelectorAll('thead th'))
+            .map(header => header.textContent.trim())
+            .join(",");
+    csvContent += headers + "\r\n";
+
+    // Add table rows
+    const rows = Array.from(table.querySelectorAll('tbody tr')).map(row => {
+      return Array.from(row.querySelectorAll('td'))
+              .map(cell => cell.textContent.trim())
+              .join(",");
+    }).join("\r\n");
+
+    csvContent += rows;
+
+    // Create a download link and trigger the download
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "Rejected_Verifications.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+</script>
+<script>
+  function downloadRejectedVerificationsPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'pt', 'a4');
+    doc.setFontSize(18);
+    doc.text('List of Rejected Verifications', 210, 30, null, null, 'center');
+    const currentDate = new Date();
+    const formattedDate = currentDate.toLocaleString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+    doc.setFontSize(10);
+    doc.text('Generated on: ' + formattedDate, 40, 50);
+    const table = document.getElementById('rejectedVerificationTable');
+    const rows = [];
+    const headers = [];
+
+    table.querySelectorAll('thead tr th').forEach(header => {
+      headers.push(header.textContent.trim());
+    });
+
+    table.querySelectorAll('tbody tr').forEach(row => {
+      const rowData = [];
+      row.querySelectorAll('td').forEach(cell => {
+        rowData.push(cell.textContent.trim());
+      });
+      rows.push(rowData);
+    });
+    doc.autoTable({
+      head: [headers],
+      body: rows,
+      startY: 70,
+      styles: { fontSize: 10, cellPadding: 8 },
+      headStyles: { fillColor: [200, 50, 50], textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [240, 240, 240] },
+      theme: 'striped',
+    });
+    const filename = `Rejected Verifications.pdf`;
+    doc.save(filename);
+  }
+</script>
 </body>
 </html>

@@ -154,9 +154,6 @@
                           })
                           .catch(error => console.error("Error:", error));
                 }
-              </script>
-              <script>
-                // Listen for change event on Intern ID select
                 document.getElementById('internId').addEventListener('change', function() {
                   const internId = this.value;
                   if (internId) {
@@ -185,6 +182,7 @@
                   <th>End Date</th>
                   <th>Proof of Document</th>
                   <th>Status</th>
+                  <th>Completion Timestamp</th>
                   <th>Actions</th>
                 </tr>
                 </thead>
@@ -214,6 +212,9 @@
                       <option value="In Progress" th:selected="${task.status == 'In Progress'}">In Progress</option>
                       <option value="Completed" th:selected="${task.status == 'Completed'}">Completed</option>
                     </select>
+                  </td>
+                  <td>
+                    <span th:text="${task.completionTimestamp != null ? #temporals.format(task.completionTimestamp, 'dd-MM-yyyy HH:mm:ss') : 'N/A'}"></span>
                   </td>
                   <td>
                     <button class="btn btn-warning btn-sm" th:id="'editBtn_' + ${task.id}"
