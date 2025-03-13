@@ -37,5 +37,10 @@ public interface GroupRepo extends JpaRepository<GroupEntity,Long>{
 
 	List<GroupEntity> findByFinalReportStatus(String finalReportStatus);
 
-	
+	@Query("SELECT DISTINCT g.groupId FROM GroupEntity g")
+	List<String> findAllGroupIds();
+	GroupEntity findByGroupId(String groupId);
+
+	@Query("SELECT g.groupId FROM GroupEntity g WHERE g.confirmationLetter = :status")
+	List<String> findGroupIdsByConfirmationLetter(@Param("status") String status);
 }

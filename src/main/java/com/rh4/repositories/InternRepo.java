@@ -75,4 +75,11 @@ public interface InternRepo extends JpaRepository<Intern, String> {
 	Intern findByFirstName(@Param("internName") String internName);
 	Intern findByInternId(String internId); // Custom query method
 
+	List<Intern> findByFirstNameStartingWithIgnoreCase(String firstName);
+
+	@Query("SELECT i FROM Intern i WHERE i.group = :groupId")
+	List<Intern> findByGroup_GroupId(String groupId); // groupId should be a String, not Long
+	@Query("SELECT i FROM Intern i WHERE i.group.groupId = :groupId")
+	List<Intern> findInternsByGroupId(@Param("groupId") String groupId);
+
 }
