@@ -16,5 +16,4 @@ public class CancelledService {
 	public List<Cancelled> getCancelledIntern() {
 		return cancelledRepo.getCancelledIntern();
 	}
-	
 }

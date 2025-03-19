@@ -20,6 +20,10 @@ public class LeaveApplicationService {
     @Autowired
     private InternRepo internRepo;
 
+    public long countPendingLeaveRequests() {
+        return leaveApplicationRepo.countByStatus("Pending");
+    }
+
     public void applyForLeave(LeaveApplication leaveApplication) {
         leaveApplication.setStatus("Pending");
         leaveApplicationRepo.save(leaveApplication);
