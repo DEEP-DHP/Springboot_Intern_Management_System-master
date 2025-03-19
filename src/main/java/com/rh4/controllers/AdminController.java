@@ -136,6 +136,8 @@ public class AdminController {
     private LogRepo logRepo;
     @Autowired
     private GroupEntity group;
+    @Autowired
+    private CancelledService cancelledService;
 
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -267,7 +269,6 @@ public class AdminController {
         long countGuide = guideService.countGuides();
         model.addAttribute("countGuide", countGuide);
 
-        // New notifications
         long pendingLeaveApplicationsCount = leaveApplicationService.countPendingLeaveApplications();
         model.addAttribute("pendingLeaveApplicationsCount", pendingLeaveApplicationsCount);
 
@@ -275,6 +276,23 @@ public class AdminController {
         model.addAttribute("pendingVerificationRequestsCount", pendingVerificationRequestsCount);
 
         return model;
+    }
+
+    @ModelAttribute
+    public void addPendingRequestCounts(Model model) {
+        long approveInternCount = internService.approveForInterviewApplicationsCount();
+        long PendingInterviewApplications = internService.countPendingInterviewApplications();
+        long pendingLeaveCount = leaveApplicationService.countPendingLeaveRequests();
+        long pendingCancellationCount = internService.countRequestedCancellations();
+        long pendingVerificationCount = verificationService.countPendingVerificationRequests();
+        long adminPendingProjectDefinitionCount = groupService.adminPendingProjectDefinitionCount();
+
+        model.addAttribute("approveInternCount", approveInternCount);
+        model.addAttribute("PendingInterviewApplications", PendingInterviewApplications);
+        model.addAttribute("pendingLeaveCount", pendingLeaveCount);
+        model.addAttribute("pendingCancellationCount", pendingCancellationCount);
+        model.addAttribute("pendingVerificationCount", pendingVerificationCount);
+        model.addAttribute("adminPendingProjectDefinitionCount", adminPendingProjectDefinitionCount);
     }
 
     // Admin Dashboard
