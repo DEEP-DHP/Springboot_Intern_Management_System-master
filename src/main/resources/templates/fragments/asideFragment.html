@@ -25,8 +25,14 @@
             border: 2px solid;
             border-radius: 10px;
         }
-
-
+        .red-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
+            margin-left: 5px;
+        }
     </style>
 
 
@@ -45,17 +51,23 @@
         </a></li>
         <li class="nav-item"><a class="nav-link collapsed"
                                 data-bs-target="#interns-components-nav" data-bs-toggle="collapse"
-                                href="#"> <i class="bi bi-menu-button-wide"></i><span>Interns</span><i
-                class="bi bi-chevron-down ms-auto"></i>
+                                href="#"> <i class="bi bi-menu-button-wide"></i><span>Interns</span>
+            <span class="red-dot" th:if="${approveInternCount > 0}"></span>
+            <span class="red-dot" th:if="${PendingInterviewApplications > 0}"></span>
+            <span class="red-dot" th:if="${pendingCancellationCount > 0}"></span>
+            <i class="bi bi-chevron-down ms-auto"></i>
         </a>
             <ul id="interns-components-nav" class="nav-content collapse "
                 data-bs-parent="#interns-nav">
                 <li><a th:href="@{/bisag/admin/intern_application}"><i
-                        class="bi bi-circle"></i><span>Intern Applications</span></a></li>
+                        class="bi bi-circle"></i><span>Intern Applications</span>
+                    <span class="red-dot" th:if="${approveInternCount > 0}"></span></a>
+                    </li>
                 <li><a
                         th:href="@{/bisag/admin/intern_application/approved_interns}"><i
                         class="bi bi-circle"></i><span>Shortlisted Intern
-							Applications</span></a></li>
+							Applications</span>
+                    <span class="red-dot" th:if="${PendingInterviewApplications > 0}"></span></a></li>
                 <li><a th:href="@{/bisag/admin/intern_application/new_interns}"><i
                         class="bi bi-circle"></i><span>Approved Interns</span></a></li>
                 <li><a th:href="@{/bisag/admin/logs}"><i
@@ -69,7 +81,9 @@
                 <li><a th:href="@{/bisag/admin/undertaking}"><i
                         class="bi bi-circle"></i><span>Add Undertaking</span></a></li>
                 <li><a th:href="@{/bisag/admin/cancellation_requests}"><i
-                        class="bi bi-circle"></i><span>Cancellation Requests</span></a></li>
+                        class="bi bi-circle"></i><span>Cancellation Requests</span>
+                    <span class="red-dot" th:if="${pendingCancellationCount > 0}"></span></a>
+                    </li>
                 <li><a th:href="@{/bisag/admin/feedback_form_list}"><i
                         class="bi bi-circle"></i><span>Feedback Applications</span></a></li>
                 <li><a th:href="@{/bisag/admin/announcement}">
@@ -114,12 +128,13 @@
                 <li class="nav-item"><a class="nav-link collapsed"
                                         data-bs-target="#preject-def-nav" data-bs-toggle="collapse" href="#">
                     <i class="bi bi-menu-button-wide"></i><span>Project
-					Definition</span><i class="bi bi-chevron-down ms-auto"></i>
+					Definition</span><span class="red-dot" th:if="${adminPendingProjectDefinitionCount > 0}"></span><i class="bi bi-chevron-down ms-auto"></i>
                 </a>
                     <ul id="preject-def-nav" class="nav-content collapse "
                         data-bs-parent="#admin-nav">
                         <li><a th:href="@{/bisag/admin/admin_pending_def_approvals}">
                             <i class="bi bi-circle"></i><span>Pending Definitions</span>
+                            <span class="red-dot" th:if="${adminPendingProjectDefinitionCount > 0}"></span>
                         </a></li>
                         <li><a th:href="@{/bisag/admin/update_project_def}">
                             <i class="bi bi-circle"></i><span>Update Definitions </span>
@@ -198,7 +213,7 @@
                 <li class="nav-item">
                     <a class="nav-link collapsed" data-bs-target="#verification-nav" data-bs-toggle="collapse" href="#">
                         <i class="bi bi-menu-button-wide"></i>
-                        <span>Intern Verification</span>
+                        <span>Intern Verification</span><span class="red-dot" th:if="${pendingVerificationCount > 0}"></span>
                         <i class="bi bi-chevron-down ms-auto"></i>
                     </a>
                     <ul id="verification-nav" class="nav-content collapse" data-bs-parent="#def-nav">
@@ -212,6 +227,7 @@
                         <li>
                             <a th:href="@{/bisag/admin/verification_requests}">
                                 <i class="bi bi-circle"></i><span>Pending Verification</span>
+                                <span class="red-dot" th:if="${pendingVerificationCount > 0}"></span>
                             </a>
                         </li>
                     </ul>
@@ -278,12 +294,14 @@
                     <a class="nav-link collapsed" data-bs-target="#leave-nav" data-bs-toggle="collapse" href="#">
                         <i class="bi bi-menu-button-wide"></i>
                         <span>Leave Application</span>
+                        <span class="red-dot" th:if="${pendingLeaveCount > 0}"></span>
                         <i class="bi bi-chevron-down ms-auto"></i>
                     </a>
                     <ul id="leave-nav" class="nav-content collapse" data-bs-parent="#def-nav">
                         <li>
                             <a th:href="@{/bisag/admin/pending_leaves}">
                                 <i class="bi bi-circle"></i><span>Pending Applications</span>
+                                <span class="red-dot" th:if="${pendingLeaveCount > 0}"></span>
                             </a>
                         </li>
                     </ul>
