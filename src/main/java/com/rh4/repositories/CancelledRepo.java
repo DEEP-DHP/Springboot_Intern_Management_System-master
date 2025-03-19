@@ -12,6 +12,6 @@ public interface CancelledRepo extends CrudRepository<Cancelled,Long>{
 	
 	@Query("FROM Cancelled c WHERE c.tableName='intern'")
 	List<Cancelled> getCancelledIntern();
-	
+
 }
 
