@@ -109,15 +109,33 @@
 			margin-right: 20px;
 		}
 		.filter-container {
-			display: grid;
-			grid-template-columns: repeat(2, 1fr); /* Two filters per row */
-			gap: 1.5rem;
-			max-width: 800px;
-			margin: auto;
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px; /* Spacing between filters */
+			justify-content: space-between;
+			max-width: 100%;
+			margin-bottom: 10px;
 		}
+
 		.filter-group {
 			display: flex;
 			flex-direction: column;
+			width: calc(33.33% - 10px); /* Three filters per row */
+			min-width: 180px;
+		}
+
+		.filter-group label {
+			font-size: 12px;
+			font-weight: bold;
+			margin-bottom: 3px;
+		}
+
+		.filter-group select {
+			font-size: 12px;
+			padding: 5px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			background: #fff;
 		}
 		.filter-container label {
 			font-weight: bold;
@@ -159,6 +177,8 @@
 				<div class="card">
 					<div class="upper-container mt-3">
 						<h5 class="card-title mx-4">All Interns</h5>
+						<button id="downloadPdf" class="btn btn-danger">Download PDF</button>
+						<button id="downloadExcel" class="btn btn-success">Download Excel</button>
 						<input type="text" id="searchInput" placeholder="Search...">
 					</div>
 					<div class="card-body table-wrapper">
@@ -382,19 +402,82 @@
 		</div>
 
 	</section>
-
-
-	<!-- Include the footer fragment -->
 	<div th:replace="fragments/footerFragment :: footer"></div>
 </main>
-<!-- End #main -->
 <script
 		src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <script>
+	document.addEventListener("DOMContentLoaded", function() {
+		function getVisibleTableData() {
+			let headers = [];
+			let data = [];
+			let excludeColumnIndex = -1;
+
+			document.querySelectorAll(".datatable thead th").forEach((th, index) => {
+				let headerText = th.innerText.trim();
+				if (headerText !== "" && headerText !== "Documents") {
+					headers.push(headerText);
+				} else if (headerText === "Documents") {
+					excludeColumnIndex = index;
+				}
+			});
+
+			document.querySelectorAll(".datatable tbody tr").forEach(tr => {
+				if (tr.style.display !== "none") {
+					let rowData = [];
+					tr.querySelectorAll("td").forEach((td, index) => {
+						if (index !== excludeColumnIndex) {
+							rowData.push(td.innerText.trim());
+						}
+					});
+					data.push(rowData);
+				}
+			});
+
+			return { headers, data };
+		}
+
+		// PDF Download
+		document.getElementById('downloadPdf').addEventListener('click', function () {
+			const { jsPDF } = window.jspdf;
+			const doc = new jsPDF('landscape', 'mm', 'a4');
+
+			doc.setFontSize(12);
+			doc.text('List of Interns', 140, 15, null, null, 'center');
+
+			const { headers, data } = getVisibleTableData();
+
+			doc.autoTable({
+				head: [headers],
+				body: data,
+				startY: 25,
+				styles: { fontSize: 4, cellPadding: 3 },
+				headStyles: { fillColor: [100, 120, 200], textColor: [255, 255, 255] },
+				columnStyles: { 0: { cellWidth: 'auto' } },
+				theme: 'striped'
+			});
+
+			doc.save('Interns List.pdf');
+		});
+
+		// Excel Download
+		document.getElementById("downloadExcel").addEventListener("click", function() {
+			const { headers, data } = getVisibleTableData();
+			let ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+			let wb = XLSX.utils.book_new();
+			XLSX.utils.book_append_sheet(wb, ws, "Interns List");
+
+			XLSX.writeFile(wb, "Interns List.xlsx");
+		});
+	});
+
 	$(document)
 			.ready(
 					function() {
-						// Add click event listener to table headers for sorting
 						$('.table th').click(
 								function() {
 									var table = $(this).parents('table')
@@ -412,7 +495,6 @@
 									}
 								});
 
-						// Function to compare rows based on the selected column
 						function comparer(index) {
 							return function(a, b) {
 								var valA = getCellValue(a, index), valB = getCellValue(
@@ -424,13 +506,10 @@
 							};
 						}
 
-						// Function to get the value of a cell
 						function getCellValue(row, index) {
 							return $(row).children('td').eq(index).text();
 						}
 					});
-</script>
-<script>
 	document.addEventListener('DOMContentLoaded', function() {
 		var searchInput = document.getElementById('searchInput');
 		var tableRows = document.querySelectorAll('.table tbody tr');
