@@ -93,11 +93,11 @@ public class HomeController {
         ModelAndView mv = new ModelAndView("internapply");
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
-        List<Branch> branches = fieldService.getBranches();
+//        List<Branch> branches = fieldService.getBranches();
         List<Degree> degrees = fieldService.getDegrees();
         mv.addObject("colleges", colleges);
         mv.addObject("domains", domains);
-        mv.addObject("branches", branches);
+//        mv.addObject("branches", branches);
         mv.addObject("degrees", degrees);
 
         return mv;
@@ -217,7 +217,7 @@ public class HomeController {
             @RequestParam("contactNo") String contactNo,
             @RequestParam("email") String email,
             @RequestParam("collegeName") String collegeName,
-            @RequestParam("branch") String branch,
+//            @RequestParam("branch") String branch,
             @RequestParam("passportSizeImage") MultipartFile passportSizeImage,
             @RequestParam("icardImage") MultipartFile icardImage,
             @RequestParam("nocPdf") MultipartFile nocPdf,
@@ -256,7 +256,7 @@ public class HomeController {
             internApplication.setContactNo(contactNo);
             internApplication.setEmail(email);
             internApplication.setCollegeName(collegeName);
-            internApplication.setBranch(branch);
+//            internApplication.setBranch(branch);
             internApplication.setSemester(semester);
             internApplication.setPassword(password);
             internApplication.setDegree(degree);

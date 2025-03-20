@@ -332,11 +332,11 @@ public class AdminController {
         ModelAndView mv = new ModelAndView("admin/register_internn");
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
-        List<Branch> branches = fieldService.getBranches();
+//        List<Branch> branches = fieldService.getBranches();
         List<Degree> degrees = fieldService.getDegrees();
         mv.addObject("colleges", colleges);
         mv.addObject("domains", domains);
-        mv.addObject("branches", branches);
+//        mv.addObject("branches", branches);
         mv.addObject("degrees", degrees);
 
         return mv;
@@ -348,7 +348,7 @@ public class AdminController {
                                   @RequestParam("contactNo") String contactNo,
                                   @RequestParam("email") String email,
                                   @RequestParam("collegeName") String collegeName,
-                                  @RequestParam("branch") String branch,
+//                                  @RequestParam("branch") String branch,
                                   @RequestParam("passportSizeImage") MultipartFile passportSizeImage,
                                   @RequestParam("icardImage") MultipartFile icardImage,
                                   @RequestParam("nocPdf") MultipartFile nocPdf,
@@ -394,7 +394,7 @@ public class AdminController {
             internApplication.setContactNo(contactNo);
             internApplication.setEmail(email);
             internApplication.setCollegeName(collegeName);
-            internApplication.setBranch(branch);
+//            internApplication.setBranch(branch);
             internApplication.setSemester(semester);
             internApplication.setPassword(password);
             internApplication.setDegree(degree);
@@ -482,12 +482,12 @@ public class AdminController {
 
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
-        List<Branch> branches = fieldService.getBranches();
+//        List<Branch> branches = fieldService.getBranches();
         List<GroupEntity> groups = groupService.getGroups();
 
         mv.addObject("colleges", colleges);
         mv.addObject("domains", domains);
-        mv.addObject("branches", branches);
+//        mv.addObject("branches", branches);
         mv.addObject("groups", groups);
 
         mv.setViewName("admin/intern_detail");
@@ -591,12 +591,12 @@ public class AdminController {
 
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
-        List<Branch> branches = fieldService.getBranches();
+//        List<Branch> branches = fieldService.getBranches();
         model = countNotifications(model);
 
         mv.addObject("colleges", colleges);
         mv.addObject("domains", domains);
-        mv.addObject("branches", branches);
+//        mv.addObject("branches", branches);
 
         mv.setViewName("admin/intern_application_detail");
         return mv;
@@ -1459,7 +1459,7 @@ public class AdminController {
             intern.get().setEmail(internApplication.getEmail());
             intern.get().setCollegeName(internApplication.getCollegeName());
             intern.get().setIsActive(true);
-            intern.get().setBranch(internApplication.getBranch());
+//            intern.get().setBranch(internApplication.getBranch());
             intern.get().setDomain(internApplication.getDomain());
             intern.get().setSemester(internApplication.getSemester());
             intern.get().setJoiningDate(internApplication.getJoiningDate());
@@ -1482,7 +1482,6 @@ public class AdminController {
         internService.addInternApplication(intern.get());
         return "redirect:/bisag/admin/intern_application/" + id;
     }
-
 
     @PostMapping("/intern/update")
     public String updateIntern(@RequestParam String id, Intern internApplication, @RequestParam("groupId") String groupId, @RequestParam("cancellationRemarks") String cancellationRemarks, MultipartHttpServletRequest req) throws IllegalStateException, IOException, Exception {
@@ -1513,7 +1512,7 @@ public class AdminController {
 
             intern.get().setEmail(internApplication.getEmail());
             intern.get().setCollegeName(internApplication.getCollegeName());
-            intern.get().setBranch(internApplication.getBranch());
+//            intern.get().setBranch(internApplication.getBranch());
             intern.get().setIsActive(true);
             intern.get().setDomain(internApplication.getDomain());
             intern.get().setSemester(internApplication.getSemester());
@@ -1539,7 +1538,7 @@ public class AdminController {
                     internData.getContactNo() != null &&
                     internData.getEmail() != null &&
                     internData.getCollegeName() != null &&
-                    internData.getBranch() != null &&
+//                    internData.getBranch() != null &&
                     internData.getDomain() != null &&
                     internData.getJoiningDate() != null &&
                     internData.getCompletionDate() != null &&
@@ -1617,12 +1616,12 @@ public class AdminController {
 
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
-        List<Branch> branches = fieldService.getBranches();
+//        List<Branch> branches = fieldService.getBranches();
 
         model = countNotifications(model);
         mv.addObject("colleges", colleges);
         mv.addObject("domains", domains);
-        mv.addObject("branches", branches);
+//        mv.addObject("branches", branches);
         mv.setViewName("admin/approved_intern_application_detail");
 
         String username = (String) session.getAttribute("username");
@@ -1655,7 +1654,7 @@ public class AdminController {
             intern.get().setEmail(internApplication.getEmail());
             intern.get().setIsActive(true);
             intern.get().setCollegeName(internApplication.getCollegeName());
-            intern.get().setBranch(internApplication.getBranch());
+//            intern.get().setBranch(internApplication.getBranch());
             intern.get().setDomain(internApplication.getDomain());
             intern.get().setSemester(internApplication.getSemester());
             intern.get().setJoiningDate(internApplication.getJoiningDate());
@@ -1717,7 +1716,7 @@ public ModelAndView newInterns(Model model) {
     List<RRecord> records = recordService.getAllRecords();
     model.addAttribute("records", records);
     List<College> college = fieldService.getColleges();
-    List<Branch> branch = fieldService.getBranches();
+//    List<Branch> branch = fieldService.getBranches();
     List<Domain> domain = fieldService.getDomains();
     List<Guide> guide = guideService.getGuide();
     List<Degree> degree = fieldService.getDegrees();
@@ -1728,7 +1727,7 @@ public ModelAndView newInterns(Model model) {
     mv.addObject("interns", interns);
     mv.addObject("project_definition_name", projectDefinitions);
     mv.addObject("colleges", college);
-    mv.addObject("branches", branch);
+//    mv.addObject("branches", branch);
     mv.addObject("domains", domain);
     mv.addObject("guides", guide);
     mv.addObject("degrees", degree);
@@ -1793,7 +1792,9 @@ public ModelAndView newInterns(Model model) {
                 Intern intern = new Intern(internApplication.getFirstName(), internApplication.getLastName(),
                         internApplication.getContactNo(), internApplication.getEmail(),
                         internApplication.getCollegeName(), internApplication.getJoiningDate(),
-                        internApplication.getCompletionDate(), internApplication.getBranch(), internApplication.getDegree(),
+                        internApplication.getCompletionDate(),
+//                        internApplication.getBranch(),
+                        internApplication.getDegree(),
                         internApplication.getPassword(), internApplication.getCollegeIcardImage(),
                         internApplication.getNocPdf(), internApplication.getResumePdf(), internApplication.getPassportSizeImage(),
                         internApplication.getSemester(), internApplication.getDomain(), group);
@@ -1818,12 +1819,12 @@ public ModelAndView newInterns(Model model) {
     public ModelAndView addFields(Model model) {
         ModelAndView mv = new ModelAndView();
         List<College> colleges = fieldService.getColleges();
-        List<Branch> branches = fieldService.getBranches();
+//        List<Branch> branches = fieldService.getBranches();
         List<Domain> domains = fieldService.getDomains();
         List<Degree> degrees = fieldService.getDegrees();
         model = countNotifications(model);
         mv.addObject("colleges", colleges);
-        mv.addObject("branches", branches);
+//        mv.addObject("branches", branches);
         mv.addObject("domains", domains);
         mv.addObject("degrees", degrees);
         mv.addObject("admin", adminName(session));
@@ -1867,19 +1868,19 @@ public ModelAndView newInterns(Model model) {
         return "redirect:/bisag/admin/add_fields";
     }
 
-    @PostMapping("/add_branch")
-    public String addBranch(Branch branch, Model model) {
-        fieldService.addBranch(branch);
-
-        String username = (String) session.getAttribute("username");
-        Admin admin = adminService.getAdminByUsername(username);
-        if (admin != null) {
-            logService.saveLog(String.valueOf(admin.getAdminId()), "Added Branch",
-                    "Admin " + admin.getName() + " added a new branch: " + branch.getName());
-        }
-
-        return "redirect:/bisag/admin/add_fields";
-    }
+//    @PostMapping("/add_branch")
+//    public String addBranch(Branch branch, Model model) {
+//        fieldService.addBranch(branch);
+//
+//        String username = (String) session.getAttribute("username");
+//        Admin admin = adminService.getAdminByUsername(username);
+//        if (admin != null) {
+//            logService.saveLog(String.valueOf(admin.getAdminId()), "Added Branch",
+//                    "Admin " + admin.getName() + " added a new branch: " + branch.getName());
+//        }
+//
+//        return "redirect:/bisag/admin/add_fields";
+//    }
 
     @PostMapping("/add_degree")
     public String addDegree(Degree degree, Model model) {
@@ -1918,11 +1919,11 @@ public ModelAndView newInterns(Model model) {
         return "redirect:/bisag/admin/add_fields";
     }
 
-    @GetMapping("/delete_branch/{id}")
-    public String deleteBranch(@PathVariable("id") long id, Model model) {
-        fieldService.deleteBranch(id);
-        return "redirect:/bisag/admin/add_fields";
-    }
+//    @GetMapping("/delete_branch/{id}")
+//    public String deleteBranch(@PathVariable("id") long id, Model model) {
+//        fieldService.deleteBranch(id);
+//        return "redirect:/bisag/admin/add_fields";
+//    }
 
     @GetMapping("/delete_domain/{id}")
     public String deleteDomain(@PathVariable("id") long id, Model model) {
@@ -1950,26 +1951,26 @@ public ModelAndView newInterns(Model model) {
         return "redirect:/bisag/admin/add_fields";
     }
 
-    @PostMapping("/update_branch/{id}")
-    public String updateBranch(@ModelAttribute("branch") Branch branch, @PathVariable("id") long id) {
-        Optional<Branch> existingBranch = fieldService.getBranch(id);
-
-        if (existingBranch.isPresent()) {
-
-            Branch updatedBranch = existingBranch.get();
-            updatedBranch.setName(branch.getName());
-
-            fieldService.updateBranch(updatedBranch);
-
-            String username = (String) session.getAttribute("username");
-            Admin admin = adminService.getAdminByUsername(username);
-            if (admin != null) {
-                logService.saveLog(String.valueOf(admin.getAdminId()), "Updated Branch",
-                        "Admin " + admin.getName() + " updated branch: " + updatedBranch.getName());
-            }
-        }
-        return "redirect:/bisag/admin/add_fields";
-    }
+//    @PostMapping("/update_branch/{id}")
+//    public String updateBranch(@ModelAttribute("branch") Branch branch, @PathVariable("id") long id) {
+//        Optional<Branch> existingBranch = fieldService.getBranch(id);
+//
+//        if (existingBranch.isPresent()) {
+//
+//            Branch updatedBranch = existingBranch.get();
+//            updatedBranch.setName(branch.getName());
+//
+//            fieldService.updateBranch(updatedBranch);
+//
+//            String username = (String) session.getAttribute("username");
+//            Admin admin = adminService.getAdminByUsername(username);
+//            if (admin != null) {
+//                logService.saveLog(String.valueOf(admin.getAdminId()), "Updated Branch",
+//                        "Admin " + admin.getName() + " updated branch: " + updatedBranch.getName());
+//            }
+//        }
+//        return "redirect:/bisag/admin/add_fields";
+//    }
 
     @PostMapping("/update_degree/{id}")
     public String updateDegree(@ModelAttribute("degree") Degree degree, @PathVariable("id") long id) {
@@ -2639,7 +2640,7 @@ public ModelAndView cancellationRequests(Model model) {
         ModelAndView mv = new ModelAndView("admin/generate_intern_report");
 
         List<College> college = fieldService.getColleges();
-        List<Branch> branch = fieldService.getBranches();
+//        List<Branch> branch = fieldService.getBranches();
         List<Domain> domain = fieldService.getDomains();
         List<Guide> guide = guideService.getGuide();
         List<Degree> degree = fieldService.getDegrees();
@@ -2656,7 +2657,7 @@ public ModelAndView cancellationRequests(Model model) {
         mv.addObject("interns", interns);
         mv.addObject("project_definition_name", projectDefinitions);
         mv.addObject("colleges", college);
-        mv.addObject("branches", branch);
+//        mv.addObject("branches", branch);
         mv.addObject("domains", domain);
         mv.addObject("guides", guide);
         mv.addObject("degrees", degree);
@@ -2669,7 +2670,7 @@ public ModelAndView cancellationRequests(Model model) {
     @PostMapping("/generate_intern_report")
     public String generateInternReport(HttpServletResponse response, @ModelAttribute("ReportFilter") ReportFilter reportFilter) throws Exception {
         College college;
-        Branch branch;
+//        Branch branch;
         Optional<Guide> guide;
         Domain domain;
         Degree degree;
@@ -2677,15 +2678,15 @@ public ModelAndView cancellationRequests(Model model) {
         // Log filter details before applying the filter
         Admin admin = getSignedInAdmin();
         logService.saveLog(String.valueOf(admin.getAdminId()), "Applied Report Filters",
-                "Admin " + admin.getName() + " applied the following filters: College = " + reportFilter.getCollege() + ", Branch = " + reportFilter.getBranch() +
+                "Admin " + admin.getName() + " applied the following filters: College = " + reportFilter.getCollege() +
                         ", Guide = " + reportFilter.getGuide() + ", Domain = " + reportFilter.getDomain() + ", Degree = " + reportFilter.getDegree() +
                         ", Date Range = " + reportFilter.getStartDate() + " to " + reportFilter.getEndDate());
 
-        if (reportFilter.getBranch().equals("All")) {
-            reportFilter.setBranch(null);
-        } else {
-            branch = fieldService.findByBranchName(reportFilter.getBranch());
-        }
+//        if (reportFilter.getBranch().equals("All")) {
+//            reportFilter.setBranch(null);
+//        } else {
+//            branch = fieldService.findByBranchName(reportFilter.getBranch());
+//        }
 
         if (reportFilter.getCollege().equals("All")) {
             reportFilter.setCollege(null);
@@ -2712,7 +2713,7 @@ public ModelAndView cancellationRequests(Model model) {
         }
 
         List<Intern> filteredInterns = internService.getFilteredInterns(reportFilter.getCollege(),
-                reportFilter.getBranch(), guide, reportFilter.getDomain(), reportFilter.getCancelled(),
+                guide, reportFilter.getDomain(), reportFilter.getCancelled(),
                 reportFilter.getStartDate(), reportFilter.getEndDate(), reportFilter.getCancelled());
 
         logService.saveLog(String.valueOf(admin.getAdminId()), "Filtered Interns for Report",
@@ -3067,12 +3068,12 @@ public ModelAndView cancellationRequests(Model model) {
 
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
-        List<Branch> branches = fieldService.getBranches();
+//        List<Branch> branches = fieldService.getBranches();
         List<GroupEntity> groups = groupService.getGroups();
 
         mv.addObject("colleges", colleges);
         mv.addObject("domains", domains);
-        mv.addObject("branches", branches);
+//        mv.addObject("branches", branches);
         mv.addObject("groups", groups);
 
         mv.setViewName("admin/intern_verification_details");
@@ -4466,7 +4467,6 @@ public String viewCancelRelievingRecords(Model model) {
         model.addAttribute("groupId", groupId);
         model.addAttribute("currentDate", LocalDate.now());
 
-        // Update confirmation letter status to 'yes'
         GroupEntity group = groupRepo.findByGroupId(groupId);
         if (group != null && !"yes".equals(group.getConfirmationLetter())) {
             group.setConfirmationLetter("yes");
@@ -4479,7 +4479,6 @@ public String viewCancelRelievingRecords(Model model) {
 
         return "admin/confirmation";
     }
-
 
     //Update status column automatically in the total interns page
     @PostMapping("/update-status")

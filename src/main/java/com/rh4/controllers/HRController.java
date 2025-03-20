@@ -149,7 +149,6 @@ public class HRController {
         Long id = Long.parseLong(data.get("id"));
         String newStatus = data.get("identityCards");
 
-        // Fetch record from DB
         Optional<RRecord> optionalRecord = recordRepo.findById(id);
         if (optionalRecord.isPresent()) {
             RRecord record = optionalRecord.get();
@@ -159,13 +158,6 @@ public class HRController {
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Record not found");
     }
-
-//    @GetMapping("/verification_requests")
-//    public String getHrVerificationRequests(Model model) {
-//        List<Verification> requests = verificationRepo.findAll();
-//        model.addAttribute("requests", requests);
-//        return "hr/hr_verification_list";
-//    }
 
     // Display Approved Verifications
     @GetMapping("/verification_requests")
@@ -193,12 +185,12 @@ public class HRController {
 
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
-        List<Branch> branches = fieldService.getBranches();
+//        List<Branch> branches = fieldService.getBranches();
         List<GroupEntity> groups = groupService.getGroups();
 
         mv.addObject("colleges", colleges);
         mv.addObject("domains", domains);
-        mv.addObject("branches", branches);
+//        mv.addObject("branches", branches);
         mv.addObject("groups", groups);
 
         mv.setViewName("hr/intern_verification_details");

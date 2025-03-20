@@ -820,10 +820,10 @@ public class GuideController {
 
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
-        List<Branch> branches = fieldService.getBranches();
+//        List<Branch> branches = fieldService.getBranches();
         mv.addObject("colleges", colleges);
         mv.addObject("domains", domains);
-        mv.addObject("branches", branches);
+//        mv.addObject("branches", branches);
 
         mv.setViewName("guide/intern_application_detail");
         return mv;
