@@ -36,20 +36,20 @@ public interface InternRepo extends JpaRepository<Intern, String> {
 	List<Intern> getCurrentInterns();
 
 	@Query("SELECT i FROM Intern i " + "WHERE (:college IS NULL OR i.collegeName = :college) "
-			+ "AND (:branch IS NULL OR i.branch = :branch) " + "AND (:guide IS NULL OR i.guide = :guide) "
+			+  "AND (:guide IS NULL OR i.guide = :guide) "
 			+ "AND (:domain IS NULL OR i.domain = :domain) "
 			+ "AND (:startDate IS NULL OR i.joiningDate >= :startDate) "
 			+ "AND (:endDate IS NULL OR i.completionDate <= :endDate)" + "AND (i.isActive =:cancelled)")
-	List<Intern> getFilteredInterns(@Param("college") String college, @Param("branch") String branch,
+	List<Intern> getFilteredInterns(@Param("college") String college,
 			@Param("guide") Optional<Guide> guide, @Param("domain") String domain, @Param("startDate") Date startDate,
 			@Param("endDate") Date endDate, @Param("cancelled") boolean cancelled);
 
 	@Query("SELECT i FROM Intern i " + "INNER JOIN i.group g "
-			+ "WHERE (:college IS NULL OR i.collegeName = :college) " + "AND (:branch IS NULL OR i.branch = :branch) "
+			+ "WHERE (:college IS NULL OR i.collegeName = :college) "
 			+ "AND (:guide IS NULL OR g.guide = :guide) " + "AND (:domain IS NULL OR i.domain = :domain) "
 			+ "AND (:startDate IS NULL OR i.joiningDate >= :startDate) "
 			+ "AND (:endDate IS NULL OR i.completionDate <= :endDate)" + "AND g.finalReportStatus = 'pending'")
-	List<Intern> getPendingInternsFilter(String college, String branch, Optional<Guide> guide, String domain,
+	List<Intern> getPendingInternsFilter(String college, Optional<Guide> guide, String domain,
 			Date startDate, Date endDate);
 
 //	@Query("from InternApplication where status = 'rejected'")
