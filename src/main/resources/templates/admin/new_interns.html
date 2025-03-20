@@ -207,13 +207,13 @@
 							</select>
 							</div>
 
-							<div class="filter-group">
-							<label for="filter-branch">Branch:</label>
-							<select id="filter-branch">
-								<option value="">All</option>
-								<option th:each="branch : ${branches}" th:value="${branch.name}" th:text="${branch.name}"></option>
-							</select>
-							</div>
+<!--							<div class="filter-group">-->
+<!--							<label for="filter-branch">Branch:</label>-->
+<!--							<select id="filter-branch">-->
+<!--								<option value="">All</option>-->
+<!--								<option th:each="branch : ${branches}" th:value="${branch.name}" th:text="${branch.name}"></option>-->
+<!--							</select>-->
+<!--							</div>-->
 
 							<div class="filter-group">
 							<label for="filter-domain">Domain:</label>
@@ -240,39 +240,100 @@
 							</div>
 
 							<div class="filter-group">
+								<label for="filter-status">Current Status:</label>
+								<select id="filter-status">
+									<option value="">All</option>
+									<option value="Working">Working</option>
+									<option value="Report Pending">Report Pending</option>
+									<option value="Completed">Completed</option>
+									<option value="Cancelled">Cancelled</option>
+								</select>
+							</div>
+
+							<div class="filter-group">
 							<label for="filter-project">Project Definition Name:</label>
 							<select id="filter-project">
 								<option value="">All</option>
 								<option th:each="project : ${project_definition_name}" th:value="${project}" th:text="${project}"></option>
 							</select>
 							</div>
+							<div class="filter-container">
+								<div class="filter-group">
+									<label for="filter-joining-date">Joining Date:</label>
+									<input type="date" id="filter-joining-date">
+								</div>
+
+								<div class="filter-group">
+									<label for="filter-completion-date">Completion Date:</label>
+									<input type="date" id="filter-completion-date">
+								</div>
+
+								<div class="filter-group">
+									<button id="apply-date-filter" class="btn btn-primary">Apply Date</button>
+								</div>
+							</div>
 						</div>
 
 						<script>
+							document.addEventListener("DOMContentLoaded", function () {
+								function parseDate(dateStr) {
+									if (!dateStr) return null;
+									const parts = dateStr.split("-");
+									return new Date(parts[2], parts[1] - 1, parts[0]);
+								}
+
+								document.getElementById('apply-date-filter').addEventListener('click', function () {
+									let selectedJoiningDate = document.getElementById('filter-joining-date').value ? new Date(document.getElementById('filter-joining-date').value) : null;
+									let selectedCompletionDate = document.getElementById('filter-completion-date').value ? new Date(document.getElementById('filter-completion-date').value) : null;
+
+									document.querySelectorAll('.datatable tbody tr').forEach(row => {
+										let rowJoiningDate = parseDate(row.querySelector('td:nth-child(19)')?.innerText.trim() || '');
+										let rowCompletionDate = parseDate(row.querySelector('td:nth-child(20)')?.innerText.trim() || '');
+
+										let showRow = true;
+
+										if (selectedJoiningDate && rowJoiningDate && rowJoiningDate < selectedJoiningDate) {
+											showRow = false;
+										}
+										if (selectedCompletionDate && rowCompletionDate && rowCompletionDate > selectedCompletionDate) {
+											showRow = false;
+										}
+
+										row.style.display = showRow ? '' : 'none';
+									});
+								});
+							});
+
 							document.querySelectorAll('.filter-container select').forEach(select => {
 								select.addEventListener('change', function() {
 									const filters = {
 										guide: document.getElementById('filter-guide').value.toLowerCase(),
 										college: document.getElementById('filter-college').value.toLowerCase(),
 										degree: document.getElementById('filter-degree').value.toLowerCase(),
-										branch: document.getElementById('filter-branch').value.toLowerCase(),
 										domain: document.getElementById('filter-domain').value.toLowerCase(),
 										gender: document.getElementById('filter-gender').value.toLowerCase(),
 										intern: document.getElementById('filter-intern').value.toLowerCase(),
-										project: document.getElementById('filter-project').value.toLowerCase()
+										project: document.getElementById('filter-project').value.toLowerCase(),
+										status: document.getElementById('filter-status').value.toLowerCase(),
+										joiningDate: document.getElementById('filter-joining-date').value,
+										completionDate: document.getElementById('filter-completion-date').value
+
 									};
 
 									document.querySelectorAll('tbody tr').forEach(row => {
 										const rowData = {
 											guide: row.querySelector('td:nth-child(8)')?.innerText.toLowerCase() || '',
 											college: row.querySelector('td:nth-child(10)')?.innerText.toLowerCase() || '',
-											degree: row.querySelector('td:nth-child(19)')?.innerText.toLowerCase() || '',
-											branch: row.querySelector('td:nth-child(11)')?.innerText.toLowerCase() || '',
+											degree: row.querySelector('td:nth-child(16)')?.innerText.toLowerCase() || '',
 											domain: row.querySelector('td:nth-child(9)')?.innerText.toLowerCase() || '',
-											gender: row.querySelector('td:nth-child(17)')?.innerText.toLowerCase() || '',
+											gender: row.querySelector('td:nth-child(14)')?.innerText.toLowerCase() || '',
 											intern: row.querySelector('td:nth-child(1)')?.innerText.toLowerCase() || '',
-											aggregate: row.querySelector('td:nth-child(20)')?.innerText.toLowerCase() || '',
-											project: row.querySelector('td:nth-child(21)')?.innerText.toLowerCase() || ''
+											aggregate: row.querySelector('td:nth-child(19)')?.innerText.toLowerCase() || '',
+											project: row.querySelector('td:nth-child(18)')?.innerText.toLowerCase() || '',
+											status: row.querySelector('td:nth-child(24)')?.innerText.trim().toLowerCase() || '',
+											joiningDate: row.querySelector('td:nth-child(19)')?.innerText.trim() || '',
+											completionDate: row.querySelector('td:nth-child(20)')?.innerText.trim() || ''
+
 										};
 
 										let showRow = true;
@@ -300,7 +361,6 @@
 								<th><i class="fa-solid fa-sort mx-2"></i>Guide</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Domain</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>College</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Branch</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Semester</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Permanent
 									Address</th>
@@ -333,7 +393,6 @@
                      intern.group.groupId == null or intern.group.groupId == '' or
                      intern.domain == null or intern.domain == '' or
                      intern.collegeName == null or intern.collegeName == '' or
-                     intern.branch == null or intern.branch == '' or
                      intern.semester == null or intern.semester == '' or
                      intern.permanentAddress == null or intern.permanentAddress == '' or
                      intern.dateOfBirth == null or intern.dateOfBirth == '' or
@@ -362,7 +421,6 @@
 								<td th:if="${intern.group != null}" th:text="${intern.group.guide != null} ? ${intern.group.guide.name} : 'Guide Not Assigned'"></td>
 								<td th:text="${intern.domain}"></td>
 								<td th:text="${intern.collegeName}"></td>
-								<td th:text="${intern.branch}"></td>
 								<td th:text="${intern.semester}"></td>
 								<td th:text="${intern.permanentAddress}"></td>
 								<td th:text="${#dates.format(intern.dateOfBirth, 'dd-MM-yyyy')}"></td>
@@ -415,14 +473,14 @@
 		function getVisibleTableData() {
 			let headers = [];
 			let data = [];
-			let excludeColumnIndex = -1;
+			let excludeColumnIndexes = []; // Store indices of columns to exclude
 
 			document.querySelectorAll(".datatable thead th").forEach((th, index) => {
 				let headerText = th.innerText.trim();
-				if (headerText !== "" && headerText !== "Documents") {
+				if (headerText !== "" && headerText !== "Documents" && headerText !== "Cancel Time") {
 					headers.push(headerText);
-				} else if (headerText === "Documents") {
-					excludeColumnIndex = index;
+				} else if (headerText === "Documents" || headerText === "Cancel Time") {
+					excludeColumnIndexes.push(index);
 				}
 			});
 
@@ -430,7 +488,7 @@
 				if (tr.style.display !== "none") {
 					let rowData = [];
 					tr.querySelectorAll("td").forEach((td, index) => {
-						if (index !== excludeColumnIndex) {
+						if (!excludeColumnIndexes.includes(index)) {
 							rowData.push(td.innerText.trim());
 						}
 					});
@@ -446,19 +504,48 @@
 			const { jsPDF } = window.jspdf;
 			const doc = new jsPDF('landscape', 'mm', 'a4');
 
+			const timestamp = new Date().toLocaleString();
+
 			doc.setFontSize(12);
 			doc.text('List of Interns', 140, 15, null, null, 'center');
 
+			doc.setFontSize(8);
+			doc.text(timestamp, 270, 15, null, null, 'right');
 			const { headers, data } = getVisibleTableData();
 
 			doc.autoTable({
 				head: [headers],
 				body: data,
 				startY: 25,
-				styles: { fontSize: 4, cellPadding: 3 },
-				headStyles: { fillColor: [100, 120, 200], textColor: [255, 255, 255] },
-				columnStyles: { 0: { cellWidth: 'auto' } },
-				theme: 'striped'
+				styles: { fontSize: 4, cellPadding: 2, overflow: 'linebreak' },
+				headStyles: { fillColor: [100, 120, 200], textColor: [255, 255, 255], fontSize: 7 },
+				columnStyles: {
+					0: { cellWidth: 13 }, // ID column
+					1: { cellWidth: 12 }, // First Name
+					2: { cellWidth: 12 }, // Last Name
+					3: { cellWidth: 16 }, // Contact No
+					4: { cellWidth: 20 }, // Email ID
+					5: { cellWidth: 12 }, // Group ID
+					6: { cellWidth: 14 }, // Guide
+					7: { cellWidth: 14 }, // Domain
+					8: { cellWidth: 24 }, // College
+					9: { cellWidth: 15 }, // Semester
+					10: { cellWidth: 18 }, // Permanent Address
+					11: { cellWidth: 11 }, // Date of Birth
+					12: { cellWidth: 10 }, // Gender
+					13: { cellWidth: 14 }, // College Guide/HOD Name
+					14: { cellWidth: 16 }, // Degree
+					15: { cellWidth: 16 }, // Aggregate Percentage
+					16: { cellWidth: 20 }, // Project Definition Name
+					17: { cellWidth: 20 }, // Joining Date
+					18: { cellWidth: 20 }, // Completion Date
+					19: { cellWidth: 13 }, // Used Resources
+					20: { cellWidth: 20 }, // Created At
+					21: { cellWidth: 20 }, // Updated At
+					22: { cellWidth: 20 }  // Current Status
+				},
+				theme: 'striped',
+				margin: { left: 0, right: 0 }
 			});
 
 			doc.save('Interns List.pdf');
@@ -467,12 +554,29 @@
 		// Excel Download
 		document.getElementById("downloadExcel").addEventListener("click", function() {
 			const { headers, data } = getVisibleTableData();
-			let ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+			const timestamp = new Date().toLocaleString();
+
+			let excelData = [
+				[`Generated On: ${timestamp}`],
+				["List of Interns"],
+				headers,
+				...data
+			];
+
+			let ws = XLSX.utils.aoa_to_sheet(excelData);
 			let wb = XLSX.utils.book_new();
 			XLSX.utils.book_append_sheet(wb, ws, "Interns List");
 
 			XLSX.writeFile(wb, "Interns List.xlsx");
 		});
+		// document.getElementById("downloadExcel").addEventListener("click", function() {
+		// 	const { headers, data } = getVisibleTableData();
+		// 	let ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+		// 	let wb = XLSX.utils.book_new();
+		// 	XLSX.utils.book_append_sheet(wb, ws, "Interns List");
+		//
+		// 	XLSX.writeFile(wb, "Interns List.xlsx");
+		// });
 	});
 
 	$(document)

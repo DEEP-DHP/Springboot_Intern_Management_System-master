@@ -85,10 +85,10 @@
                         <th>College Name</th>
                         <td><input type="text" name="collegeName" th:value="${intern.get().collegeName}" class="no-border" readonly></td>
                     </tr>
-                    <tr>
-                        <th>Branch</th>
-                        <td><input type="text" name="branch" th:value="${intern.get().branch}" class="no-border" readonly></td>
-                    </tr>
+<!--                    <tr>-->
+<!--                        <th>Branch</th>-->
+<!--                        <td><input type="text" name="branch" th:value="${intern.get().branch}" class="no-border" readonly></td>-->
+<!--                    </tr>-->
                     <tr>
                         <th>Domain</th>
                         <td><input type="text" name="domain" th:value="${intern.get().domain}" class="no-border" readonly></td>
@@ -141,25 +141,27 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        // Add Title
-        doc.setFont("helvetica", "bold");
+        const firstName = document.querySelector("[name='firstName']").value || "Unknown";
+        const lastName = document.querySelector("[name='lastName']").value || "Intern";
+
+        const fileName = `Intern Details_${firstName} ${lastName}.pdf`;
+
+        doc.setFont("times of roman", "bold");
         doc.setFontSize(18);
         doc.text("Intern Details", 105, 15, null, null, "center");
 
-        // Add some spacing
         doc.setFontSize(12);
-        doc.setFont("helvetica", "normal");
-        doc.text("Here are the details of the selected intern:", 14, 25);
+        doc.setFont("times of roman", "normal");
+        doc.text("Here are the details of the intern:", 14, 25);
 
-        // Define the intern data
         const internData = [
             ["Intern ID", document.querySelector("[name='internId']").value],
-            ["First Name", document.querySelector("[name='firstName']").value],
-            ["Last Name", document.querySelector("[name='lastName']").value],
+            ["First Name", firstName],
+            ["Last Name", lastName],
             ["Contact No", document.querySelector("[name='contactNo']").value],
             ["Email", document.querySelector("[name='email']").value],
             ["College Name", document.querySelector("[name='collegeName']").value],
-            ["Branch", document.querySelector("[name='branch']").value],
+            // ["Branch", document.querySelector("[name='branch']").value],
             ["Domain", document.querySelector("[name='domain']").value],
             ["Semester", document.querySelector("[name='semester']").value],
             ["Address", document.querySelector("[name='permanentAddress']").value],
@@ -169,22 +171,20 @@
             ["Completion Date", document.querySelector("[name='completionDate']").value],
         ];
 
-        // Add Table
         let startY = 35;
-        doc.setFont("helvetica", "bold");
+        doc.setFont("times of roman", "bold");
         doc.setFontSize(12);
         doc.setTextColor(40, 40, 40);
 
         internData.forEach(([key, value], index) => {
-            doc.setFont("helvetica", "bold");
+            doc.setFont("times of roman", "bold");
             doc.text(`${key}:`, 14, startY);
-            doc.setFont("helvetica", "normal");
+            doc.setFont("times of roman", "normal");
             doc.text(value || "N/A", 60, startY);
             startY += 8;
         });
 
-        // Save PDF
-        doc.save("Intern_Details.pdf");
+        doc.save(fileName);
     }
 </script>
 
