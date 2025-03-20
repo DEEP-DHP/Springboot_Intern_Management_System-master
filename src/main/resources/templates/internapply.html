@@ -302,15 +302,16 @@ html, body {
                                     </select>
                                     <div class="tooltip" id="tooltip-college"></div>
                                 </div>
-                                <div class="form-group mt-2" style="position: relative;">
-                                    <select class="form-select" id="branch" name="branch" required
-                                            data-tooltip="Please enter your stream">
-                                        <option value="" disabled selected>Select Branch</option>
-                                        <option th:each="branch : ${branches}"
-                                                th:text="${branch.name}" th:value="${branch.name}"></option>
-                                    </select>
-                                    <div class="tooltip" id="tooltip-branch"></div>
-                                </div>
+<!--                                <div class="form-group mt-2" style="position: relative;">-->
+<!--                                    <select class="form-select" id="branch" name="branch" required-->
+<!--                                            data-tooltip="Please enter your stream">-->
+<!--                                        <option value="" disabled selected>Select Branch</option>-->
+<!--                                        <option th:each="branch : ${branches}"-->
+<!--                                                th:text="${branch.name}" th:value="${branch.name}"></option>-->
+<!--                                    </select>-->
+<!--                                    <div class="tooltip" id="tooltip-branch"></div>-->
+<!--                                </div>-->
+
                                 <div class="form-group mt-2" style="position: relative;">
                                     <select class="form-select" id="domain"
                                             name="domain" required data-tooltip="Please enter your internship domain">
@@ -328,6 +329,12 @@ html, body {
                                                 th:text="${degree.name}" th:value="${degree.name}"></option>
                                     </select>
                                     <div class="tooltip" id="tooltip-degree"></div>
+                                </div>
+                                <div class="form-group mt-2" style="position: relative;">
+                                    <input type="text" class="form-control"
+                                           placeholder="Security Pin*" id="securityPin" name="securityPin"
+                                           required data-tooltip="Remember your security pin">
+                                    <div class="tooltip" id="tooltip-securityPin"></div>
                                 </div>
                                 <div class="form-group mt-3" style="position: relative;">
                                     <input type="password" id="password" class="form-control"
@@ -390,12 +397,7 @@ html, body {
                                            data-tooltip="Only JPG or JPEG files are allowed">
                                     <div class="tooltip" id="tooltip-icardImage"></div>
                                 </div>
-                                <div class="form-group mt-2" style="position: relative;">
-                                    <input type="text" class="form-control"
-                                           placeholder="Security Pin*" id="securityPin" name="securityPin"
-                                           required data-tooltip="Remember your security pin">
-                                    <div class="tooltip" id="tooltip-securityPin"></div>
-                                </div>
+
                             </div>
                             <div class="text-center py-4">
                                 <button type="submit" class="btnRegister">
