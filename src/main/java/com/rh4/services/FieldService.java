@@ -6,10 +6,8 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.rh4.repositories.DomainRepo;
-import com.rh4.entities.Branch;
 import com.rh4.entities.College;
 import com.rh4.entities.Degree;
-import com.rh4.repositories.BranchRepo;
 import com.rh4.repositories.CollegeRepo;
 import com.rh4.repositories.DegreeRepo;
 
@@ -21,8 +19,6 @@ public class FieldService {
 	private DegreeRepo degreeRepo;
 	@Autowired
 	private DomainRepo domainRepo;
-	@Autowired
-	private BranchRepo branchRepo;
 	
 	public void addCollege(College college) {
 		collegeRepo.save(college);
@@ -30,9 +26,9 @@ public class FieldService {
 	public void addDomain(Domain domain) {
 		domainRepo.save(domain);
 	}
-	public void addBranch(Branch branch) {
-		branchRepo.save(branch);
-	}
+//	public void addBranch(Branch branch) {
+//		branchRepo.save(branch);
+//	}
 	public void addDegree(Degree degree) {
 		degreeRepo.save(degree);
 	}
@@ -44,19 +40,19 @@ public class FieldService {
 	{
 		return degreeRepo.findAll();
 	}
-	public List<Branch> getBranches()
-	{
-		return branchRepo.findAll();
-	}
+//	public List<Branch> getBranches()
+//	{
+//		return branchRepo.findAll();
+//	}
 	public List<Domain> getDomains()
 	{
 		return domainRepo.findAll();
 	}
 	
-	public void deleteBranch(long id)
-	{
-		branchRepo.deleteById(id);
-	}
+//	public void deleteBranch(long id)
+//	{
+//		branchRepo.deleteById(id);
+//	}
 	public void deleteDegree(long id)
 	{
 		degreeRepo.deleteById(id);
@@ -78,10 +74,10 @@ public class FieldService {
 	{
 		return degreeRepo.findById(id);
 	}
-	public Optional<Branch> getBranch(long id)
-	{
-		return branchRepo.findById(id);
-	}
+//	public Optional<Branch> getBranch(long id)
+//	{
+//		return branchRepo.findById(id);
+//	}
 	public Optional<Domain> getDomain(long id)
 	{
 		return domainRepo.findById(id);
@@ -92,15 +88,15 @@ public class FieldService {
 	public Degree findByDegreeName(String name) {
 		return degreeRepo.findByName(name);
 	}
-	public Branch findByBranchName(String name) {
-		return branchRepo.findByName(name);
-	}
+//	public Branch findByBranchName(String name) {
+//		return branchRepo.findByName(name);
+//	}
 	public Domain getDomainByName(String name) {
 		return domainRepo.findByName(name);
 	}
-	public void updateBranch(Branch updatedBranch) {
-		branchRepo.save(updatedBranch);
-	}
+//	public void updateBranch(Branch updatedBranch) {
+//		branchRepo.save(updatedBranch);
+//	}
 	public void updateDomain(Domain updatedDomain) {
 		domainRepo.save(updatedDomain);
 	}

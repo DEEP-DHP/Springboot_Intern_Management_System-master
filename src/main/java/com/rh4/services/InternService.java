@@ -199,21 +199,21 @@ public void addIntern(Intern intern)
 		return internRepo.findDistinctGenders();
 	}
 
-	public List<Intern> getFilteredInterns(String college, String branch, Optional<Guide> guide, String domain,
+	public List<Intern> getFilteredInterns(String college, Optional<Guide> guide, String domain,
 			String cancelled, Date startDate, Date endDate, String cancelledStatus) {
 		if(cancelledStatus.equals("current"))
 		{			
 			boolean isCancelled = true;
-			return internRepo.getFilteredInterns(college,branch,guide,domain,startDate,endDate,isCancelled);
+			return internRepo.getFilteredInterns(college,guide,domain,startDate,endDate,isCancelled);
 		}
 		else if(cancelledStatus.equals("cancelled"))
 		{
 			boolean isCancelled = false;
-			return internRepo.getFilteredInterns(college,branch,guide,domain,startDate,endDate,isCancelled);
+			return internRepo.getFilteredInterns(college,guide,domain,startDate,endDate,isCancelled);
 		}
 		else
 		{
-			return internRepo.getPendingInternsFilter(college,branch,guide,domain,startDate,endDate);
+			return internRepo.getPendingInternsFilter(college,guide,domain,startDate,endDate);
 		}
 	}
 
