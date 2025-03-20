@@ -34,8 +34,8 @@ public class InternApplication {
     @Column(name = "college_name")
     private String collegeName;
 
-    @Column(name = "branch_name")
-    private String branch;
+//    @Column(name = "branch_name")
+//    private String branch;
 
     private String guideName;
     private Long guideId;

@@ -29,8 +29,8 @@ public class Intern {
     @Column(name = "college_name")
     private String collegeName;
 
-    @Column(name = "branch_name")
-    private String branch;
+//    @Column(name = "branch_name")
+//    private String branch;
 
     @Lob
     @Column(name = "icard_image", columnDefinition = "LONGBLOB")
@@ -174,7 +174,7 @@ public class Intern {
     }
 
     public Intern(String internId, String firstName, String lastName, String contactNo, String email,
-                  String collegeName, String branch, byte[] collegeIcardImage, byte[] nocPdf, byte[] projectDefinitionForm, byte[] extraForm, byte[] extraForm2, byte[] resumePdf, int semester,
+                  String collegeName, byte[] collegeIcardImage, byte[] nocPdf, byte[] projectDefinitionForm, byte[] extraForm, byte[] extraForm2, byte[] resumePdf, int semester,
                   String permanentAddress, Date dateOfBirth, String gender, String collegeGuideHodName, String degree, Double aggregatePercentage, String projectDefinitionName, String cancellationStatus,
                   Guide guide, String domain, Date joiningDate, Date completionDate, String password, byte[] icardForm, byte[] registrationForm, byte[] securityForm,
                   String usedResource, LocalDateTime createdAt, LocalDateTime updatedAt, GroupEntity group, boolean isActive, String status, LocalDateTime cancelTime) {
@@ -186,7 +186,7 @@ public class Intern {
         this.contactNo = contactNo;
         this.email = email;
         this.collegeName = collegeName;
-        this.branch = branch;
+//        this.branch = branch;
         this.collegeIcardImage = collegeIcardImage;
         this.nocPdf = nocPdf;
         this.projectDefinitionForm = projectDefinitionForm;
@@ -219,7 +219,7 @@ public class Intern {
     }
 
     public Intern(String firstName, String lastName, String contactNo, String email, String collegeName, Date joiningDate, Date completionDate,
-                  String branch, String degree, String password, byte[] collegeIcardImage, byte[] nocPdf, byte[] resumePdf, byte[] passportSizeImage, int semester, String domain, GroupEntity group) {
+                   String degree, String password, byte[] collegeIcardImage, byte[] nocPdf, byte[] resumePdf, byte[] passportSizeImage, int semester, String domain, GroupEntity group) {
         super();
         this.firstName = firstName;
         this.lastName = lastName;
@@ -228,7 +228,7 @@ public class Intern {
         this.collegeName = collegeName;
         this.joiningDate = joiningDate;
         this.completionDate = completionDate;
-        this.branch = branch;
+//        this.branch = branch;
         this.degree = degree;
         this.collegeIcardImage = collegeIcardImage;
         this.nocPdf = nocPdf;
@@ -320,13 +320,13 @@ public class Intern {
         this.email = email;
     }
 
-    public String getBranch() {
-        return branch;
-    }
-
-    public void setBranch(String branch) {
-        this.branch = branch;
-    }
+//    public String getBranch() {
+//        return branch;
+//    }
+//
+//    public void setBranch(String branch) {
+//        this.branch = branch;
+//    }
 
     public byte[] getCollegeIcardImage() {
         return collegeIcardImage;
