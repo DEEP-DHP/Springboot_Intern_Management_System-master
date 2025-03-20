@@ -5,7 +5,7 @@ import java.sql.Date;
 
 public class ReportFilter {
 	private String college;
-	private String branch;
+//	private String branch;
 	private String guide;
 	private String domain;
 	private String degree;
@@ -16,11 +16,11 @@ public class ReportFilter {
 	public ReportFilter() {
 		super();
 	}
-	public ReportFilter(String college, String branch, String guide, String domain, String degree, Date startDate, Date endDate,
+	public ReportFilter(String college, String guide, String domain, String degree, Date startDate, Date endDate,
 						String cancelled, String format) {
 		super();
 		this.college = college;
-		this.branch = branch;
+//		this.branch = branch;
 		this.guide = guide;
 		this.format = format;
 		this.domain = domain;
@@ -35,12 +35,12 @@ public class ReportFilter {
 	public void setCollege(String college) {
 		this.college = college;
 	}
-	public String getBranch() {
-		return branch;
-	}
-	public void setBranch(String branch) {
-		this.branch = branch;
-	}
+//	public String getBranch() {
+//		return branch;
+//	}
+//	public void setBranch(String branch) {
+//		this.branch = branch;
+//	}
 	public String getGuide() {
 		return guide;
 	}

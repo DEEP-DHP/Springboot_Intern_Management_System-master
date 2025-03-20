@@ -55,7 +55,6 @@ public class InternExcelExporter {
         createCell(row, 11, "Email", style);
         createCell(row, 12, "ContactNo", style);
         createCell(row, 13, "DOB", style);
-        createCell(row, 14, "Branch", style);
         createCell(row, 15, "Semester", style);
         createCell(row, 16, "Degree", style);
         createCell(row, 17, "AggregatePercentage", style);
@@ -106,7 +105,6 @@ public class InternExcelExporter {
             createCell(row, columnCount++,intern.getContactNo(), style);
             createCell(row, columnCount++,String.valueOf(intern.getDateOfBirth()), style);
             createCell(row, columnCount++,intern.getCollegeName(), style);
-            createCell(row, columnCount++,intern.getBranch(), style);
             createCell(row, columnCount++,String.valueOf(intern.getSemester()), style);
             createCell(row, columnCount++,intern.getDegree(), style);
             createCell(row, columnCount++,String.valueOf(intern.getAggregatePercentage()), style);

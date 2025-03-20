@@ -69,8 +69,6 @@ public class InternPDFExporter {
         table.addCell(cell);
         cell.setPhrase(new Phrase("College", font));
         table.addCell(cell);
-        cell.setPhrase(new Phrase("Branch", font));
-        table.addCell(cell);
         cell.setPhrase(new Phrase("Semester", font));
         table.addCell(cell);
         cell.setPhrase(new Phrase("Degree", font));
@@ -105,7 +103,6 @@ public class InternPDFExporter {
             table.addCell(getCellValue(intern.getContactNo()));
             table.addCell(getCellValue(String.valueOf(intern.getDateOfBirth())));
             table.addCell(getCellValue(intern.getCollegeName()));
-            table.addCell(getCellValue(intern.getBranch()));
             table.addCell(getCellValue(String.valueOf(intern.getSemester())));
             table.addCell(getCellValue(intern.getDegree()));
             table.addCell(getCellValue(String.valueOf(intern.getAggregatePercentage())));
@@ -130,7 +127,7 @@ public class InternPDFExporter {
 
         PdfPTable table = new PdfPTable(getColumnCount());
         table.setWidthPercentage(100f);
-        table.setWidths(new float[] {1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f});
+        table.setWidths(new float[] {1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f});
         table.setSpacingBefore(10);
 
         writeTableHeader(table);
@@ -141,7 +138,7 @@ public class InternPDFExporter {
         document.close();
     }
     private int getColumnCount() {
-        return 22;
+        return 21;
     }
 
 }
