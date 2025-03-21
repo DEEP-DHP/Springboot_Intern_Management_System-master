@@ -85,7 +85,7 @@
                 </div>
             </div>
             <div class="col-xl-6">
-                <form action="/bisag/intern/requestCancellation" method="post">
+                <form action="/bisag/intern/requestCancellation" method="post" onsubmit="return confirmCancellation()">
                     <div class="card">
                         <div
                                 class="card-body profile-card pt-4 d-flex flex-column align-items-left">
@@ -171,12 +171,6 @@
                                     <span th:text="${intern.collegeName}"></span>
                                 </div>
                             </div>
-<!--                            <div class="row">-->
-<!--                                <div class="col-lg-3 col-md-4 label">Branch</div>-->
-<!--                                <div class="col-lg-9 col-md-8">-->
-<!--                                    <span th:text="${intern.branch}"></span>-->
-<!--                                </div>-->
-<!--                            </div>-->
                             <div class="row">
                                 <div class="col-lg-3 col-md-4 label">Domain</div>
                                 <div class="col-lg-9 col-md-8">
@@ -409,6 +403,11 @@
             }
         }
     });
+</script>
+<script>
+    function confirmCancellation() {
+        return confirm("Are you sure you want to request cancellation? This action cannot be undone.");
+    }
 </script>
 </body>
 </html>

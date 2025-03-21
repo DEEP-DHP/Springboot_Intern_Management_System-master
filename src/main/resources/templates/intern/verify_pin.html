@@ -5,34 +5,78 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Verify Security Pin</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <style>
+    .center-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .compact-box {
+      width: 350px;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-  <h2 class="mt-5">Verify Your Security Pin</h2>
 
-  <!-- Success and Error Alert Boxes -->
-  <div th:if="${pinError}" class="alert alert-danger" role="alert">
-    <span th:text="${pinError}"></span>
-  </div>
-
-  <div th:if="${pinSuccess}" class="alert alert-success" role="alert">
-    <span th:text="${pinSuccess}"></span>
-  </div>
-
-  <form th:action="@{/bisag/intern/verify_pin}" method="post">
-    <div class="form-group">
-      <label for="securityPin">Enter Security Pin:</label>
-      <input type="password" id="securityPin" name="securityPin" class="form-control" required>
+<div class="container center-container">
+  <div class="compact-box bg-light text-center">
+    <h4 class="mb-4">Verify Your Security Pin</h4>
+    <div th:if="${pinError}" class="alert alert-danger" role="alert">
+      <span th:text="${pinError}"></span>
     </div>
-    <button type="submit" class="btn btn-primary">Verify</button>
-  </form>
 
-  <p th:if="${error}" class="text-danger mt-3" th:text="${error}"></p>
+    <div th:if="${pinSuccess}" class="alert alert-success" role="alert">
+      <span th:text="${pinSuccess}"></span>
+    </div>
+
+    <form th:action="@{/bisag/intern/verify_pin}" method="post">
+      <div class="form-group position-relative">
+        <label for="securityPin">Enter Security Pin:</label>
+        <div class="input-group">
+          <input type="password" id="securityPin" name="securityPin" class="form-control text-center" required>
+          <div class="input-group-append">
+            <button type="button" class="btn btn-outline-secondary" id="toggleSecurityPin">
+              <i class="fa fa-eye"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Verify</button>
+    </form>
+
+    <script>
+      document.getElementById("toggleSecurityPin").addEventListener("click", function() {
+        let pinField = document.getElementById("securityPin");
+        let icon = this.querySelector("i");
+
+        if (pinField.type === "password") {
+          pinField.type = "text";
+          icon.classList.remove("fa-eye");
+          icon.classList.add("fa-eye-slash");
+        } else {
+          pinField.type = "password";
+          icon.classList.remove("fa-eye-slash");
+          icon.classList.add("fa-eye");
+        }
+      });
+    </script>
+
+    <!-- Include FontAwesome for eye icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <p th:if="${error}" class="text-danger mt-3" th:text="${error}"></p>
+  </div>
 </div>
+
 <script th:if="${pinSuccess}">
   setTimeout(function() {
     window.location.href = '/bisag/intern/intern_dashboard';
   }, 1000); // 1 second delay
 </script>
+
 </body>
 </html>
