@@ -212,6 +212,10 @@ public class InternController {
         String internId = intern.getInternId();
         session.setAttribute("internId", internId);
 
+        if (!intern.getIsCredentialsGenerated()) {
+            return new ModelAndView("redirect:/bisag/intern/credentials");
+        }
+
         boolean hasAccepted = undertakingRepo.existsByIntern(internId);
         if (!hasAccepted) {
             return new ModelAndView("redirect:/bisag/intern/undertaking");
@@ -1265,5 +1269,16 @@ public class InternController {
         logService.saveLog(currentIntern.getInternId(), "Viewed Announcements",
                 "Intern viewed all announcements.");
         return "intern/announcement_alert";
+    }
+
+    @GetMapping("/credentials")
+    public ModelAndView showCredentialsPage(HttpSession session, Model model) {
+        ModelAndView mv = new ModelAndView("intern/credentials");
+
+        Intern intern = getSignedInIntern();
+        mv.addObject("internId", intern.getInternId());
+        mv.addObject("message", "Your credentials have not been generated yet. Please contact the admin.");
+
+        return mv;
     }
 }

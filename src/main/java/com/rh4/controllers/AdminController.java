@@ -281,18 +281,22 @@ public class AdminController {
     @ModelAttribute
     public void addPendingRequestCounts(Model model) {
         long approveInternCount = internService.approveForInterviewApplicationsCount();
-        long PendingInterviewApplications = internService.countPendingInterviewApplications();
+        long pendingInterviewApplications = internService.countPendingInterviewApplications();
         long pendingLeaveCount = leaveApplicationService.countPendingLeaveRequests();
         long pendingCancellationCount = internService.countRequestedCancellations();
         long pendingVerificationCount = verificationService.countPendingVerificationRequests();
         long adminPendingProjectDefinitionCount = groupService.adminPendingProjectDefinitionCount();
+        long totalInternNotifications = approveInternCount + pendingInterviewApplications + pendingCancellationCount;
 
-        model.addAttribute("approveInternCount", approveInternCount);
-        model.addAttribute("PendingInterviewApplications", PendingInterviewApplications);
-        model.addAttribute("pendingLeaveCount", pendingLeaveCount);
-        model.addAttribute("pendingCancellationCount", pendingCancellationCount);
-        model.addAttribute("pendingVerificationCount", pendingVerificationCount);
-        model.addAttribute("adminPendingProjectDefinitionCount", adminPendingProjectDefinitionCount);
+        Map<String, Long> notificationCounts = new HashMap<>();
+        notificationCounts.put("approveInternCount", approveInternCount);
+        notificationCounts.put("pendingInterviewApplications", pendingInterviewApplications);
+        notificationCounts.put("pendingLeaveCount", pendingLeaveCount);
+        notificationCounts.put("pendingCancellationCount", pendingCancellationCount);
+        notificationCounts.put("pendingVerificationCount", pendingVerificationCount);
+        notificationCounts.put("adminPendingProjectDefinitionCount", adminPendingProjectDefinitionCount);
+        notificationCounts.put("totalInternNotifications", totalInternNotifications);
+        model.addAttribute("notificationCounts", notificationCounts);
     }
 
     // Admin Dashboard
@@ -4360,6 +4364,7 @@ public String viewCancelRelievingRecords(Model model) {
 
             String encryptedPassword = encodePassword("Bisag@123");
             intern.setPassword(encryptedPassword);
+            intern.setIsCredentialsGenerated(true);
 
             internService.save(intern);
 
