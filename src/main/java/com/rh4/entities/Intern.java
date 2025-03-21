@@ -153,6 +153,9 @@ public class Intern {
     @Column(name = "cancel_file_path")
     private String cancelFilePath;
 
+    @Column(nullable = false, columnDefinition = "BIT DEFAULT 0")
+    private boolean isCredentialsGenerated;
+
     public int getSecurityVerified() {
         return securityVerified;
     }
@@ -177,7 +180,7 @@ public class Intern {
                   String collegeName, byte[] collegeIcardImage, byte[] nocPdf, byte[] projectDefinitionForm, byte[] extraForm, byte[] extraForm2, byte[] resumePdf, int semester,
                   String permanentAddress, Date dateOfBirth, String gender, String collegeGuideHodName, String degree, Double aggregatePercentage, String projectDefinitionName, String cancellationStatus,
                   Guide guide, String domain, Date joiningDate, Date completionDate, String password, byte[] icardForm, byte[] registrationForm, byte[] securityForm,
-                  String usedResource, LocalDateTime createdAt, LocalDateTime updatedAt, GroupEntity group, boolean isActive, String status, LocalDateTime cancelTime) {
+                  String usedResource, LocalDateTime createdAt, LocalDateTime updatedAt, GroupEntity group, boolean isActive, String status, LocalDateTime cancelTime, boolean isCredentialsGenerated) {
         super();
         this.internId = internId;
         this.firstName = firstName;
@@ -216,6 +219,7 @@ public class Intern {
         this.group = group;
         this.status = status;
         this.cancelTime = cancelTime;
+        this.isCredentialsGenerated = isCredentialsGenerated;
     }
 
     public Intern(String firstName, String lastName, String contactNo, String email, String collegeName, Date joiningDate, Date completionDate,
@@ -584,5 +588,13 @@ public class Intern {
 
     public void setCancelFilePath(String cancelFilePath) {
         this.cancelFilePath = cancelFilePath;
+    }
+
+    public boolean getIsCredentialsGenerated() {
+        return isCredentialsGenerated;
+    }
+
+    public void setIsCredentialsGenerated(boolean credentialsGenerated) {
+        isCredentialsGenerated = credentialsGenerated;
     }
 }
