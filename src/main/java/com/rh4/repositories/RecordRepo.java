@@ -18,4 +18,6 @@ public interface RecordRepo extends JpaRepository<RRecord, Long> {
     List<RRecord> findByStatus(String status);
     @Query("SELECT r.finalReport FROM RRecord r WHERE r.internId = :internId")
     String findFinalReportByInternId(@Param("internId") String internId);
+    RRecord findTopByInternIdOrderBySubmissionTimestampDesc(String internId);
+
 }
