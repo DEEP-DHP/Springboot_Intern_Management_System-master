@@ -54,7 +54,7 @@
 
 <main id="main" class="main">
     <div class="pagetitle">
-        <h1>Intern Details<span th:text="${' - ' + intern.get().firstName + ' ' + intern.get().lastName}"></span></h1>
+        <h1>Intern Details<span th:text="${' - ' + intern.get().firstName}"></span></h1>
     </div>
     <div th:if="${intern.isPresent()}">
 
@@ -66,12 +66,8 @@
                         <td><input type="text" name="internId" th:value="${intern.get().internId}" class="no-border" readonly></td>
                     </tr>
                     <tr>
-                        <th>First Name</th>
+                        <th>Full Name</th>
                         <td><input type="text" name="firstName" th:value="${intern.get().firstName}" class="no-border" readonly></td>
-                    </tr>
-                    <tr>
-                        <th>Last Name</th>
-                        <td><input type="text" name="lastName" th:value="${intern.get().lastName}" class="no-border" readonly></td>
                     </tr>
                     <tr>
                         <th>Contact No</th>
@@ -84,10 +80,6 @@
                     <tr>
                         <th>College Name</th>
                         <td><input type="text" name="collegeName" th:value="${intern.get().collegeName}" class="no-border" readonly></td>
-                    </tr>
-                    <tr>
-                        <th>Branch</th>
-                        <td><input type="text" name="branch" th:value="${intern.get().branch}" class="no-border" readonly></td>
                     </tr>
                     <tr>
                         <th>Domain</th>
@@ -142,9 +134,8 @@
         const doc = new jsPDF();
 
         const firstName = document.querySelector("[name='firstName']").value || "Unknown";
-        const lastName = document.querySelector("[name='lastName']").value || "Intern";
 
-        const fileName = `Intern Details_${firstName} ${lastName}.pdf`;
+        const fileName = `Intern Details_${firstName}.pdf`;
 
         doc.setFont("times of roman", "bold");
         doc.setFontSize(18);
@@ -157,11 +148,9 @@
         const internData = [
             ["Intern ID", document.querySelector("[name='internId']").value],
             ["First Name", firstName],
-            ["Last Name", lastName],
             ["Contact No", document.querySelector("[name='contactNo']").value],
             ["Email", document.querySelector("[name='email']").value],
             ["College Name", document.querySelector("[name='collegeName']").value],
-            ["Branch", document.querySelector("[name='branch']").value],
             ["Domain", document.querySelector("[name='domain']").value],
             ["Semester", document.querySelector("[name='semester']").value],
             ["Address", document.querySelector("[name='permanentAddress']").value],
