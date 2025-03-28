@@ -250,7 +250,7 @@ public class InternController {
         mv.addObject("username", getUsername());
         mv.addObject("intern", intern);
 
-        String internFullName = intern.getFirstName() + " " + intern.getLastName();
+        String internFullName = intern.getFirstName();
         logService.saveLog(internId, "Intern Accessed Dashboard", "Intern " + internFullName + " visited their dashboard.");
 
         return mv;
@@ -297,7 +297,7 @@ public class InternController {
 
         internService.updateCancellationStatus(intern);
 
-        String internFullName = intern.getFirstName() + " " + intern.getLastName();
+        String internFullName = intern.getFirstName();
         logService.saveLog(intern.getInternId(), "Cancellation Request Submitted",
                 "Intern " + internFullName + " submitted cancellation request at " + intern.getCancelTime());
 
@@ -326,7 +326,7 @@ public class InternController {
         Intern intern = getSignedInIntern();
 
         String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
-        String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
+        String internFullName = intern != null ? intern.getFirstName() : "Unknown";
         logService.saveLog(internId, "Viewed Project Definition", internFullName + " viewed the project definition page.");
 
         if (intern.getGroupEntity() != null) {
@@ -416,7 +416,7 @@ public class InternController {
         mv.addObject("weeklyReportDisable1", weeklyReportDisable1);
 
         String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
-        String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
+        String internFullName = intern != null ? intern.getFirstName() : "Unknown";
         logService.saveLog(internId, "Accessed Weekly Report Submission", internFullName + " accessed the weekly report submission page.");
 
         return mv;
@@ -478,7 +478,7 @@ public class InternController {
         MyUser user = myUserService.getUserByUsername(report.getReplacedBy().getUsername());
 
         String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
-        String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
+        String internFullName = intern != null ? intern.getFirstName() : "Unknown";
         logService.saveLog(internId, "Accessed Weekly Report Change", internFullName + " accessed the change weekly report page for week: " + weekNo);
 
         if (user.getRole().equals("GUIDE")) {
@@ -488,7 +488,7 @@ public class InternController {
             mv.addObject("replacedBy", guide.getName());
         } else if (user.getRole().equals("INTERN")) {
             Intern reportIntern = internService.getInternByUsername(user.getUsername());
-            mv.addObject("replacedBy", reportIntern.getFirstName() + " " + reportIntern.getLastName());
+            mv.addObject("replacedBy", reportIntern.getFirstName());
             mv.addObject("status", "Your current weekly report is accepted and if any changes are required then you will be notified.");
         }
 
@@ -503,7 +503,7 @@ public class InternController {
         byte[] pdfContent = report.getSubmittedPdf();
 
         Intern intern = internService.getInternById(internId);
-        String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
+        String internFullName = intern != null ? intern.getFirstName() : "Unknown";
         logService.saveLog(internId, "Viewed Weekly Report PDF", internFullName + " viewed the PDF report for week " + weekNo);
 
         HttpHeaders headers = new HttpHeaders();
@@ -543,6 +543,7 @@ public class InternController {
             // submitted"
             report.setStatus("late submitted");
         }
+        report.setIsRead(0); // Mark as unread since it's a new update
 
         weeklyReportService.addReport(report);
         logService.saveLog(intern.getInternId(), "Weekly Report Changed", "Weekly Report changed successfully.");
@@ -555,7 +556,7 @@ public class InternController {
         Intern intern = getSignedInIntern();
 
         String internId = intern != null ? String.valueOf(intern.getInternId()) : "Unknown";
-        String internFullName = intern != null ? intern.getFirstName() + " " + intern.getLastName() : "Unknown";
+        String internFullName = intern != null ? intern.getFirstName() : "Unknown";
         logService.saveLog(internId, "Accessed Submit Forms", internFullName + " accessed the submit forms page.");
 
         mv.addObject("intern", intern);
@@ -626,7 +627,7 @@ public class InternController {
             if (pdf != null) {
 
                 logService.saveLog(id, "Viewed I-Card Form",
-                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their I-Card form.");
+                        "Intern " + application.getFirstName() + " accessed their I-Card form.");
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
             }
         }
@@ -644,7 +645,7 @@ public class InternController {
             if (pdf != null) {
 
                 logService.saveLog(id, "Viewed Project Definition Form",
-                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their Project Definition form.");
+                        "Intern " + application.getFirstName() + " accessed their Project Definition form.");
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
             }
         }
@@ -661,7 +662,7 @@ public class InternController {
 
             if (pdf != null) {
                 logService.saveLog(id, "Viewed Extra Form",
-                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their Extra form.");
+                        "Intern " + application.getFirstName() + " accessed their Extra form.");
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
             }
         }
@@ -678,7 +679,7 @@ public class InternController {
 
             if (pdf != null) {
                 logService.saveLog(id, "Viewed Security Form",
-                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their security form.");
+                        "Intern " + application.getFirstName() + " accessed their security form.");
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
             }
         }
@@ -695,7 +696,7 @@ public class InternController {
 
             if (pdf != null) {
                 logService.saveLog(id, "Viewed Registration Form",
-                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their registration form.");
+                        "Intern " + application.getFirstName() + " accessed their registration form.");
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
             }
         }
@@ -712,7 +713,7 @@ public class InternController {
 
             if (pdf != null) {
                 logService.saveLog(id, "Viewed Resume",
-                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their resume.");
+                        "Intern " + application.getFirstName() + " accessed their resume.");
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
             }
         }
@@ -728,7 +729,7 @@ public class InternController {
             byte[] pdf = application.getNocPdf();
             if (pdf != null) {
                 logService.saveLog(id, "Viewed NOC Form",
-                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their NOC form.");
+                        "Intern " + application.getFirstName() + " accessed their NOC form.");
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
             }
         }
@@ -745,7 +746,7 @@ public class InternController {
 
             if (image != null) {
                 logService.saveLog(id, "Viewed College I-Card",
-                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their college I-Card.");
+                        "Intern " + application.getFirstName() + " accessed their college I-Card.");
                 return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
             }
         }
@@ -760,7 +761,7 @@ public class InternController {
             byte[] image = application.getPassportSizeImage();
             if (image != null) {
                 logService.saveLog(id, "Viewed Passport Image",
-                        "Intern " + application.getFirstName() + " " + application.getLastName() + " accessed their passport-size image.");
+                        "Intern " + application.getFirstName() + " accessed their passport-size image.");
 
                 return ResponseEntity.ok()
                         .contentType(MediaType.IMAGE_JPEG)
@@ -789,7 +790,7 @@ public class InternController {
         mv.addObject("intern", intern);
 
         logService.saveLog(intern.getInternId(), "Viewed Query Page",
-                "Intern " + intern.getFirstName() + " " + intern.getLastName() + " accessed the query page.");
+                "Intern " + intern.getFirstName() + " accessed the query page.");
 
         return mv;
     }
@@ -811,7 +812,7 @@ public class InternController {
         mv.addObject("submitDisable", submitDisable);
 
         logService.saveLog(intern.getInternId(), "Viewed Final Report Submission Page",
-                "Intern " + intern.getFirstName() + " " + intern.getLastName() + " accessed the final report submission page.");
+                "Intern " + intern.getFirstName() + " accessed the final report submission page.");
         return mv;
     }
 
@@ -898,7 +899,7 @@ public class InternController {
         mv.addObject("lastLeave", lastLeave);
         mv.addObject("leaveHistory", leaveHistory);
         logService.saveLog(intern.getInternId(), "Viewed Leave Application Page",
-                "Intern " + intern.getFirstName() + " " + intern.getLastName() + " accessed the leave application page.");
+                "Intern " + intern.getFirstName() + " accessed the leave application page.");
         return mv;
     }
 
@@ -1020,24 +1021,24 @@ public class InternController {
         String loggedInInternId = loggedInIntern.getInternId();
         if (!loggedInInternId.equals(thesisStorage.getAllowedInternId())) {
             logService.saveLog(loggedInInternId, "Unauthorized Thesis Access Attempt",
-                    "Intern " + loggedInIntern.getFirstName() + " " + loggedInIntern.getLastName() + " attempted to access Thesis ID: " + id + " without permission.");
+                    "Intern " + loggedInIntern.getFirstName() + " attempted to access Thesis ID: " + id + " without permission.");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         if (thesisStorage.getFilePath() == null || thesisStorage.getFilePath().isEmpty()) {
             logService.saveLog(loggedInInternId, "Thesis File Missing",
-                    "Intern " + loggedInIntern.getFirstName() + " " + loggedInIntern.getLastName() + " tried to view Thesis ID: " + id + " but the file path was null or empty.");
+                    "Intern " + loggedInIntern.getFirstName() + " tried to view Thesis ID: " + id + " but the file path was null or empty.");
             return ResponseEntity.notFound().build();
         }
         Path filePath = Paths.get(thesisStorage.getFilePath());
         Resource resource = new UrlResource(filePath.toUri());
         if (!resource.exists() || !resource.isReadable()) {
             logService.saveLog(loggedInInternId, "Failed to View Thesis",
-                    "Intern " + loggedInIntern.getFirstName() + " " + loggedInIntern.getLastName() + " tried to view Thesis ID: " + id + " but the file was not accessible.");
+                    "Intern " + loggedInIntern.getFirstName() + " tried to view Thesis ID: " + id + " but the file was not accessible.");
             return ResponseEntity.notFound().build();
         }
 
         logService.saveLog(loggedInInternId, "Viewed Thesis",
-                "Intern " + loggedInIntern.getFirstName() + " " + loggedInIntern.getLastName() + " successfully viewed Thesis ID: " + id + ".");
+                "Intern " + loggedInIntern.getFirstName() + " successfully viewed Thesis ID: " + id + ".");
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
@@ -1063,7 +1064,7 @@ public class InternController {
         Message message = messageService.sendMessage(sender.getInternId(), receiverId, messageText);
 
         logService.saveLog(sender.getInternId(), "Sent Message",
-                "Intern " + sender.getFirstName() + " " + sender.getLastName() + " sent a message to " + receiverId + ".");
+                "Intern " + sender.getFirstName() + " sent a message to " + receiverId + ".");
 
         return ResponseEntity.ok(message);
     }
@@ -1086,7 +1087,7 @@ public class InternController {
         messages.sort(Comparator.comparing(Message::getTimestamp));
 
         logService.saveLog(internId, "Viewed Chat History",
-                "Intern " + sender.getFirstName() + " " + sender.getLastName() + " viewed chat history with " + receiverId + ".");
+                "Intern " + sender.getFirstName() + " viewed chat history with " + receiverId + ".");
 
         return ResponseEntity.ok(messages);
     }
@@ -1106,7 +1107,7 @@ public class InternController {
                 .collect(Collectors.toList());
 
         logService.saveLog(loggedIntern.getInternId(), "Viewed Tasks",
-                "Intern " + loggedIntern.getFirstName() + " " + loggedIntern.getLastName() + " accessed their pending tasks.");
+                "Intern " + loggedIntern.getFirstName() + " accessed their pending tasks.");
 
         model.addAttribute("tasks", pendingTasks);
         return "intern/intern-tasks";
@@ -1163,7 +1164,7 @@ public class InternController {
                 return ResponseEntity.badRequest().body(response);
             }
 
-            String uploadDir = "uploads/task_proofs/";
+            String uploadDir = "main/resources/static/files/Task_Proofs/";
             Files.createDirectories(Paths.get(uploadDir));
 
             String fileName = "task_" + taskId + "_" + file.getOriginalFilename();
@@ -1197,7 +1198,7 @@ public class InternController {
 
         try {
             String fileName = taskOpt.get().getProofAttachment();
-            Path filePath = Paths.get("uploads/task_proofs/", fileName);
+            Path filePath = Paths.get("main/resources/static/files/Task_Proofs/", fileName);
             Resource resource = new UrlResource(filePath.toUri());
 
             if (!resource.exists()) {
@@ -1232,7 +1233,7 @@ public class InternController {
         Feedback feedback = new Feedback();
         feedback.setInternId(currentIntern.getInternId());
         feedback.setFirstName(currentIntern.getFirstName());
-        feedback.setLastName(currentIntern.getLastName());
+//        feedback.setLastName(currentIntern.getLastName());
 
         model.addAttribute("interns", List.of(currentIntern));
         model.addAttribute("feedback", feedback);
@@ -1249,10 +1250,10 @@ public class InternController {
             Intern currentIntern = getSignedInIntern();
             feedback.setInternId(currentIntern.getInternId());
             feedback.setFirstName(currentIntern.getFirstName());
-            feedback.setLastName(currentIntern.getLastName());
+//            feedback.setLastName(currentIntern.getLastName());
             feedBackService.saveFeedback(feedback);
             logService.saveLog(currentIntern.getInternId(), "Submitted Feedback",
-                    "Intern " + currentIntern.getFirstName() + " " + currentIntern.getLastName() + " submitted feedback.");
+                    "Intern " + currentIntern.getFirstName() + " submitted feedback.");
 
             return "redirect:/bisag/intern/intern_dashboard";
         } catch (Exception e) {

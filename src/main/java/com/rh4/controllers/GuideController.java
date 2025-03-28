@@ -284,7 +284,7 @@ public class GuideController {
             mv.addObject("replacedBy", name);
         } else if (user.getRole().equals("INTERN")) {
             Intern intern = internService.getInternByUsername(user.getUsername());
-            mv.addObject("replacedBy", intern.getFirstName() + intern.getLastName());
+            mv.addObject("replacedBy", intern.getFirstName());
         }
         mv.addObject("report", report);
         mv.addObject("group", group);
@@ -757,8 +757,7 @@ public class GuideController {
         if (finalStatus.equals("failed")) {
 
         } else {
-            String finalMessage = message + "\n" + "Username: " + intern.get().getFirstName() +
-                    intern.get().getLastName() + "\n Password: " + intern.get().getFirstName() + "_" + intern.get().getId();
+            String finalMessage = message + "\n" + "Username: " + intern.get().getFirstName() + "\n Password: " + intern.get().getFirstName() + "_" + intern.get().getId();
         }
 
         String username = (String) session.getAttribute("username");
@@ -952,7 +951,7 @@ public class GuideController {
             mv.addObject("replacedBy", guide.getName());
         } else if (user.getRole().equals("INTERN")) {
             Intern intern = internService.getInternByUsername(user.getUsername());
-            mv.addObject("replacedBy", intern.getFirstName() + " " + intern.getLastName());
+            mv.addObject("replacedBy", intern.getFirstName());
             mv.addObject("status",
                     "Your current weekly report is accepted and if any changes are required then you will be notified.");
         }

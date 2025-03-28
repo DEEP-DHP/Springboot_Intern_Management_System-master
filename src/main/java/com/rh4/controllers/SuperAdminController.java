@@ -56,20 +56,19 @@ public class SuperAdminController {
 	{
 			ModelAndView mv = new ModelAndView("super_admin/super_admin_dashboard");
 
-		    // Retrieve the username from the session
 		    String username = (String) session.getAttribute("username");
 
-		    // Use the adminService to get the Admin object based on the username
 		    SuperAdmin sadmin = superAdminService.getSuperAdminByUsername(username);
 		    
 		    long adminCount = superAdminService.countAdmin();
 	 	    model.addAttribute("adminCount", adminCount);
 
-		    // Set the "id" and "username" attributes in the session
+			long HRCount = superAdminService.countHR();
+			model.addAttribute("HRCount", HRCount);
+
 		    session.setAttribute("id", sadmin.getSuperAdminId());
 		    session.setAttribute("username", username);
 
-		    // Add the username to the ModelAndView
 		    mv.addObject("username", username);
 
 		    return mv;
@@ -114,8 +113,6 @@ public class SuperAdminController {
 		return "redirect:/bisag/super_admin/register_admin";
 		
 	}
-	
-
 	//--------------------------------------- Admin List -------------------------------------------//
 	
 	@GetMapping("/admin_list")
@@ -170,7 +167,6 @@ public class SuperAdminController {
 	    	{
 	    		updatedAdmin.setPassword(encodePassword(admin.getPassword()));
 	    	}
-	        // Save the updated admin entity
 	        adminService.updateAdmin(updatedAdmin,existingAdmin);
 	    }
 		return "redirect:/bisag/super_admin/admin_list";
@@ -185,8 +181,6 @@ public class SuperAdminController {
         return "redirect:/bisag/super_admin/admin_list";
     }
 	
-	//--------------------------------- Admin Delete Completed -------------------------------------//
-
 	//-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_HR-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 	@GetMapping("/register_hr")
 	public String registerHR()

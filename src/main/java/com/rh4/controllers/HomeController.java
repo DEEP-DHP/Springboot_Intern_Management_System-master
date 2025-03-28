@@ -213,7 +213,7 @@ public class HomeController {
     @PostMapping("/bisag_internship")
     public String bisagInternship(
             @RequestParam("firstName") String firstName,
-            @RequestParam("lastName") String lastName,
+//            @RequestParam("lastName") String lastName,
             @RequestParam("contactNo") String contactNo,
             @RequestParam("email") String email,
             @RequestParam("collegeName") String collegeName,
@@ -252,7 +252,7 @@ public class HomeController {
             // Save InternApplication data
             InternApplication internApplication = new InternApplication();
             internApplication.setFirstName(firstName);
-            internApplication.setLastName(lastName);
+//            internApplication.setLastName(lastName);
             internApplication.setContactNo(contactNo);
             internApplication.setEmail(email);
             internApplication.setCollegeName(collegeName);
@@ -289,7 +289,7 @@ public class HomeController {
                     "BISAG Administrative Office"
             );
 
-            session.setAttribute("msg", "Application submitted successfully.");
+            session.setAttribute("msg", "Application submitted successfully. Wait for 24-48 hours for recruitment.");
             return "redirect:/bisag_internship";
 
         } catch (DataIntegrityViolationException e) {
@@ -319,7 +319,7 @@ public class HomeController {
             // Fetch intern details using internId from internService
             Intern intern = internService.getIntern(internId).orElseThrow(() -> new RuntimeException("Intern not found"));            if (intern != null) {
                 // Log intern's logout action
-                logService.saveLog(intern.getInternId(), "Logged Out", "Intern " + intern.getFirstName() + " " + intern.getLastName() + " logged out.");
+                logService.saveLog(intern.getInternId(), "Logged Out", "Intern " + intern.getFirstName() + " logged out.");
             }
         }
 

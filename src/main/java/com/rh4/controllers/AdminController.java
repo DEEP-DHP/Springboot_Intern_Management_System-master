@@ -26,10 +26,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -128,6 +125,8 @@ public class AdminController {
 
     @Value("${app.storage.base-dir}")
     private String baseDir;
+    @Value("${app.storage.base-dir2}")
+    private String baseDir2;
 
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     @Autowired
@@ -348,7 +347,7 @@ public class AdminController {
 
     @PostMapping("/register_internn")
     public String registerInternn(@RequestParam("firstName") String firstName,
-                                  @RequestParam("lastName") String lastName,
+//                                  @RequestParam("lastName") String lastName,
                                   @RequestParam("contactNo") String contactNo,
                                   @RequestParam("email") String email,
                                   @RequestParam("collegeName") String collegeName,
@@ -394,7 +393,7 @@ public class AdminController {
 
             InternApplication internApplication = new InternApplication();
             internApplication.setFirstName(firstName);
-            internApplication.setLastName(lastName);
+//            internApplication.setLastName(lastName);
             internApplication.setContactNo(contactNo);
             internApplication.setEmail(email);
             internApplication.setCollegeName(collegeName);
@@ -499,7 +498,7 @@ public class AdminController {
         Admin admin = getSignedInAdmin();
         if (admin != null && intern.isPresent()) {
             logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Intern Details",
-                    "Admin " + admin.getName() + " viewed the details of intern ID: " + id + ", Name: " + intern.get().getFirstName() + " " + intern.get().getLastName());
+                    "Admin " + admin.getName() + " viewed the details of intern ID: " + id + ", Name: " + intern.get().getFirstName());
         } else {
             System.out.println("Error: Admin or Intern not found for logging!");
         }
@@ -1453,7 +1452,7 @@ public class AdminController {
 
         if (internApplication.getIsActive()) {
             intern.get().setFirstName(internApplication.getFirstName());
-            intern.get().setLastName(internApplication.getLastName());
+//            intern.get().setLastName(internApplication.getLastName());
             intern.get().setContactNo(internApplication.getContactNo());
 
             MyUser user = myUserService.getUserByUsername(intern.get().getEmail());
@@ -1503,7 +1502,7 @@ public class AdminController {
 
         if (intern.get().getIsActive()) {
             intern.get().setFirstName(internApplication.getFirstName());
-            intern.get().setLastName(internApplication.getLastName());
+//            intern.get().setLastName(internApplication.getLastName());
             intern.get().setContactNo(internApplication.getContactNo());
 
             MyUser user = myUserService.getUserByUsername(intern.get().getEmail());
@@ -1538,7 +1537,7 @@ public class AdminController {
             Intern internData = intern.get();
 
             if (internData.getFirstName() != null &&
-                    internData.getLastName() != null &&
+//                    internData.getLastName() != null &&
                     internData.getContactNo() != null &&
                     internData.getEmail() != null &&
                     internData.getCollegeName() != null &&
@@ -1653,7 +1652,7 @@ public class AdminController {
 
         if (internApplication.getIsActive()) {
             intern.get().setFirstName(internApplication.getFirstName());
-            intern.get().setLastName(internApplication.getLastName());
+//            intern.get().setLastName(internApplication.getLastName());
             intern.get().setContactNo(internApplication.getContactNo());
             intern.get().setEmail(internApplication.getEmail());
             intern.get().setIsActive(true);
@@ -1694,8 +1693,7 @@ public class AdminController {
         if (finalStatus.equals("failed")) {
             emailService.sendSimpleEmail(intern.get().getEmail(), "You are Failed", "BISAG INTERNSHIP RESULT");
         } else {
-            String finalMessage = message + "\n" + "Username: " + intern.get().getFirstName() +
-                    intern.get().getLastName() + "\n Password: " + intern.get().getFirstName() + "_" + intern.get().getId();
+            String finalMessage = message + "\n" + "Username: " + intern.get().getFirstName() + "\n Password: " + intern.get().getFirstName() + "_" + intern.get().getId();
             emailService.sendSimpleEmail(intern.get().getEmail(), finalMessage, "BISAG INTERNSHIP RESULT");
         }
 
@@ -1744,6 +1742,17 @@ public ModelAndView newInterns(Model model) {
     }
     model.addAttribute("finalReportStatuses", finalReportStatuses);
 
+    Map<String, String> reportTimestamps = new HashMap<>();
+    for (Intern i : intern) {
+        RRecord record = recordService.findLatestRecordByInternId(i.getInternId());
+        if (record != null && record.getSubmissionTimestamp() != null) {
+            reportTimestamps.put(i.getInternId(),
+                    record.getSubmissionTimestamp().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")));
+        } else {
+            reportTimestamps.put(i.getInternId(), "N/A");
+        }
+    }
+    model.addAttribute("reportTimestamps", reportTimestamps);
     String username = (String) session.getAttribute("username");
     Admin admin = adminService.getAdminByUsername(username);
     if (admin != null) {
@@ -1793,7 +1802,8 @@ public ModelAndView newInterns(Model model) {
                 internApplication.setGroupCreated(true);
                 internService.addInternApplication(internApplication);
 
-                Intern intern = new Intern(internApplication.getFirstName(), internApplication.getLastName(),
+                Intern intern = new Intern(internApplication.getFirstName(),
+//                        internApplication.getLastName(),
                         internApplication.getContactNo(), internApplication.getEmail(),
                         internApplication.getCollegeName(), internApplication.getJoiningDate(),
                         internApplication.getCompletionDate(),
@@ -1811,7 +1821,7 @@ public ModelAndView newInterns(Model model) {
                 if (admin != null) {
                     logService.saveLog(String.valueOf(admin.getAdminId()), "Created Group and Registered Intern",
                             "Admin " + admin.getName() + " created a group and registered intern "
-                                    + internApplication.getFirstName() + " " + internApplication.getLastName());
+                                    + internApplication.getFirstName());
                 }
             }
         }
@@ -2266,11 +2276,26 @@ public ModelAndView newInterns(Model model) {
         ModelAndView mv = new ModelAndView("/admin/admin_weekly_report");
         List<GroupEntity> groups = groupService.getAllocatedGroups();
         List<WeeklyReport> reports = weeklyReportService.getAllReports();
+
+        Map<String, Long> unreadReportCounts = new HashMap<>();
+        long totalUnreadReports = 0;
+
+        for (GroupEntity group : groups) {
+            long unreadCount = reports.stream()
+                    .filter(report -> report.getGroup().getGroupId().equals(group.getGroupId()) && report.getIsRead() == 0)
+                    .count();
+            unreadReportCounts.put(group.getGroupId(), unreadCount);
+            totalUnreadReports += unreadCount;
+        }
+
         groups.sort(Comparator.comparing(GroupEntity::getGroupId));
         model = countNotifications(model);
+
         mv.addObject("groups", groups);
         mv.addObject("reports", reports);
         mv.addObject("admin", adminName(session));
+        mv.addObject("unreadReportCounts", unreadReportCounts);
+        mv.addObject("totalUnreadReports", totalUnreadReports);
 
         String username = (String) session.getAttribute("username");
         Admin admin = adminService.getAdminByUsername(username);
@@ -2282,35 +2307,35 @@ public ModelAndView newInterns(Model model) {
         return mv;
     }
 
-    @GetMapping("/admin_weekly_report_details/{groupId}/{weekNo}")
-    public ModelAndView changeWeeklyReportSubmission(@PathVariable("groupId") String groupId, @PathVariable("weekNo") int weekNo, Model model) {
-        ModelAndView mv = new ModelAndView("/admin/admin_weekly_report_details");
-        model = countNotifications(model);
-        Admin admin = getSignedInAdmin();
-        model.addAttribute("admin", admin);
-
-        GroupEntity group = groupService.getGroup(groupId);
-        WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
-        MyUser user = myUserService.getUserByUsername(admin.getEmailId());
-
-        if (user.getRole().equals("ADMIN")) {
-            String name = admin.getName();
-            mv.addObject("replacedBy", name);
-
-            logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Weekly Report Details",
-                    "Admin " + admin.getName() + " accessed weekly report details for group " + groupId + " and week " + weekNo);
-        } else if (user.getRole().equals("INTERN")) {
-            Intern intern = internService.getInternByUsername(user.getUsername());
-            mv.addObject("replacedBy", intern.getFirstName() + intern.getLastName());
-        } else {
-
-        }
-
-        mv.addObject("report", report);
-        mv.addObject("group", group);
-
-        return mv;
-    }
+//    @GetMapping("/admin_weekly_report_details/{groupId}/{weekNo}")
+//    public ModelAndView changeWeeklyReportSubmission(@PathVariable("groupId") String groupId, @PathVariable("weekNo") int weekNo, Model model) {
+//        ModelAndView mv = new ModelAndView("/admin/admin_weekly_report_details");
+//        model = countNotifications(model);
+//        Admin admin = getSignedInAdmin();
+//        model.addAttribute("admin", admin);
+//
+//        GroupEntity group = groupService.getGroup(groupId);
+//        WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
+//        MyUser user = myUserService.getUserByUsername(admin.getEmailId());
+//
+//        if (user.getRole().equals("ADMIN")) {
+//            String name = admin.getName();
+//            mv.addObject("replacedBy", name);
+//
+//            logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Weekly Report Details",
+//                    "Admin " + admin.getName() + " accessed weekly report details for group " + groupId + " and week " + weekNo);
+//        } else if (user.getRole().equals("INTERN")) {
+//            Intern intern = internService.getInternByUsername(user.getUsername());
+//            mv.addObject("replacedBy", intern.getFirstName() + intern.getLastName());
+//        } else {
+//
+//        }
+//
+//        mv.addObject("report", report);
+//        mv.addObject("group", group);
+//
+//        return mv;
+//    }
 
     @GetMapping("/admin_weekly_report_form")
     public ModelAndView showWeeklyReportForm(Model model) {
@@ -2453,7 +2478,7 @@ public String getReportsByYear(@RequestParam(value = "date", required = true) St
             mv.addObject("replacedBy", guide.getName());
         } else if (user.getRole().equals("INTERN")) {
             Intern intern = internService.getInternByUsername(user.getUsername());
-            mv.addObject("replacedBy", intern.getFirstName() + " " + intern.getLastName());
+            mv.addObject("replacedBy", intern.getFirstName());
             mv.addObject("status",
                     "Your current weekly report is accepted and if any changes are required then you will be notified.");
         }
@@ -2475,13 +2500,149 @@ public String getReportsByYear(@RequestParam(value = "date", required = true) St
     @GetMapping("/viewPdf/{internId}/{weekNo}")
     public ResponseEntity<byte[]> viewPdf(@PathVariable String internId, @PathVariable int weekNo) {
         WeeklyReport report = weeklyReportService.getReportByInternIdAndWeekNo(internId, weekNo);
-        byte[] pdfContent = report.getSubmittedPdf();
 
+        if (report == null || report.getSubmittedPdf() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        report.setIsRead(1);
+        weeklyReportService.addReport(report);
+
+        byte[] pdfContent = report.getSubmittedPdf();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setCacheControl(CacheControl.noCache().mustRevalidate());
 
         return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
     }
+
+    int CurrentWeekNo;
+    @GetMapping("/admin_weekly_report_details/{groupId}/{weekNo}")
+    public ModelAndView changeWeeklyReportSubmission(@PathVariable("groupId") String groupId, @PathVariable("weekNo") int weekNo) {
+        ModelAndView mv = new ModelAndView("/admin/admin_weekly_report_details");
+
+        Admin admin = getSignedInAdmin();
+        String adminId = String.valueOf(admin.getAdminId());
+
+        logService.saveLog(adminId, "Viewed Weekly Report Details", "Admin: " + admin.getName() + " accessed weekly report details for group ID: " + groupId + " and week number: " + weekNo);
+
+        GroupEntity group = groupService.getGroup(groupId);
+        WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
+        MyUser user = myUserService.getUserByUsername(getSignedInAdmin().getEmailId());
+        if (user.getRole().equals("ADMIN")) {
+            String name = admin.getName();
+            mv.addObject("replacedBy", name);
+        } else if (user.getRole().equals("INTERN")) {
+            Intern intern = internService.getInternByUsername(user.getUsername());
+            mv.addObject("replacedBy", intern.getFirstName());
+        }
+        mv.addObject("report", report);
+        mv.addObject("group", group);
+
+        return mv;
+    }
+
+    @PostMapping("/admin_weekly_report_details/{groupid}/changed_report")
+    public String changeWeeklyReportSubmission(@PathVariable("groupid") String groupId,
+                                               @RequestParam("weekNo") int weekNo,
+                                               @RequestParam(name = "file", required = false) MultipartFile file,
+                                               RedirectAttributes redirectAttributes) throws IOException {
+
+        if (file == null || file.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "No file was uploaded. Please select a PDF file.");
+            return "redirect:/bisag/admin/admin_weekly_report";
+        }
+
+        GroupEntity group = groupService.getGroup(groupId);
+        Admin admin = getSignedInAdmin();
+        WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
+
+        MyUser user = myUserService.getUserByUsername(admin.getEmailId());
+        report.setReplacedBy(user);
+        Date currentDate = new Date();
+
+        if (report.getDeadline().compareTo(currentDate) >= 0) {
+            report.setStatus("submitted");
+        } else {
+            report.setStatus("late submitted");
+        }
+
+        // **Define the storage path**
+        String storageDir = baseDir2 + group.getGroupId() + "/Weekly Reports/" + group.getGroupId() + "_Week" + weekNo + ".pdf";
+        File existingFile = new File(storageDir);
+        report.setIsRead(0); // Mark as unread since it's a new update
+
+        // **Ensure the directory exists**
+        File parentDir = existingFile.getParentFile();
+        if (!parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+
+        // **Save the file**
+        Files.copy(file.getInputStream(), existingFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Weekly Report Updated",
+                "Admin " + admin.getName() + " updated the weekly report for Group ID: " + groupId + ", Week No: " + weekNo);
+
+        weeklyReportService.addReport(report);
+
+        redirectAttributes.addFlashAttribute("success", "Weekly report updated successfully!");
+        return "redirect:/bisag/admin/admin_weekly_report_details/" + groupId + "/" + weekNo;
+    }
+//@PostMapping("/admin_weekly_report_details/{groupId}/update_report")
+//public String updateWeeklyReport(@PathVariable("groupId") String groupId,
+//                                 @RequestParam("weekNo") int weekNo,
+//                                 @RequestParam("weeklyReportSubmission") MultipartFile file,
+//                                 RedirectAttributes redirectAttributes) {
+//    try {
+//        if (file.isEmpty()) {
+//            redirectAttributes.addFlashAttribute("errorMessage", "File upload failed! Please select a file.");
+//            return "redirect:/bisag/admin/admin_weekly_report_details/" + groupId;
+//        }
+//
+//        // **Define structured storage path**
+//        String groupFolderPath = baseDir2 + "/" + groupId;
+//        String weeklyReportsFolderPath = groupFolderPath + "/Weekly Reports";
+//        String fileName = groupId + "_Week" + weekNo + ".pdf";
+//        String storagePath = weeklyReportsFolderPath + "/" + fileName;
+//
+//        // **Ensure directories exist**
+//        File weeklyReportsFolder = new File(weeklyReportsFolderPath);
+//        if (!weeklyReportsFolder.exists()) {
+//            weeklyReportsFolder.mkdirs();
+//        }
+//
+//        // **Save the file**
+//        File destinationFile = new File(storagePath);
+//        file.transferTo(destinationFile);
+//
+//        // **Update report details**
+//        WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, groupService.getGroup(groupId));
+//
+//        if (report == null) {
+//            redirectAttributes.addFlashAttribute("errorMessage", "No report found for Group ID: " + groupId);
+//            return "redirect:/bisag/admin/admin_weekly_report_details/" + groupId;
+//        }
+//
+//        report.setStatus("Updated");
+//        report.setReportSubmittedDate(new Date());
+//        report.setIsRead(0); // Mark as unread since it's a new update
+//        weeklyReportService.addReport(report);
+//
+//        // **Log the update action**
+//        Admin admin = getSignedInAdmin();
+//        logService.saveLog(String.valueOf(admin.getAdminId()), "Weekly Report Updated",
+//                "Admin " + admin.getName() + " updated the weekly report for Group ID: " + groupId + ", Week No: " + weekNo);
+//
+//        redirectAttributes.addFlashAttribute("successMessage", "Weekly report updated successfully!");
+//    } catch (IOException e) {
+//        redirectAttributes.addFlashAttribute("errorMessage", "Error while saving the file. Please try again.");
+//    } catch (Exception e) {
+//        redirectAttributes.addFlashAttribute("errorMessage", "An unexpected error occurred. Please try again.");
+//    }
+//
+//    return "redirect:/bisag/admin/admin_weekly_report_details/" + groupId + "/" + weekNo;
+//}
 
     //Cancellatin Request
     @GetMapping("/cancellation_requests")
@@ -3086,7 +3247,7 @@ public ModelAndView cancellationRequests(Model model) {
         model.addAttribute("admin", admin);
         if (admin != null && intern.isPresent()) {
             logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Intern Verification Details",
-                    "Admin " + admin.getName() + " viewed the details of intern ID: " + id + ", Name: " + intern.get().getFirstName() + " " + intern.get().getLastName());
+                    "Admin " + admin.getName() + " viewed the details of intern ID: " + id + ", Name: " + intern.get().getFirstName());
         } else {
             System.out.println("Error: Admin or Intern not found for logging!");
         }
@@ -3724,7 +3885,7 @@ public String viewCancelRelievingRecords(Model model) {
                 Intern intern = internOptional.get();
                 model.addAttribute("leave", leave);
                 model.addAttribute("groupId", intern.getGroup() != null ? intern.getGroup().getGroupId() : "N/A");
-                model.addAttribute("internName", intern.getFirstName() + " " + intern.getLastName());
+                model.addAttribute("internName", intern.getFirstName());
             } else {
                 model.addAttribute("groupId", "N/A");
                 model.addAttribute("internName", "N/A");
@@ -3834,7 +3995,16 @@ public String viewCancelRelievingRecords(Model model) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Failed to create storage directory!");
                 return "redirect:/bisag/admin/thesis-storage";
             }
-            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+            String sanitizedTitle = thesisTitle.replaceAll("[^a-zA-Z0-9.-]", "_").trim();
+
+            // Extract file extension from the uploaded file
+            String fileExtension = "";
+            if (file.getOriginalFilename() != null && file.getOriginalFilename().contains(".")) {
+                fileExtension = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."));
+            }
+
+            // Construct the new file name using thesisTitle
+            String fileName = sanitizedTitle + fileExtension;
             String filePath = STORAGE_PATH + fileName;
             file.transferTo(new File(filePath));
             ThesisStorage thesis = new ThesisStorage();
@@ -4154,7 +4324,8 @@ public String viewCancelRelievingRecords(Model model) {
 
         try {
             String fileName = taskOpt.get().getProofAttachment();
-            Path filePath = Paths.get("uploads/task_proofs/", fileName);
+//            Path filePath = Paths.get("uploads/task_proofs/", fileName);
+            Path filePath = Paths.get("main/resources/static/files/Task_Proofs/", fileName);
             Resource resource = new UrlResource(filePath.toUri());
 
             if (!resource.exists()) {
@@ -4171,7 +4342,6 @@ public String viewCancelRelievingRecords(Model model) {
         }
     }
 
-    // Update Task Status
     // Update Task Status
     @PutMapping("/update-task/{id}")
     public ResponseEntity<Map<String, Object>> updateTaskStatus(@PathVariable Long id, @RequestBody Map<String, String> taskData) {
@@ -4386,7 +4556,7 @@ public String viewCancelRelievingRecords(Model model) {
 
             logService.saveLog(internId, "Updated Credentials",
                     "Admin updated Intern login credentials for "
-                            + intern.getFirstName() + " " + intern.getLastName());
+                            + intern.getFirstName());
         }
 
         return "redirect:/bisag/admin/intern_application/new_interns";

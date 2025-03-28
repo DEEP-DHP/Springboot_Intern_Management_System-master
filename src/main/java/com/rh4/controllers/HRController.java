@@ -198,7 +198,7 @@ public class HRController {
         HR hr = getSignedInHR();
         if (hr != null && intern.isPresent()) {
             logService.saveLog(String.valueOf(hr.getHRId()), "Viewed Intern Verification Details",
-                    "HR " + hr.getName() + " viewed the details of intern ID: " + id + ", Name: " + intern.get().getFirstName() + " " + intern.get().getLastName());
+                    "HR " + hr.getName() + " viewed the details of intern ID: " + id + ", Name: " + intern.get().getFirstName());
         } else {
             System.out.println("Error: HR not found for logging!");
         }
