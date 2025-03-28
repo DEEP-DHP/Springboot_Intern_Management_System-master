@@ -39,12 +39,15 @@ public class WeeklyReport {
 	
 	private String status;
 
+	@Column(name = "is_read", nullable = false)
+	private int isRead = 0;  // 0 = Unread, 1 = Read (default is Unread)
+
 	public WeeklyReport() {
 		super();
 	}
 
 	public WeeklyReport(long weeklyReportId, Intern intern, GroupEntity group, Date reportSubmittedDate, Date deadline,
-			int weekNo, byte[] submittedPdf, Guide guide, MyUser replacedBy, String status) {
+			int weekNo, byte[] submittedPdf, Guide guide, MyUser replacedBy, String status, int isRead) {
 		super();
 		this.weeklyReportId = weeklyReportId;
 		this.intern = intern;
@@ -56,6 +59,7 @@ public class WeeklyReport {
 		this.guide = guide;
 		this.replacedBy = replacedBy;
 		this.status = status;
+		this.isRead = isRead;
 	}
 
 	public long getWeeklyReportId() {
@@ -138,5 +142,11 @@ public class WeeklyReport {
 		this.status = status;
 	}
 
-	
+	public int getIsRead() {
+		return isRead;
+	}
+
+	public void setIsRead(int isRead) {
+		this.isRead = isRead;
+	}
 }

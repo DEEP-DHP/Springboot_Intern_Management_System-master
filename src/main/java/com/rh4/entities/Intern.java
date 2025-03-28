@@ -17,8 +17,8 @@ public class Intern {
     @Column(name = "first_name")
     private String firstName;
 
-    @Column(name = "last_name")
-    private String lastName;
+//    @Column(name = "last_name")
+//    private String lastName;
 
     @Column(name = "contact_no", unique = true)
     private String contactNo;
@@ -176,7 +176,7 @@ public class Intern {
         super();
     }
 
-    public Intern(String internId, String firstName, String lastName, String contactNo, String email,
+    public Intern(String internId, String firstName, String contactNo, String email,
                   String collegeName, byte[] collegeIcardImage, byte[] nocPdf, byte[] projectDefinitionForm, byte[] extraForm, byte[] extraForm2, byte[] resumePdf, int semester,
                   String permanentAddress, Date dateOfBirth, String gender, String collegeGuideHodName, String degree, Double aggregatePercentage, String projectDefinitionName, String cancellationStatus,
                   Guide guide, String domain, Date joiningDate, Date completionDate, String password, byte[] icardForm, byte[] registrationForm, byte[] securityForm,
@@ -185,7 +185,7 @@ public class Intern {
         this.internId = internId;
         this.firstName = firstName;
         this.isActive = isActive;
-        this.lastName = lastName;
+//        this.lastName = lastName;
         this.contactNo = contactNo;
         this.email = email;
         this.collegeName = collegeName;
@@ -222,11 +222,11 @@ public class Intern {
         this.isCredentialsGenerated = isCredentialsGenerated;
     }
 
-    public Intern(String firstName, String lastName, String contactNo, String email, String collegeName, Date joiningDate, Date completionDate,
+    public Intern(String firstName, String contactNo, String email, String collegeName, Date joiningDate, Date completionDate,
                    String degree, String password, byte[] collegeIcardImage, byte[] nocPdf, byte[] resumePdf, byte[] passportSizeImage, int semester, String domain, GroupEntity group) {
         super();
         this.firstName = firstName;
-        this.lastName = lastName;
+//        this.lastName = lastName;
         this.contactNo = contactNo;
         this.email = email;
         this.collegeName = collegeName;
@@ -308,13 +308,13 @@ public class Intern {
         this.firstName = firstName;
     }
 
-    public String getLastName() {
-        return lastName;
-    }
+//    public String getLastName() {
+//        return lastName;
+//    }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
+//    public void setLastName(String lastName) {
+//        this.lastName = lastName;
+//    }
 
     public String getEmail() {
         return email;

@@ -15,7 +15,7 @@ public class Feedback {
 
         private String internId;
         private String firstName;
-        private String lastName;
+//        private String lastName;
         private String environment;
         private String facilities;
         private String interaction;
@@ -50,12 +50,9 @@ public class Feedback {
             this.topics = topics;
             this.magazine = magazine;
             this.feedbackDate = feedbackDate;
-
-
-
             this.internId = internId;
             this.firstName = firstName;
-            this.lastName = lastName;
+//            this.lastName = lastName;
 
         }
 
@@ -84,13 +81,13 @@ public class Feedback {
         this.firstName = firstName;
     }
 
-    public String getLastName() {
-        return lastName;
-    }
+//    public String getLastName() {
+//        return lastName;
+//    }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
+//    public void setLastName(String lastName) {
+//        this.lastName = lastName;
+//    }
 
     public String getEnvironment() {
             return environment;

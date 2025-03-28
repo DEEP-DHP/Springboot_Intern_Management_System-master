@@ -21,8 +21,8 @@ public class InternApplication {
     @Column(name = "first_name")
     private String firstName;
 
-    @Column(name = "last_name")
-    private String lastName;
+//    @Column(name = "last_name")
+//    private String lastName;
 
     @Column(name = "contact_number", unique = true)
     @Pattern(regexp = "\\d{10}", message = "Contact number must be exactly 10 digits")
