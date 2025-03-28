@@ -20,6 +20,8 @@ public class SuperAdminService {
 	private AdminRepo adminRepo;
 	@Autowired
 	private UserRepo userRepo;
+	@Autowired
+	private HRRepo hrRepo;
 
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -51,4 +53,8 @@ public class SuperAdminService {
 	public long countAdmin() {
         return adminRepo.count();
     }
+
+	public long countHR() {
+		return hrRepo.count();
+	}
 }

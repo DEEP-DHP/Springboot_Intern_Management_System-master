@@ -35,4 +35,7 @@ public class RecordService {
     public String findFinalReportByInternId(String internId) {
         return recordRepo.findFinalReportByInternId(internId);
     }
+    public RRecord findLatestRecordByInternId(String internId) {
+        return recordRepo.findTopByInternIdOrderBySubmissionTimestampDesc(internId);
+    }
 }
