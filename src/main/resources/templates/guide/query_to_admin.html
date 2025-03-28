@@ -86,7 +86,7 @@
 							<select id="receiverId" name="receiverId" class="form-select">
 								<option value="">Select Receiver</option>
 								<option th:each="admin : ${admins}" th:value="${admin.adminId}" th:text="${admin.name}"></option>
-								<option th:each="intern : ${interns}" th:value="${intern.internId}" th:text="${intern.firstName + ' ' + intern.lastName}"></option>
+								<option th:each="intern : ${interns}" th:value="${intern.internId}" th:text="${intern.firstName}"></option>
 							</select>
 						</div>
 

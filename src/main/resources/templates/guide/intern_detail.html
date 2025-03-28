@@ -53,7 +53,7 @@
 
 <main id="main" class="main">
   <div class="pagetitle">
-    <h1>Intern Details<span th:text="${' - ' + intern.get().firstName + ' ' + intern.get().lastName}"></span></h1>
+    <h1>Intern Details<span th:text="${' - ' + intern.get().firstName}"></span></h1>
   </div>
   <div th:if="${intern.isPresent()}">
 
@@ -66,12 +66,8 @@
             <td><input type="text" name="internId" th:value="${intern.get().internId}" class="no-border" readonly></td>
           </tr>
           <tr>
-            <th>First Name</th>
+            <th>Full Name</th>
             <td><input type="text" name="firstName" th:value="${intern.get().firstName}" class="no-border" readonly></td>
-          </tr>
-          <tr>
-            <th>Last Name</th>
-            <td><input type="text" name="lastName" th:value="${intern.get().lastName}" class="no-border" readonly></td>
           </tr>
           <tr>
             <th>Contact No</th>
