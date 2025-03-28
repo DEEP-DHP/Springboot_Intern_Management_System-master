@@ -199,15 +199,13 @@
                     <thead>
                     <tr>
                         <th>Intern ID</th>
-                        <th>First Name</th>
-                        <th>Last Name</th>
+                        <th>Full Name</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:each="intern : ${interns}">
                         <td th:text="${intern.internId}"></td>
                         <td th:text="${intern.firstName}"></td>
-                        <td th:text="${intern.lastName}"></td>
                     </tr>
                     </tbody>
                 </table>
@@ -216,7 +214,6 @@
                     <!-- Hidden fields for intern details -->
                     <input type="hidden" th:field="*{internId}" th:value="${interns[0].internId}">
                     <input type="hidden" th:field="*{firstName}" th:value="${interns[0].firstName}">
-                    <input type="hidden" th:field="*{lastName}" th:value="${interns[0].lastName}">
 
                     <table>
                         <thead>
