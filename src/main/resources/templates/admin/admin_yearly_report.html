@@ -64,7 +64,7 @@
       <tbody>
       <tr th:each="report : ${reports}">
         <td th:text="${report.weekNo}">0</td>
-        <td th:text="${report.intern.firstName} + ' ' + ${report.intern.lastName}"></td>
+        <td th:text="${report.intern.firstName}"></td>
         <td th:text="${report.group.groupId}"></td>
         <td th:text="${report.reportSubmittedDate}"></td>
         <td th:text="${report.group.guide.name}"></td>

@@ -5,6 +5,9 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <title>Feedback Form List</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
   <meta content="" name="description">
   <meta content="" name="keywords">
@@ -68,10 +71,9 @@
     }
 
     .main {
-      margin-left: 300px; /* Adjust this value to match your sidebar width */
+      margin-left: 300px;
       padding: 20px;
     }
-
     @media (max-width: 1199px) {
       .main {
         margin-left: 0;
@@ -79,15 +81,9 @@
     }
   </style>
 </head>
-
 <body>
-
-<!-- Include the header fragment -->
 <div th:replace="fragments/headerFragment :: header"></div>
-
-<!-- Include the aside fragment -->
 <div th:replace="fragments/asideFragment :: aside"></div>
-
 <main id="main" class="main">
   <div class="pagetitle">
     <h1>Feedback form List</h1>
@@ -99,13 +95,23 @@
     </nav>
   </div>
   <div class="container mt-2">
-    <table>
+    <div class="mb-3 d-flex">
+      <label for="fromDate" class="mr-2"><b>From Date:</b></label>
+      <input type="date" id="fromDate" class="form-control w-25 mx-2">
+
+      <label for="toDate" class="mr-2"><b>To Date:</b></label>
+      <input type="date" id="toDate" class="form-control w-25 mx-2">
+
+      <button id="applyDateFilter" class="btn btn-primary ml-2">Filter</button>
+      <button id="downloadPdf" class="btn btn-danger ml-2">Download PDF</button>
+      <button id="downloadCsv" class="btn btn-success ml-2">Download Excel</button>
+    </div>
+    <table id="feedbackTable">
       <thead>
       <tr>
-        <th><No class=""></No></th>
+        <th>No</th>
         <th>Intern ID</th>
-        <th>First Name</th>
-        <th>Last Name</th>
+        <th>Full Name</th>
         <th>Environment</th>
         <th>Facilities</th>
         <th>Interaction</th>
@@ -123,7 +129,6 @@
         <td th:text="${feedback.id}"></td>
         <td th:text="${feedback.internId}"></td>
         <td th:text="${feedback.firstName}"></td>
-        <td th:text="${feedback.lastName}"></td>
         <td th:text="${feedback.environment}"></td>
         <td th:text="${feedback.facilities}"></td>
         <td th:text="${feedback.interaction}"></td>
@@ -133,19 +138,101 @@
         <td th:text="${feedback.researchAreas}"></td>
         <td th:text="${feedback.topics}"></td>
         <td th:text="${feedback.magazine}"></td>
-        <td th:text="${#temporals.format(feedback.feedbackDate, 'dd-MM-yyyy')}"></td>
+        <td th:text="${#temporals.format(feedback.feedbackDate, 'dd-MM-yyyy')}" class="feedback-date"></td>
       </tr>
       </tbody>
     </table>
   </div>
-
-  <!-- Include the footer fragment -->
   <div th:replace="fragments/footerFragment :: footer"></div>
 
 </main>
-<!-- End #main -->
+<script>
+  document.getElementById("applyDateFilter").addEventListener("click", function () {
+    let fromDate = document.getElementById("fromDate").value;
+    let toDate = document.getElementById("toDate").value;
 
-<!-- Bootstrap and jQuery Scripts -->
+    if (!fromDate || !toDate) {
+      alert("Please select both From and To dates.");
+      return;
+    }
+
+    // Convert input dates to JS Date objects
+    let from = new Date(fromDate);
+    let to = new Date(toDate);
+
+    document.querySelectorAll("#feedbackTable tbody tr").forEach(function (row) {
+      let dateCell = row.querySelector(".feedback-date");
+      if (!dateCell) return;
+
+      // Convert feedbackDate from 'dd-MM-yyyy' to a JS Date object
+      let parts = dateCell.textContent.trim().split("-");
+      let feedbackDate = new Date(parts[2], parts[1] - 1, parts[0]); // Year, Month (0-based), Day
+
+      // Check if feedbackDate is within range
+      if (feedbackDate >= from && feedbackDate <= to) {
+        row.style.display = ""; // Show row
+      } else {
+        row.style.display = "none"; // Hide row
+      }
+    });
+  });
+  // Function to get only visible table rows
+  function getVisibleTableData() {
+    let headers = [];
+    let data = [];
+
+    document.querySelectorAll("#feedbackTable thead th").forEach(th => {
+      headers.push(th.innerText.trim());
+    });
+
+    document.querySelectorAll("#feedbackTable tbody tr").forEach(tr => {
+      if (tr.style.display !== "none") {
+        let rowData = [];
+        tr.querySelectorAll("td").forEach(td => {
+          rowData.push(td.innerText.trim());
+        });
+        data.push(rowData);
+      }
+    });
+
+    return { headers, data };
+  }
+
+  // Download as PDF
+  document.getElementById('downloadPdf').addEventListener('click', function () {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape', 'mm', 'a4');
+
+    doc.setFontSize(12);
+    doc.text('Feedback Form List', 140, 15, null, null, 'center');
+
+    const { headers, data } = getVisibleTableData();
+
+    doc.autoTable({
+      head: [headers],
+      body: data,
+      startY: 25,
+      styles: { fontSize: 6, cellPadding: 2, overflow: 'linebreak' },
+      headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255], fontSize: 7 },
+      columnStyles: { 0: { cellWidth: 'auto' } },
+      theme: 'striped'
+    });
+
+    doc.save('Feedback List.pdf');
+  });
+
+  // Download as CSV
+  document.getElementById("downloadCsv").addEventListener("click", function() {
+    const { headers, data } = getVisibleTableData();
+    let csvContent = Papa.unparse([headers, ...data]);
+
+    let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "Feedback List.csv";
+    link.click();
+  });
+</script>
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"
         integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8="
         crossorigin="anonymous"></script>

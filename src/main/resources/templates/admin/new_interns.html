@@ -285,16 +285,16 @@
 								let originalData = [];
 								document.querySelectorAll(".datatable tbody tr").forEach(row => {
 									let rowData = {
-										guide: row.querySelector("td:nth-child(8)")?.innerText.trim() || '',
-										college: row.querySelector("td:nth-child(10)")?.innerText.trim() || '',
-										degree: row.querySelector("td:nth-child(16)")?.innerText.trim() || '',
-										domain: row.querySelector("td:nth-child(9)")?.innerText.trim() || '',
-										gender: row.querySelector("td:nth-child(14)")?.innerText.trim() || '',
+										guide: row.querySelector("td:nth-child(7)")?.innerText.trim() || '',
+										college: row.querySelector("td:nth-child(9)")?.innerText.trim() || '',
+										degree: row.querySelector("td:nth-child(15)")?.innerText.trim() || '',
+										domain: row.querySelector("td:nth-child(8)")?.innerText.trim() || '',
+										gender: row.querySelector("td:nth-child(13)")?.innerText.trim() || '',
 										intern: row.querySelector("td:nth-child(1)")?.innerText.trim() || '',
-										project: row.querySelector("td:nth-child(18)")?.innerText.trim() || '',
-										status: row.querySelector("td:nth-child(24)")?.innerText.trim() || '',
-										joiningDate: row.querySelector("td:nth-child(19)")?.innerText.trim() || '',
-										completionDate: row.querySelector("td:nth-child(20)")?.innerText.trim() || '',
+										project: row.querySelector("td:nth-child(17)")?.innerText.trim() || '',
+										status: row.querySelector("td:nth-child(23)")?.innerText.trim() || '',
+										joiningDate: row.querySelector("td:nth-child(18)")?.innerText.trim() || '',
+										completionDate: row.querySelector("td:nth-child(19)")?.innerText.trim() || '',
 										rowElement: row
 									};
 									originalData.push(rowData);
@@ -378,8 +378,7 @@
 							<tr>
 								<th><i class="fa-solid fa-sort mx-2"></i>ID</th>
 								<th>Documents</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>First Name</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Last Name</th>
+								<th><i class="fa-solid fa-sort mx-2"></i>Full Name</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Contact No</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Email ID</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Group ID</th>
@@ -404,6 +403,7 @@
 								<th><i class="fa-solid fa-sort mx-2"></i>Updated At</th>
 								<!--								<th><i class="fa-solid fa-sort mx-2"></i>Cancellation Status</th>-->
 								<th><i class="fa-solid fa-sort mx-2"></i>Current Status</th>
+								<th><i class="fa-solid fa-sort mx-2"></i>Report TimeStamp</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Cancel Time</th>
 
 							</tr>
@@ -439,7 +439,7 @@
 										th:href="@{'/bisag/admin/intern_docs/' + ${intern.internId}}"
 										class="btn"><i class="fa-solid fa-book my-0"></i></a></td>
 								<td th:text="${intern.firstName}"></td>
-								<td th:text="${intern.lastName}"></td>
+<!--								<td th:text="${intern.lastName}"></td>-->
 								<td th:text="${intern.contactNo}"></td>
 								<td th:text="${intern.email}"></td>
 								<td th:text="${intern.group.groupId}"></td>
@@ -470,6 +470,7 @@
                intern.status)) :
              intern.status)">
 								</td>
+								<td th:text="${reportTimestamps[intern.internId]}"></td>
 								<td th:text="${intern.cancelTime != null ? #dates.format(T(java.util.Date).from(intern.cancelTime.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss') : 'N/A'}"></td>
 								<input type="hidden" class="intern-id" th:value="${intern.internId}" />
 								<input type="hidden" class="current-status" th:value="${intern.status}" />
@@ -546,28 +547,27 @@
 				headStyles: { fillColor: [100, 120, 200], textColor: [255, 255, 255], fontSize: 7 },
 				columnStyles: {
 					0: { cellWidth: 13 }, // ID column
-					1: { cellWidth: 12 }, // First Name
-					2: { cellWidth: 12 }, // Last Name
-					3: { cellWidth: 16 }, // Contact No
-					4: { cellWidth: 20 }, // Email ID
-					5: { cellWidth: 12 }, // Group ID
-					6: { cellWidth: 14 }, // Guide
-					7: { cellWidth: 14 }, // Domain
-					8: { cellWidth: 24 }, // College
-					9: { cellWidth: 15 }, // Semester
-					10: { cellWidth: 18 }, // Permanent Address
-					11: { cellWidth: 11 }, // Date of Birth
-					12: { cellWidth: 10 }, // Gender
-					13: { cellWidth: 14 }, // College Guide/HOD Name
-					14: { cellWidth: 16 }, // Degree
-					15: { cellWidth: 16 }, // Aggregate Percentage
-					16: { cellWidth: 20 }, // Project Definition Name
-					17: { cellWidth: 20 }, // Joining Date
-					18: { cellWidth: 20 }, // Completion Date
-					19: { cellWidth: 13 }, // Used Resources
-					20: { cellWidth: 20 }, // Created At
-					21: { cellWidth: 20 }, // Updated At
-					22: { cellWidth: 20 }  // Current Status
+					1: { cellWidth: 24 }, // First Name
+					2: { cellWidth: 16 }, // Contact No
+					3: { cellWidth: 20 }, // Email ID
+					4: { cellWidth: 12 }, // Group ID
+					5: { cellWidth: 14 }, // Guide
+					6: { cellWidth: 14 }, // Domain
+					7: { cellWidth: 24 }, // College
+					8: { cellWidth: 15 }, // Semester
+					9: { cellWidth: 18 }, // Permanent Address
+					10: { cellWidth: 11 }, // Date of Birth
+					11: { cellWidth: 10 }, // Gender
+					12: { cellWidth: 14 }, // College Guide/HOD Name
+					13: { cellWidth: 16 }, // Degree
+					14: { cellWidth: 16 }, // Aggregate Percentage
+					15: { cellWidth: 20 }, // Project Definition Name
+					16: { cellWidth: 20 }, // Joining Date
+					17: { cellWidth: 20 }, // Completion Date
+					18: { cellWidth: 13 }, // Used Resources
+					19: { cellWidth: 20 }, // Created At
+					20: { cellWidth: 20 }, // Updated At
+					21: { cellWidth: 20 }  // Current Status
 				},
 				theme: 'striped',
 				margin: { left: 0, right: 0 }

@@ -119,8 +119,7 @@
 							<thead>
 							<tr>
 								<th><i class="fa-solid fa-sort mx-2"></i>ID</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>First Name</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Last Name</th>
+								<th><i class="fa-solid fa-sort mx-2"></i>Full Name</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Contact No</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Email ID</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>College</th>
@@ -133,7 +132,6 @@
 								th:if="${intern.status == 'pending'}">
 								<td><a th:href="@{'/bisag/admin/intern_application/' + ${intern.id}}"><span th:text="${intern.id}"></span></a></td>
 								<td th:text="${intern.firstName}"></td>
-								<td th:text="${intern.lastName}"></td>
 								<td th:text="${intern.contactNo}"></td>
 								<td th:text="${intern.email}"></td>
 								<td th:text="${intern.collegeName}"></td>

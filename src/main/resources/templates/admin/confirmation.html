@@ -90,7 +90,7 @@
   <tbody>
   <tr th:each="intern, iterStat : ${interns}">
     <td th:text="${iterStat.index + 1}"></td>
-    <td th:text="${intern.firstName + ' ' + intern.lastName}"></td>
+    <td th:text="${intern.firstName}"></td>
   </tr>
   </tbody>
 </table>

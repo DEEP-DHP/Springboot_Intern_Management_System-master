@@ -118,8 +118,7 @@
               <thead>
               <tr>
                 <th><i class="fa-solid fa-sort mx-2"></i>ID</th>
-                <th><i class="fa-solid fa-sort mx-2"></i>First Name</th>
-                <th><i class="fa-solid fa-sort mx-2"></i>Last Name</th>
+                <th><i class="fa-solid fa-sort mx-2"></i>Full Name</th>
                 <th><i class="fa-solid fa-sort mx-2"></i>Contact No</th>
                 <th><i class="fa-solid fa-sort mx-2"></i>Email ID</th>
                 <th><i class="fa-solid fa-sort mx-2"></i>College</th>
@@ -133,7 +132,6 @@
               <tr th:each="intern : ${rejectedInterns}">
                 <td th:text="${intern.id}"></td>
                 <td th:text="${intern.firstName}"></td>
-                <td th:text="${intern.lastName}"></td>
                 <td th:text="${intern.contactNo}"></td>
                 <td th:text="${intern.email}"></td>
                 <td th:text="${intern.collegeName}"></td>

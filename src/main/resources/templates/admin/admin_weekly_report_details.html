@@ -2,24 +2,22 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Weekly Report Details</title>
-	<!-- Include any necessary styles or scripts -->
-	<link
-			href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-			rel="stylesheet">
-	<!-- Bootstrap CSS is used for the card layout in this example -->
-</head>
-<style>
-	.late-status {
-		color: red;
-	}
+	<meta charset="utf-8">
+	<meta content="width=device-width, initial-scale=1.0" name="viewport">
+	<title>Admin Weekly Report Details</title>
 
-	.green-status {
-		color: green;
-	}
-</style>
+	<!-- Bootstrap CSS -->
+	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+
+	<style>
+		.late-status {
+			color: red;
+		}
+		.green-status {
+			color: green;
+		}
+	</style>
+</head>
 
 <body>
 
@@ -36,37 +34,54 @@
 			<div class="d-flex justify-content-between align-items-center mb-3">
 				<h3 class="text-dark">Report Details</h3>
 			</div>
-			<form>
+			<form th:action="@{'/bisag/admin/admin_weekly_report_details/' + ${report.group.groupId} + '/changed_report'}"
+				  method="POST" enctype="multipart/form-data">
 				<table class="table table-bordered">
 					<tr>
 						<td>Week No:</td>
-						<td th:text="${report.weekNo}">0</td>
+						<td th:text="${report.weekNo}"></td>
 					</tr>
 					<tr>
 						<td>Group ID:</td>
-						<td th:text="${group.groupId}">0</td>
+						<td th:text="${report.group.groupId}"></td>
 					</tr>
 					<tr>
 						<td>Guide:</td>
-						<td th:text="${group.guide.name}">0</td>
+						<td th:text="${report.group.guide.name}"></td>
 					</tr>
 					<tr>
 						<td>Submitted Date:</td>
-						<td th:text="${report.reportSubmittedDate}">0</td>
+						<td th:text="${report.reportSubmittedDate}"></td>
 					</tr>
 					<tr>
 						<td>Deadline:</td>
-						<td th:text="${report.deadline}">0</td>
+						<td th:text="${report.deadline}"></td>
 					</tr>
 					<tr>
 						<td>Submitted By:</td>
-						<td th:text="${replacedBy}">0</td>
+						<td th:text="${replacedBy}"></td>
 					</tr>
 					<tr>
 						<td>Status:</td>
-						<td th:text="${report.status}">0</td>
+						<td th:class="${report.status == 'late submitted' ? 'late-status' : 'green-status'}" th:text="${report.status}"></td>
+					</tr>
+					<tr>
+						<td>Report PDF:</td>
+						<td>
+							<iframe th:src="@{/bisag/admin/viewPdf/{internId}/{weekNo}(internId=${report.intern.internId}, weekNo=${report.weekNo})}"
+									width="1000" height="800"></iframe>
+						</td>
+					</tr>
+					<tr>
+						<input type="hidden" class="form-control" id="weekNo" name="weekNo"
+							   th:value="${report.weekNo}">
+						<td>Upload New Report:</td>
+						<td><input type="file" class="form-control" id="file" name="file" required></td>
 					</tr>
 				</table>
+				<div class="text-center">
+					<button type="submit" class="btn btn-primary">Update Report</button>
+				</div>
 			</form>
 		</div>
 	</div>
@@ -76,12 +91,8 @@
 </main>
 
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-<script
-		src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
-<script
-		src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
-<!-- Bootstrap JS is used for the card layout in this example -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
 
 </body>
-
 </html>

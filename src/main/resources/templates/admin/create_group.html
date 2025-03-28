@@ -125,8 +125,7 @@
 								<tr>
 									<th><i class="fa-solid fa-sort mx-2"></i>Select</th>
 									<th><i class="fa-solid fa-sort mx-2"></i>Intern ID</th>
-									<th><i class="fa-solid fa-sort mx-2"></i>First Name</th>
-									<th><i class="fa-solid fa-sort mx-2"></i>Last Name</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Full Name</th>
 									<th><i class="fa-solid fa-sort mx-2"></i>Domain</th>
 									<th>Action</th>
 									<!-- Add more columns as needed -->
@@ -142,7 +141,6 @@
 											th:href="@{'/bisag/admin/intern_application/' + ${intern.id}}"><span
 											th:text="${intern.id}"></span></a></td>
 									<td th:text="${intern.firstName}"></td>
-									<td th:text="${intern.lastName}"></td>
 									<td th:text="${intern.domain}"
 										data-domain="${intern.domain}"></td>
 									<td><a

@@ -20,7 +20,7 @@
   <tbody>
   <tr th:each="intern : ${interns}">
     <td th:text="${intern.id}"></td>
-    <td th:text="${intern.firstName + ' ' + intern.lastName}"></td>
+    <td th:text="${intern.firstName}"></td>
     <td>
                     <span th:text="${intern.undertakingAccepted ? 'Accepted' : 'Pending'}"
                           th:style="${intern.undertakingAccepted ? 'color: green;' : 'color: red;'}">
