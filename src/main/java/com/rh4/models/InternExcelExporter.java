@@ -43,23 +43,24 @@ public class InternExcelExporter {
          
         createCell(row, 0, "InternID", style);      
         createCell(row, 1, "GroupId-mail", style);       
-        createCell(row, 2, "FirstName Name", style);    
-        createCell(row, 3, "LastName", style);
-        createCell(row, 4, "Gender", style);
-        createCell(row, 5, "Domain", style);
-        createCell(row, 6, "ProjectDefinition", style);
-        createCell(row, 7, "JoiningDate", style);
-        createCell(row, 8, "CompletionDate", style);
-        createCell(row, 9, "ExternalGuide", style);
-        createCell(row, 10, "InternalGuide", style);
-        createCell(row, 11, "Email", style);
-        createCell(row, 12, "ContactNo", style);
-        createCell(row, 13, "DOB", style);
-        createCell(row, 15, "Semester", style);
-        createCell(row, 16, "Degree", style);
-        createCell(row, 17, "AggregatePercentage", style);
-        createCell(row, 18, "Address", style);
-        createCell(row, 19, "UsedResource", style);  
+        createCell(row, 2, "FullName", style);
+//        createCell(row, 3, "LastName", style);
+        createCell(row, 3, "Gender", style);
+        createCell(row, 4, "Domain", style);
+        createCell(row, 5, "ProjectDefinition", style);
+        createCell(row, 6, "JoiningDate", style);
+        createCell(row, 7, "CompletionDate", style);
+        createCell(row, 8, "ExternalGuide", style);
+        createCell(row, 9, "InternalGuide", style);
+        createCell(row, 10, "Email", style);
+        createCell(row, 11, "ContactNo", style);
+        createCell(row, 12, "DOB", style);
+        createCell(row, 13, "CollegeName", style);
+        createCell(row, 14, "Semester", style);
+        createCell(row, 15, "Degree", style);
+        createCell(row, 16, "AggregatePercentage", style);
+        createCell(row, 17, "Address", style);
+        createCell(row, 18, "UsedResource", style);
          
     }
      
@@ -93,7 +94,7 @@ public class InternExcelExporter {
             createCell(row, columnCount++,intern.getInternId(), style);
             createCell(row, columnCount++,Optional.ofNullable(intern.getGroup()).map(GroupEntity::getGroupId).orElse(null), style);
             createCell(row, columnCount++,intern.getFirstName(), style);
-            createCell(row, columnCount++,intern.getLastName(), style);
+//            createCell(row, columnCount++,intern.getLastName(), style);
             createCell(row, columnCount++,intern.getGender(), style);
             createCell(row, columnCount++,intern.getDomain(), style);
             createCell(row, columnCount++,intern.getProjectDefinitionName(), style);

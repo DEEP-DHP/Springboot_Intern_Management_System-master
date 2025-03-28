@@ -27,7 +27,7 @@ public class InternPDFExporter {
         Font font = FontFactory.getFont(FontFactory.HELVETICA_BOLD);
         font.setColor(Color.WHITE);
 
-        String[] headers = {"InternID", "GroupId", "CancellationStatus", "FirstName", "LastName", "Gender",
+        String[] headers = {"InternID", "GroupId", "CancellationStatus", "FullName", "Gender",
                 "Domain", "ProjectDefinition", "JoiningDate", "CompletionDate", "ExternalGuide",
                 "InternalGuide", "Email", "ContactNo", "DOB", "College", "Semester",
                 "Degree", "AggregatePercentage", "Address", "UsedResource", "Status"};
@@ -48,7 +48,7 @@ public class InternPDFExporter {
             table.addCell(getCellValue(intern.getGroup() != null ? intern.getGroup().getGroupId() : ""));
             table.addCell(getCellValue(intern.getCancellationStatus()));
             table.addCell(getCellValue(intern.getFirstName()));
-            table.addCell(getCellValue(intern.getLastName()));
+//            table.addCell(getCellValue(intern.getLastName()));
             table.addCell(getCellValue(intern.getGender()));
             table.addCell(getCellValue(intern.getDomain()));
             table.addCell(getCellValue(intern.getProjectDefinitionName()));
@@ -138,9 +138,9 @@ public class InternPDFExporter {
         p.setAlignment(Paragraph.ALIGN_CENTER);
         document.add(p);
 
-        PdfPTable table = new PdfPTable(22);
+        PdfPTable table = new PdfPTable(21);
         table.setWidthPercentage(100f);
-        table.setWidths(new float[]{1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f});
+        table.setWidths(new float[]{1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f});
         table.setSpacingBefore(10);
 
         writeTableHeader(table);
