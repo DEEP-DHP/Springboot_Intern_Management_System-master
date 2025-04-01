@@ -820,7 +820,7 @@ public class InternController {
     public String finalReportSubmission(@RequestParam("finalReport") MultipartFile finalReport) throws Exception {
         Intern intern = getSignedInIntern();
         GroupEntity group = intern.getGroup();
-        String storageDir = baseDir + intern.getEmail() + "/";
+        String storageDir = baseDir2 + group.getGroupId() + "/";
         File directory = new File(storageDir);
 
         if (!directory.exists()) {
@@ -882,6 +882,14 @@ public class InternController {
 
         redirectAttributes.addFlashAttribute("success", "Password changed successfully!");
         return "redirect:/bisag/intern/change_passwordd";
+    }
+
+    @PostMapping("/change_passwordd")
+    public String changePasswordd(@RequestParam("newPassword") String newPassword) {
+        Intern intern = getSignedInIntern();
+        internService.changePassword(intern, newPassword);
+        logService.saveLog(intern.getInternId(), "Changed Password", "Password changed successfully.");
+        return "redirect:/logout";
     }
 
     @GetMapping("/apply_leave")

@@ -1,18 +1,22 @@
 package com.rh4.controllers;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.rh4.entities.*;
-import com.rh4.repositories.GuideRepo;
-import com.rh4.repositories.LeaveApplicationRepo;
-import com.rh4.repositories.TaskAssignmentRepo;
+import com.rh4.repositories.*;
 import com.rh4.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -26,8 +30,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
-
-import com.rh4.repositories.GroupRepo;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -65,6 +67,8 @@ public class GuideController {
             private TaskAssignmentService taskAssignmentService;
     @Autowired
             private FieldService fieldService;
+    @Autowired
+            private InternRepo internRepo;
     Intern internFromUploadFileMethod;
     int CurrentWeekNo;
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -75,6 +79,10 @@ public class GuideController {
         return passwordEncoder.encode(rawPassword);
     }
 
+    @Value("${app.storage.base-dir}")
+    private String baseDir;
+    @Value("${app.storage.base-dir2}")
+    private String baseDir2;
     public Guide getSignedInGuide() {
         String username = (String) session.getAttribute("username");
         Guide guide = guideService.getGuideByUsername(username);
@@ -379,7 +387,36 @@ public class GuideController {
 //				return "redirect:/";
 //			}
 //		}
+@GetMapping("/final_reports/{groupId}/{fileName}")
+public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @PathVariable String fileName) throws Exception {
+    // Define the directory path based on the groupId
+    String storageDir = baseDir2 + groupId + "/";
+    File file = new File(storageDir + fileName);
 
+    if (!file.exists()) {
+        // Return a 404 response if the file does not exist
+        return ResponseEntity.notFound().build();
+    }
+
+    // Create a Resource object for the file
+    Resource resource = new FileSystemResource(file);
+
+    // Return the file as a resource with the appropriate content type (PDF)
+    return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_PDF)  // PDF MIME type
+            .body(resource);
+}
+    @GetMapping("/getInternEmail/{groupId}")
+    @ResponseBody
+    public ResponseEntity<String> getInternEmail(@PathVariable Long groupId) {
+        List<Intern> interns = internRepo.findByGroupId(groupId);
+
+        if (!interns.isEmpty()) {
+            return ResponseEntity.ok(interns.get(0).getEmail()); // Use the first intern’s email
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Intern not found");
+        }
+    }
     @GetMapping("/query_to_admin")
     public ModelAndView queryToAdmin() {
         ModelAndView mv = new ModelAndView("/guide/query_to_admin");
