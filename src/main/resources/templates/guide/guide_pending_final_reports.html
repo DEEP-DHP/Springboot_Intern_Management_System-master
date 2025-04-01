@@ -111,9 +111,7 @@
 			th:if="${group.finalReportStatus == 'gpending'}">
 			<td th:text="${group.groupId}"></td>
 			<td th:text="${group.groupId}"></td>
-			<td><a
-					th:href="@{'/files/final_reports/' + ${group.groupId} + '/' + ${group.finalReport}}"
-					target="_blank"> Open Document </a></td>
+			<td><a th:href="@{'/bisag/guide/final_reports/' + ${group.groupId} + '/finalReport.pdf'}" target="_blank">Open Document</a></td>
 
 			<td>
 				<form action="/bisag/guide/guide_pending_final_reports/ans"
