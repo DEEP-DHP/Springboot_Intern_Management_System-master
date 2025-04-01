@@ -458,27 +458,28 @@ html, body {
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="messageModalLabel">Message</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <th:block>
-                    <!-- Apply 'text-success' for success and 'text-danger' for error -->
-<!--                    <p class="text-center"-->
-<!--                       th:text="${session.msg}"-->
-<!--                       th:classappend="${session.msg.contains('Error') ? ' text-danger' : ' text-success'}">-->
-<!--                    </p>-->
                     <div>
-                        <div class="alert alert-danger">
+                        <div th:class="${session.msg.contains('Error') ? 'alert alert-danger' : 'alert alert-success'}">
                             <span th:utext="${session.msg}"></span>
-                            <span th:classappend="${session.msg.contains('Error') ? ' text-danger' : ' text-success'}"></span>
                         </div>
                     </div>
                 </th:block>
             </div>
+            <div class="modal-footer">
+                <button type="button"
+                        th:class="${session.msg.contains('Error') ? 'btn btn-danger' : 'btn btn-success'}"
+                        data-bs-dismiss="modal">
+                    OK
+                </button>
+            </div>
         </div>
     </div>
 </div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
         integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
         crossorigin="anonymous"></script>
