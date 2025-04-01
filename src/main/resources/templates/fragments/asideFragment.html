@@ -187,6 +187,10 @@
                         data-bs-parent="#weekly-report-nav">
                         <li><a th:href="@{/bisag/admin/admin_weekly_report}"> <i
                                 class="bi bi-circle"></i><span>All Weekly Reports</span>
+                            <span th:if="${totalUnreadReports > 0}"
+                                  th:text="${totalUnreadReports}"
+                                  class="badge badge-danger ml-2">
+    </span>
                         </a></li>
                         <li><a th:href="@{/bisag/admin/weekly-reports/pending}"> <i
                                 class="bi bi-circle"></i><span>Pending Weekly Reports</span>
