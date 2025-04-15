@@ -219,12 +219,8 @@ html, body {
         white-space: nowrap; /* Prevent line breaks */
         z-index: 1000; /* Make sure it appears above other elements */
     }
-
-
 </style>
-
 <body>
-
 <div class="container-fluid register">
     <div class="row">
         <div class="col-md-3 register-left">
@@ -234,8 +230,6 @@ html, body {
                 <img th:src="@{/assets/img/bisag_logo.png}" alt=""
                      style="position: relative; z-index: 1; width: 100px; height: 100px;">
             </div>
-
-
             <h3 class="mt-4">Welcome</h3>
             <p>If you have previously submitted an application, kindly
                 verify your application status by logging into your account</p>
@@ -261,37 +255,42 @@ html, body {
                                            required data-tooltip="Please enter your full name">
                                     <div class="tooltip" id="tooltip-firstName"></div>
                                 </div>
-<!--                                <div class="form-group mt-2" style="position: relative;">-->
-<!--                                    <input type="text" class="form-control"-->
-<!--                                           placeholder="Last Name*" id="lastName" name="lastName"-->
-<!--                                           required data-tooltip="Please enter your last name">-->
-<!--                                    <div class="tooltip" id="tooltip-lastName"></div>-->
-<!--                                </div>-->
                                 <div class="form-group mt-2" style="position: relative;">
                                     <input type="tel" class="form-control"
                                            placeholder="Contact Number*" id="contactNo" name="contactNo"
                                            required data-tooltip="Please enter your contact number">
                                     <div class="tooltip" id="tooltip-contactNo"></div>
-                                </div>
-                                <div class="form-group my-4" style="position: relative;">
-                                    <label for="email" class="form-label text-white">Email
-                                        ID:</label> <input type="email" class="form-control"
+<!--                                </div>-->
+<!--                                <div class="form-group my-4" style="position: relative;">-->
+                                    <input type="email" class="form-control"
                                                            placeholder="Email*" id="email" name="email" required
                                                            data-tooltip="Please enter your email id">
                                     <div class="tooltip" id="tooltip-email"></div>
                                 </div>
                                 <div class="form-group" style="position: relative;">
-                                    <label for="nocPdf" class="form-label text-white mt-1">Upload NOC:</label>
-                                    <input type="file" class="form-control" id="nocPdf" name="nocPdf" accept=".pdf"
+                                    <input type="number" class="form-control"
+                                           placeholder="Semester*" id="semester" name="semester"
                                            required
-                                           data-tooltip="Only PDF files are allowed">
-                                    <div class="tooltip" id="tooltip-nocPdf"></div>
+                                           data-tooltip="Please enter your current semester, must between 1 to 8">
+                                    <div class="tooltip" id="tooltip-semester"></div>
+                                </div>
+                                <div class="form-group mt-2" style="position: relative;">
+                                    <input type="date" class="form-control" id="joiningDate" placeholder="Joining Date*"
+                                           name="joiningDate" onfocus="(this.type='date')" onblur="(this.type='text')"
+                                           required data-tooltip="Please enter your Joining date">
+                                    <div class="tooltip" id="tooltip-joiningDate"></div>
+                                </div>
+                                <div class="form-group mt-2" style="position: relative;">
+                                    <input type="date" class="form-control" id="completionDate"
+                                           placeholder="Completion Date*"
+                                           name="completionDate" onfocus="(this.type='date')"
+                                           onblur="(this.type='text')" required
+                                           data-tooltip="Please enter your Completion date, must be in future">
+                                    <div class="tooltip" id="tooltip-completionDate"></div>
                                 </div>
                             </div>
 
-                            <!-- Column 2 -->
                             <div class="col-md-4">
-                                <!-- Additional fields -->
                                 <div class="form-group" style="position: relative;">
                                     <select class="form-select" id="collegeName"
                                             name="collegeName" required
@@ -302,16 +301,6 @@ html, body {
                                     </select>
                                     <div class="tooltip" id="tooltip-college"></div>
                                 </div>
-<!--                                <div class="form-group mt-2" style="position: relative;">-->
-<!--                                    <select class="form-select" id="branch" name="branch" required-->
-<!--                                            data-tooltip="Please enter your stream">-->
-<!--                                        <option value="" disabled selected>Select Branch</option>-->
-<!--                                        <option th:each="branch : ${branches}"-->
-<!--                                                th:text="${branch.name}" th:value="${branch.name}"></option>-->
-<!--                                    </select>-->
-<!--                                    <div class="tooltip" id="tooltip-branch"></div>-->
-<!--                                </div>-->
-
                                 <div class="form-group mt-2" style="position: relative;">
                                     <select class="form-select" id="domain"
                                             name="domain" required data-tooltip="Please enter your internship domain">
@@ -341,19 +330,6 @@ html, body {
                                         👁️
                                     </button>
                                 </div>
-
-                                <script>
-                                    document.getElementById('toggleSecurityPin').addEventListener('click', function() {
-                                        let securityPinInput = document.getElementById('securityPin');
-                                        if (securityPinInput.type === "password") {
-                                            securityPinInput.type = "text";
-                                            this.textContent = "❌";
-                                        } else {
-                                            securityPinInput.type = "password";
-                                            this.textContent = "👁️";
-                                        }
-                                    });
-                                </script>
                                 <div class="form-group mt-3" style="position: relative;">
                                     <input type="password" id="password" class="form-control"
                                            placeholder="Password*" name="password" required>
@@ -371,52 +347,24 @@ html, body {
                                         <p id="special" class="invalid">At least one special character (@, #, $, etc.)</p>
                                     </div>
                                 </div>
-
-                                <script>
-                                    document.getElementById('togglePassword').addEventListener('click', function() {
-                                        let passwordInput = document.getElementById('password');
-                                        if (passwordInput.type === "password") {
-                                            passwordInput.type = "text";
-                                            this.textContent = "❌";
-                                        } else {
-                                            passwordInput.type = "password";
-                                            this.textContent = "👁️";
-                                        }
-                                    });
-                                </script>
-                                <div class="form-group mt-4" style="position: relative;">
-                                    <label for="resumePdf" class="form-label text-white mt-0">Upload Resume:</label>
-                                    <input type="file" class="form-control" id="resumePdf" name="resumePdf"
-                                           accept=".pdf" required
-                                           data-tooltip="Only PDF files are allowed">
-                                    <div class="tooltip" id="tooltip-resumePdf"></div>
-                                </div>
                             </div>
 
-                            <!-- Column 3 -->
                             <div class="col-md-4">
                                 <div class="form-group" style="position: relative;">
-                                    <input type="number" class="form-control"
-                                           placeholder="Semester*" id="semester" name="semester"
-                                           required
-                                           data-tooltip="Please enter your current semester, must between 1 to 8">
-                                    <div class="tooltip" id="tooltip-semester"></div>
-                                </div>
-                                <div class="form-group mt-2" style="position: relative;">
-                                    <input type="date" class="form-control" id="joiningDate" placeholder="Joining Date*"
-                                           name="joiningDate" onfocus="(this.type='date')" onblur="(this.type='text')"
-                                           required data-tooltip="Please enter your Joining date">
-                                    <div class="tooltip" id="tooltip-joiningDate"></div>
-                                </div>
-                                <div class="form-group mt-2" style="position: relative;">
-                                    <input type="date" class="form-control" id="completionDate"
-                                           placeholder="Completion Date*"
-                                           name="completionDate" onfocus="(this.type='date')"
-                                           onblur="(this.type='text')" required
-                                           data-tooltip="Please enter your Completion date, must be in future">
-                                    <div class="tooltip" id="tooltip-completionDate"></div>
-                                </div>
-                                <div class="form-group my-4" style="position: relative;">
+                                    <label for="nocPdf" class="form-label text-white mt-1">Upload NOC:</label>
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" id="nocPdf" name="nocPdf" accept=".pdf" required
+                                               data-tooltip="Only PDF files are allowed">
+                                        <button type="button" class="btn btn-primary" id="viewNocBtn">View</button>
+                                    </div>
+                                    <div class="tooltip" id="tooltip-nocPdf"></div>
+                                    <label for="resumePdf" class="form-label text-white mt-0">Upload Resume:</label>
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" id="resumePdf" name="resumePdf"
+                                               accept=".pdf" required data-tooltip="Only PDF files are allowed">
+                                        <button type="button" class="btn btn-primary" id="viewResumeBtn">View</button>
+                                    </div>
+                                    <div class="tooltip" id="tooltip-resumePdf"></div>
                                     <label for="passportSizeImage" class="form-label text-white">Passport Size
                                         Image:</label>
                                     <input type="file" class="form-control" id="passportSizeImage"
@@ -441,6 +389,8 @@ html, body {
                                               role="status" aria-hidden="true"></span> <span
                                         class="visually-hidden">Loading...</span>Submit
                                 </button>
+                                <button type="reset" class="btnRegister" style="margin-left: 10px;">Reset</button>
+
                                 <a th:href="@{/}" type="button" class="btnRegister">Home</a>
                             </div>
                         </div>
@@ -486,6 +436,12 @@ html, body {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
+<script>
+    document.querySelector("button[type='reset']").addEventListener("click", function () {
+        // Clear all file inputs
+        document.querySelectorAll("input[type='file']").forEach(input => input.value = "");
+    });
+</script>
 <script th:inline="javascript">
     document.addEventListener('DOMContentLoaded', function() {
         if (typeof sessionStorage !== 'undefined' && '${session.msg}' !== '') {
@@ -503,8 +459,6 @@ html, body {
             }, 60000);
         }
     });
-</script>
-<script>
 		$(document).ready(function() {
 			$('.spinner-border').addClass('visually-hidden');
 
@@ -516,9 +470,6 @@ html, body {
 				}, 200000);
 			});
 		});
-
-</script>
-<script>
     const passwordInput = document.getElementById("password");
 const tooltip = document.getElementById("password-tooltip");
 
@@ -538,8 +489,6 @@ passwordInput.addEventListener("input", function () {
     document.getElementById("special").classList.toggle("valid", /[@#$%^&+=]/.test(value));
 });
 
-</script>
-<script>
     function showTooltip(inputElement, tooltipElement) {
         tooltipElement.innerText = inputElement.getAttribute("data-tooltip");
         tooltipElement.style.display = "block";
@@ -563,6 +512,62 @@ passwordInput.addEventListener("input", function () {
             tooltip.style.left = e.pageX + 10 + 'px'; // Offset by 10px to avoid cursor
             tooltip.style.top = e.pageY + 10 + 'px'; // Offset by 10px to avoid cursor
         });
+    });
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        let passwordInput = document.getElementById('password');
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            this.textContent = "❌";
+        } else {
+            passwordInput.type = "password";
+            this.textContent = "👁️";
+        }
+    });
+    document.getElementById('toggleSecurityPin').addEventListener('click', function() {
+        let securityPinInput = document.getElementById('securityPin');
+        if (securityPinInput.type === "password") {
+            securityPinInput.type = "text";
+            this.textContent = "❌";
+        } else {
+            securityPinInput.type = "password";
+            this.textContent = "👁️";
+        }
+    });
+</script>
+<script>
+    document.getElementById("viewNocBtn").addEventListener("click", function () {
+        const fileInput = document.getElementById("nocPdf");
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert("Please select a NOC PDF file first.");
+            return;
+        }
+
+        if (file.type !== "application/pdf") {
+            alert("Selected file is not a PDF.");
+            return;
+        }
+
+        const fileURL = URL.createObjectURL(file);
+        window.open(fileURL, '_blank');
+    });
+        document.getElementById("viewResumeBtn").addEventListener("click", function () {
+        const fileInput = document.getElementById("resumePdf");
+        const file = fileInput.files[0];
+
+        if (!file) {
+        alert("Please select a Resume PDF file first.");
+        return;
+    }
+
+        if (file.type !== "application/pdf") {
+        alert("Selected file is not a PDF.");
+        return;
+    }
+
+        const fileURL = URL.createObjectURL(file);
+        window.open(fileURL, '_blank');
     });
 </script>
 </body>
