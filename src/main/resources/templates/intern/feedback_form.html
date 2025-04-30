@@ -284,7 +284,10 @@
                         <textarea class="input-field" th:field="*{magazine}" name="magazine" required></textarea>
 
                         <label>Date:</label>
-                        <input type="date" th:field="*{feedbackDate}" class="input-field" name="date" required>
+                        <input type="date" th:field="*{feedbackDate}" class="input-field" name="date"
+                               th:value="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}"
+                               th:attr="min=${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}, max=${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}"
+                               required readonly>
 
                         <label>Student Sign:</label>
                         <input type="text" class="input-field" th:field="*{studentSign}" name="signature" required>

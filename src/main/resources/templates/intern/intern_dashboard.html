@@ -111,6 +111,17 @@
         </div>
         </div>
         <div class="col-xl-12">
+            <!-- Success Alert -->
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- Error Alert -->
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
             <div class="card">
                 <div class="card-body pt-3">
                     <!-- Bordered Tabs -->
@@ -130,6 +141,10 @@
                                     data-bs-target="#profile-change-password">Change
                                 Password
                             </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab"
+                                    data-bs-target="#profile-edit">Add Details</button>
                         </li>
                     </ul>
                     <div class="tab-content pt-2">
@@ -257,11 +272,11 @@
                                                    oninput="checkPasswordStrength(this.value)">
                                             <!-- Eye icon to toggle password visibility -->
                                             <div class="input-group-append">
-                        <span class="input-group-text"
-                              onclick="togglePasswordVisibility('newPassword')">
-                            <i class="fa fa-eye" aria-hidden="true"
-                               style="font-size: 1.5rem; height: 100%;"></i>
-                        </span>
+                                                <span class="input-group-text"
+                                                      onclick="togglePasswordVisibility('newPassword')">
+                                                    <i class="fa fa-eye" aria-hidden="true"
+                                                       style="font-size: 1.5rem; height: 100%;"></i>
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -288,7 +303,91 @@
                             <!-- End Change Password Form -->
                         </div>
 
-                        <!-- Auto-show password tab if first login -->
+                        <div class="tab-pane fade profile-edit pt-3" id="profile-edit">
+                            <form th:action="@{'/bisag/intern/update_profile/' + ${intern.internId}}"
+                                  th:object="${intern}" method="post">
+
+                                <input type="hidden" th:field="*{internId}">
+
+                                <div class="row mb-3">
+                                    <label for="permanentAddress" class="col-md-4 col-lg-3 col-form-label">Address</label>
+                                    <div class="col-md-8 col-lg-9">
+                                        <input name="permanentAddress" type="text" class="form-control"
+                                               id="permanentAddress" th:field="*{permanentAddress}" required onblur="this.value = toTitleCase(this.value)">
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <label for="dob" class="col-md-4 col-lg-3 col-form-label">Date of Birth</label>
+                                    <div class="col-md-8 col-lg-9">
+                                        <input name="dob" type="date" class="form-control"
+                                               id="dob" th:field="*{dateOfBirth}" required>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <label for="guideName" class="col-md-4 col-lg-3 col-form-label">College Guide Name</label>
+                                    <div class="col-md-8 col-lg-9">
+                                        <input name="guideName" type="text" class="form-control"
+                                               id="guideName" th:field="*{collegeGuideHodName}" required onblur="this.value = toTitleCase(this.value)">
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <label for="percentage" class="col-md-4 col-lg-3 col-form-label">Percentage</label>
+                                    <div class="col-md-8 col-lg-9">
+                                        <input name="percentage" type="text" class="form-control"
+                                               id="percentage" th:field="*{aggregatePercentage}" required>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label class="col-md-4 col-lg-3 col-form-label">Gender</label>
+                                    <div class="col-md-8 col-lg-9">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="gender" id="male" value="Male" th:checked="${intern.gender == 'Male'}">
+                                            <label class="form-check-label" for="male">Male</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="gender" id="female" value="Female" th:checked="${intern.gender == 'Female'}" required>
+                                            <label class="form-check-label" for="female">Female</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="gender" id="other" value="Other" th:checked="${intern.gender == 'Other'}">
+                                            <label class="form-check-label" for="other">Other</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label class="col-md-4 col-lg-3 col-form-label">Used Resources</label>
+                                    <div class="col-md-8 col-lg-9">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="usedResource" id="laptop" value="Laptop" th:checked="${intern.usedResource == 'Laptop'}" required>
+                                            <label class="form-check-label" for="laptop">LAPTOP</label>
+                                        </div>
+<!--                                        <div class="form-check form-check-inline">-->
+<!--                                            <input class="form-check-input" type="radio" name="usedResources" id="pc" value="BISAG-PC" th:checked="${intern.usedResource == 'BISAG-PC'}" required>-->
+<!--                                            <label class="form-check-label" for="pc">BISAG-PC</label>-->
+<!--                                        </div>-->
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer">
+                                    <a class="btn btn-danger" th:href="@{/bisag/intern/intern_dashboard}">Cancel</a>
+                                    <button type="submit" class="btn btn-primary"
+                                            onclick="return confirm('Are you sure you want to update the details?')">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <script>
+                            window.addEventListener('DOMContentLoaded', () => {
+                                const dobInput = document.getElementById('dob');
+                                const today = new Date();
+                                today.setDate(today.getDate() - 1); // Yesterday
+                                const maxDate = today.toISOString().split('T')[0];
+                                dobInput.setAttribute('max', maxDate);
+                            });
+                        </script>
                         <script th:if="${forcePasswordChange}">
                             document.addEventListener("DOMContentLoaded", function() {
                                 // Automatically show the password tab on first login
@@ -296,12 +395,10 @@
                             });
                         </script>
                     </div>
-                    <!-- End Bordered Tabs -->
                 </div>
             </div>
         </div>
     </section>
-    <!-- Modal for Uploading Profile Picture -->
     <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -404,6 +501,11 @@
 <script>
     function confirmCancellation() {
         return confirm("Are you sure you want to request cancellation? This action cannot be undone.");
+    }
+    function toTitleCase(str) {
+        return str.toLowerCase().replace(/\b\w/g, function (char) {
+            return char.toUpperCase();
+        });
     }
 </script>
 </body>

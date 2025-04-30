@@ -51,25 +51,10 @@
         transition: background-color 0.1s ease, border-radius 0.1s ease, padding
         0.1s ease;
     }
-
-
-
-
-
-
-
-
-
-
-
 </style>
 
 <body>
-
-<!-- Include the header fragment -->
 <div th:replace="fragments/internHeaderFragment :: header"></div>
-
-<!-- Include the aside fragment -->
 <div th:replace="fragments/internAsideFragment :: aside"></div>
 
 <main id="main" class="main">
@@ -136,6 +121,17 @@
     <h1 class="text-danger small pt-1 mx-3 fw-bold"
         th:if="${weeklyReportDisable1 != 'false' || weeklyReportDisable2 != 'false'}">No need to submit more reports.
         You have completed your internship.</h1>
+    <!-- Success message -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Error message -->
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
     <div class="container mt-2">
         <div class="card">
             <div
@@ -236,7 +232,7 @@
                                 Weekly Report:</label> <input type="file" class="form-control"
                                                               id="weeklyReportSubmission" name="weeklyReportSubmission"
                                                               accept=".pdf"
-                                                              required>
+                                                              required onchange="validateFileSize(this)">
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary"
@@ -252,9 +248,19 @@
             </div>
         </div>
     </div>
-
-
-    <!-- Include the footer fragment -->
+    <script>
+        function validateFileSize(input) {
+            const maxSizeKB = 500;
+            const file = input.files[0];
+            if (file) {
+                const fileSizeKB = file.size / 1024;
+                if (fileSizeKB > maxSizeKB) {
+                    alert("Please select a file less than 500 KB.");
+                    input.value = "";
+                }
+            }
+        }
+    </script>
     <div th:replace="fragments/footerFragment :: footer"></div>
 </main>
 

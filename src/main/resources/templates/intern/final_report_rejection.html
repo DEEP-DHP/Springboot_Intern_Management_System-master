@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Final Report Rejection</title>
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<style>
+  .late-status {
+    color: red;
+  }
+
+  .green-status {
+    color: green;
+  }
+</style>
+
+<body>
+
+<!-- Include the header fragment -->
+<div th:replace="fragments/internHeaderFragment :: header"></div>
+
+<!-- Include the aside fragment -->
+<div th:replace="fragments/internAsideFragment :: aside"></div>
+
+<main id="main" class="main">
+  <div class="container mt-2">
+    <!-- Card Header -->
+    <div class="col-xxl-12 col-md-12">
+      <div class="card info-card sales-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+              <i class="bi bi-file-earmark-pdf"></i>
+            </div>
+            <div class="ps-3">
+              <h4><span>Final Report Status</span></h4>
+              <h5><span class="text-danger small pt-1 fw-bold">Highlighted Changes Required</span></h5>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PDF Display Card -->
+    <div class="card-body">
+      <table class="table table-bordered">
+        <tr>
+          <td>Group ID:</td>
+          <td th:text="${intern.group.groupId}"></td>
+        </tr>
+        <tr>
+          <td>Guide:</td>
+          <td th:text="${intern.group.guide.name}"></td>
+        </tr>
+        <tr>
+          <td>Rejected File:</td>
+          <td>
+            <div th:if="${rejectionFilePath != null}">
+              <iframe th:src="@{/bisag/intern/updated_final_report}" width="1000" height="800" style="border: 1px solid #ccc;"></iframe>
+            </div>
+            <div th:if="${rejectionFilePath == null}" class="text-danger">
+              No rejection report available.
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Include the footer fragment -->
+  <div th:replace="fragments/footerFragment :: footer"></div>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+</body>
+</html>
