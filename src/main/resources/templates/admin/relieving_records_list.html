@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Intern Relieving Records</title>
+  <title>Total Interns</title>
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
         integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
@@ -35,7 +35,21 @@
       width: 60%;
       border-collapse: collapse;
       margin-bottom: 20px;
-      margin-top: 40px;
+      margin-top: 10px;
+    }
+
+    .table th {
+      cursor: pointer;
+      background-image: url('default-icon.png'); /* Default icon image */
+      background-size: 16px 16px; /* Adjust the size of the icon */
+      background-repeat: no-repeat;
+      background-position: right center;
+      /* Position the icon to the right center */
+      padding-right: 20px; /* Add some padding to accommodate the icon */
+    }
+
+    .table th:hover {
+      background-image: url('hover-icon.png'); /* Hover icon image */
     }
 
     th, td {
@@ -73,14 +87,64 @@
       color: white;
     }
 
-    .table th {
-      cursor: pointer;
-      background-image: url('default-icon.png'); /* Default icon image */
-      background-size: 16px 16px; /* Adjust the size of the icon */
-      background-repeat: no-repeat;
-      background-position: right center;
-      /* Position the icon to the right center */
-      padding-right: 20px; /* Add some padding to accommodate the icon */
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    .table td, .table th {
+      white-space: nowrap;
+    }
+
+    .upper-container {
+      display: flex; /* Use flexbox for layout */
+      align-items: center; /* Center items vertically */
+    }
+
+    .card-title {
+      margin-right: 10px; /* Add some spacing between elements */
+    }
+
+    #searchInput {
+      margin-left: auto; /* Align the input to the right */
+      margin-right: 20px;
+    }
+    .filter-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px; /* Spacing between filters */
+      justify-content: space-between;
+      max-width: 100%;
+      margin-bottom: 10px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      width: calc(33.33% - 10px); /* Three filters per row */
+      min-width: 180px;
+    }
+
+    .filter-group label {
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+
+    .filter-group select {
+      font-size: 12px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+    }
+    .filter-container label {
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+    .filter-container select {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
     }
   </style>
 </head>
@@ -96,11 +160,11 @@
 <main id="main" class="main">
 
   <div class="pagetitle">
-    <h1>Relieving Records</h1>
+    <h1>Total Interns</h1>
     <nav>
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a th:href="@{/bisag/admin/ask_records}">Records</a></li>
-        <li class="breadcrumb-item active">Relieving Records List</li>
+        <li class="breadcrumb-item"><a href="/bisag/admin/intern_application/new_interns">Intern</a></li>
+        <li class="breadcrumb-item active">Total Interns</li>
       </ol>
     </nav>
   </div>
@@ -111,13 +175,26 @@
       <div class="col-lg-12">
         <input type="text" class="mb-4" id="searchInput" placeholder="Search...">
         <div class="card">
-          <div class="card-body">
+          <div class="upper-container mt-3">
+            <div class="card-body">
             <h5 class="card-title">List of Relieving Records for Interns</h5>
             <button id="downloadPdf" class="btn btn-primary mb-3">Download PDF</button>
             <button id="downloadCSV" class="btn btn-primary mb-3">Download Excel</button>
             <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
             <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
-            <!-- Table with stripped rows -->
+
+          </div>
+          </div>
+          <div class="card-body table-wrapper">
+            <form method="get" action="/bisag/admin/relieving_records_list">
+              <input type="hidden" name="page" value="0" />
+              <input type="hidden" name="size" value="40" />
+              <label>
+                <input type="checkbox" name="showAll" th:checked="${showAll}" onchange="this.form.submit()" />
+                Show All Records
+              </label>
+            </form>
+          <div class="card-body table-wrapper">
             <table class="table table-bordered">
               <thead>
               <tr>
@@ -148,7 +225,7 @@
                 <th>Attendance</th>
                 <th>Any Others</th>
                 <th>TimeStamp</th>
-
+                <th>Action</th>
               </tr>
               </thead>
               <tbody>
@@ -159,49 +236,174 @@
                   </a>
                 </td>
                 <td th:text="${record.internId}"></td>
-                <td th:text="${record.firstName}"></td>
-                <td th:text="${record.groupId}"></td>
-                <td th:text="${record.collegeName}"></td>
+                <td>
+                  <span class="view-field" th:text="${record.firstName}"></span>
+                  <input class="form-control edit-field d-none" name="firstName" th:value="${record.firstName}" />
+                </td>
+                <td>
+                  <span class="view-field" th:text="${record.groupId}"></span>
+                  <input class="form-control edit-field d-none" name="groupId" th:value="${record.groupId}" />
+                </td>
+                <td>
+                  <span class="view-field" th:text="${record.collegeName}"></span>
+                  <input class="form-control edit-field d-none" name="collegeName" th:value="${record.collegeName}" />
+                </td>
                 <td th:text="${#dates.format(T(java.util.Date).from(record.joiningDate.toLocalDate().atStartOfDay(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy')}"></td>
                 <td th:text="${#dates.format(T(java.util.Date).from(record.plannedDate.toLocalDate().atStartOfDay(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy')}"></td>
-                <td th:text="${record.password}"></td>
-                <td th:text="${record.media}"></td>
-                <td th:text="${record.status}"></td>
-                <td th:text="${record.project}"></td>
-                <td th:text="${record.books}"></td>
-                <td th:text="${record.subscription}"></td>
-                <td th:text="${record.accessRights}"></td>
-                <td th:text="${record.pendrives}"></td>
-                <td th:text="${record.unusedCd}"></td>
-                <td th:text="${record.backupProject}"></td>
-                <td th:text="${record.system}"></td>
-                <td th:text="${record.identityCards}"></td>
-                <td th:text="${record.stipend}"></td>
-                <td th:text="${record.information}"></td>
-                <td th:text="${record.endInteriew}"></td>
-                <td th:text="${record.weeklyReport}"></td>
-                <td th:text="${record.finalReport}"></td>
-                <td th:text="${record.attendance}"></td>
-                <td th:text="${record.others}"></td>
+
+                <!-- Editable Fields -->
+                <td><span class="view-field" th:text="${record.password}"></span>
+                  <select class="form-control edit-field d-none" name="password">
+                    <option value="Yes" th:selected="${record.password == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.password == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.password == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+
+                <td><span class="view-field" th:text="${record.media}"></span>
+                  <select class="form-control edit-field d-none" name="media">
+                    <option value="Yes" th:selected="${record.media == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.media == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.media == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.status}"></span>
+                  <select class="form-control edit-field d-none" name="status">
+                    <option value="Yes" th:selected="${record.status == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.status == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.status == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.project}"></span>
+                  <select class="form-control edit-field d-none" name="project">
+                    <option value="Yes" th:selected="${record.project == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.project == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.project == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.books}"></span>
+                  <select class="form-control edit-field d-none" name="books">
+                    <option value="Yes" th:selected="${record.books == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.books == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.books == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.subscription}"></span>
+                  <select class="form-control edit-field d-none" name="subscription">
+                    <option value="Yes" th:selected="${record.subscription == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.subscription == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.subscription == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.accessRights}"></span>
+                  <select class="form-control edit-field d-none" name="accessRights">
+                    <option value="Yes" th:selected="${record.accessRights == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.accessRights == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.accessRights == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.pendrives}"></span>
+                  <select class="form-control edit-field d-none" name="pendrives">
+                    <option value="Yes" th:selected="${record.pendrives == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.pendrives == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.pendrives == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.unusedCd}"></span>
+                  <select class="form-control edit-field d-none" name="unusedCd">
+                    <option value="Yes" th:selected="${record.unusedCd == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.unusedCd == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.unusedCd == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.backupProject}"></span>
+                  <select class="form-control edit-field d-none" name="backupProject">
+                    <option value="Yes" th:selected="${record.backupProject == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.backupProject == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.backupProject == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.system}"></span>
+                  <select class="form-control edit-field d-none" name="system">
+                    <option value="Yes" th:selected="${record.system == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.system == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.system == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.identityCards}"></span>
+                  <select class="form-control edit-field d-none" name="identityCards">
+                    <option value="Yes" th:selected="${record.identityCards == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.identityCards == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.identityCards == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.stipend}"></span>
+                  <select class="form-control edit-field d-none" name="stipend">
+                    <option value="Yes" th:selected="${record.stipend == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.stipend == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.stipend == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.information}"></span>
+                  <select class="form-control edit-field d-none" name="information">
+                    <option value="Yes" th:selected="${record.information == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.information == 'No'}">No</option>
+                    <option value="Not Applicable" th:selected="${record.information == 'Not Applicable'}">Not Applicable</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.endInteriew}"></span>
+                  <select class="form-control edit-field d-none" name="endInteriew">
+                    <option value="Yes" th:selected="${record.endInteriew == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.endInteriew == 'No'}">No</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.weeklyReport}"></span>
+                  <select class="form-control edit-field d-none" name="weeklyReport">
+                    <option value="Yes" th:selected="${record.weeklyReport == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.weeklyReport == 'No'}">No</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.finalReport}"></span>
+                  <select class="form-control edit-field d-none" name="finalReport">
+                    <option value="Yes" th:selected="${record.finalReport == 'Yes'}">Yes</option>
+                    <option value="No" th:selected="${record.finalReport == 'No'}">No</option>
+                  </select>
+                </td>
+                <td><span class="view-field" th:text="${record.attendance}"></span><input class="form-control edit-field d-none" name="attendance" th:value="${record.attendance}" /></td>
+                <td><span class="view-field" th:text="${record.others}"></span><input class="form-control edit-field d-none" name="others" th:value="${record.others}" /></td>
+
                 <td th:text="${#temporals.format(record.submissionTimestamp, 'dd-MM-yyyy HH:mm:ss')}"></td>
 
+                <!-- Actions -->
+                <td>
+                  <button class="btn btn-sm btn-primary edit-btn">Edit</button>
+                  <button class="btn btn-sm btn-success d-none save-btn" th:attr="data-id=${record.id}">Save</button>
+                </td>
               </tr>
               </tbody>
             </table>
-
           </div>
+            <div th:if="${!showAll}">
+              <nav>
+                <ul class="pagination">
+                  <li th:each="i : ${#numbers.sequence(0, totalCount / pageSize)}"
+                      class="page-item"
+                      th:classappend="${i == currentPage} ? 'active'">
+                    <a class="page-link"
+                       th:href="@{/bisag/admin/relieving_records_list(page=${i}, size=${pageSize}, showAll=${showAll})}"
+                       th:text="${i + 1}"></a>
+                  </li>
+                </ul>
+              </nav>
+            </div>
         </div>
 
       </div>
     </div>
 
   </section>
-
-
-  <!-- Include the footer fragment -->
   <div th:replace="fragments/footerFragment :: footer"></div>
 </main>
-<!-- End #main -->
 <script
         src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
@@ -321,6 +523,50 @@
       }
 
       doc.save('Relieving Records.pdf');
+    });
+  });
+</script>
+<script>
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const row = btn.closest('tr');
+      row.querySelectorAll('.view-field').forEach(el => el.classList.add('d-none'));
+      row.querySelectorAll('.edit-field').forEach(el => el.classList.remove('d-none'));
+      row.querySelector('.edit-btn').classList.add('d-none');
+      row.querySelector('.save-btn').classList.remove('d-none');
+    });
+  });
+
+  document.querySelectorAll('.save-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const row = btn.closest('tr');
+      const id = btn.getAttribute('data-id');
+      const data = { id };
+
+      row.querySelectorAll('.edit-field').forEach(input => {
+        data[input.name] = input.value;
+      });
+
+      fetch('/bisag/admin/update_relieving_record', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]')?.value || ''
+        },
+        body: JSON.stringify(data)
+      })
+              .then(res => {
+                if (!res.ok) throw new Error('Update failed');
+                return res.text();
+              })
+              .then(() => {
+                alert("Record updated successfully!");
+                location.reload(); // Optional: refresh to see updated timestamp
+              })
+              .catch(err => {
+                alert("Failed to update. Try again.");
+                console.error(err);
+              });
     });
   });
 </script>

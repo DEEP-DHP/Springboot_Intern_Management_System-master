@@ -32,8 +32,8 @@
 </head>
 
 <body>
-<div th:replace="fragments/headerFragment :: header"></div>
-<div th:replace="fragments/asideFragment :: aside"></div>
+<th:block th:replace="~{fragments/headerFragment :: header}"></th:block>
+<th:block th:replace="~{fragments/asideFragment :: aside}"></th:block>
 <main id="main" class="main">
     <div class="pagetitle">
         <h1>Dashboard</h1>
@@ -147,78 +147,79 @@
                             </div>
                         </a>
                     </div>
-                    <div class="col-xxl-4 col-md-4">
-                        <a th:href="@{/bisag/admin/create_group}">
-                            <div class="card info-card interns-card glowing-card">
-
-                                <div class="card-body">
-
-                                    <div class="d-flex align-items-center">
-                                        <div
-                                                class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                            <i class="bi bi-people"></i>
-                                        </div>
-                                        <div class="ps-3">
-                                            <h6>
-                                                <span th:text="${pendingGroupCreationCount}"></span>
-                                            </h6>
-                                            <span class="text-success small pt-1 fw-bold">Pending Group Creation</span>
+                    <div class="row">
+                        <div class="col-xxl-3 col-md-3">
+                            <a th:href="@{/bisag/admin/create_group}">
+                                <div class="card info-card interns-card glowing-card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-people"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6><span th:text="${pendingGroupCreationCount}"></span></h6>
+                                                <span class="text-success small pt-1 fw-bold">Pending Group Creation</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                            </a>
+                        </div>
 
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-xxl-4 col-xl-4">
-                        <a th:href="@{/bisag/admin/cancellation_requests}">
-                            <div class="card info-card customers-card glowing-card">
-
-                                <div class="card-body">
-
-                                    <div class="d-flex align-items-center">
-                                        <div
-                                                class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                            <i class="bi bi-people"></i>
-                                        </div>
-                                        <div class="ps-3">
-                                            <h6>
-                                                <span th:text="${requestedCancellationsCount}"></span>
-                                            </h6>
-                                            <span class="text-danger small pt-1 fw-bold">Pending Cancellation Requests</span>
-
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-xxl-4 col-md-4">
-                        <a th:href="@{/bisag/admin/admin_pending_def_approvals}">
-                            <div class="card info-card sales-card glowing-card">
-
-                                <div class="card-body">
-
-                                    <div class="d-flex align-items-center">
-                                        <div
-                                                class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                            <i class="bi bi-people"></i>
-                                        </div>
-                                        <div class="ps-3">
-                                            <h6>
-                                                <span th:text="${adminPendingProjectDefinitionCount}"></span>
-                                            </h6>
-                                            <span class="text-success small pt-1 fw-bold">Pending
-													Project Definitions</span>
+                        <div class="col-xxl-3 col-md-3">
+                            <a th:href="@{/bisag/admin/cancellation_requests}">
+                                <div class="card info-card customers-card glowing-card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-people"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6><span th:text="${requestedCancellationsCount}"></span></h6>
+                                                <span class="text-danger small pt-1 fw-bold">Pending Cancellation Requests</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                            </a>
+                        </div>
 
-                            </div>
-                        </a>
+                        <div class="col-xxl-3 col-md-3">
+                            <a th:href="@{/bisag/admin/admin_pending_def_approvals}">
+                                <div class="card info-card sales-card glowing-card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-people"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6><span th:text="${adminPendingProjectDefinitionCount}"></span></h6>
+                                                <span class="text-success small pt-1 fw-bold">Pending Project Definitions</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-xxl-3 col-md-3">
+                            <a th:href="@{/bisag/admin/allocate_guide}">
+                                <div class="card info-card interns-card glowing-card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-people"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6><span th:text="${countGroup}"></span></h6>
+                                                <span class="text-success small pt-1 fw-bold">Total Groups</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
                     </div>
-
                     <section class="section profile">
                         <div class="row">
                             <div class="col-xl-4">
@@ -234,6 +235,17 @@
                                         <h3>Admin</h3>
                                     </div>
                                 </div>
+                            </div>
+                            <!-- Success Message -->
+                            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                                <span th:text="${success}"></span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+
+                            <!-- Error Message -->
+                            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <span th:text="${error}"></span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
                             <div class="col-xl-8">
                                 <div class="card">
@@ -447,7 +459,7 @@
         </div>
     </section>
 
-    <div th:replace="fragments/footerFragment :: footer"></div>
+    <th:block th:replace="~{fragments/footerFragment :: footer}"></th:block>
 
 </main>
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"

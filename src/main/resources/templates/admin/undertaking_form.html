@@ -68,20 +68,16 @@
 
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Add New Undertaking</h5>
-
-                        <!-- Success/Error Messages -->
                         <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
                         <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
 
-                        <!-- Add New Undertaking Form -->
-                        <form th:action="@{/bisag/admin/add_undertaking}" method="post">
-                            <div class="form-floating">
-                                <textarea class="form-control" name="rules" id="rules" rows="4" required></textarea>
-                                <label for="rules">Enter Undertaking Content</label>
+                        <form th:action="@{/bisag/admin/add_undertaking}" method="post" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="file" class="form-label">Upload Undertaking PDF</label>
+                                <input type="file" class="form-control" name="file" id="file" accept="application/pdf" required>
                             </div>
                             <div class="text-center">
-                                <button type="submit" class="btn btn-custom">Add Undertaking</button>
+                                <button type="submit" class="btn-custom">Upload Undertaking</button>
                             </div>
                         </form>
                         <hr>

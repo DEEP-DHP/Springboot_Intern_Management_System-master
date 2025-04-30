@@ -58,8 +58,6 @@
                         <!-- Success/Error Messages -->
                         <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
                         <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
-                        <!-- Relieving Record Form -->
-                        <!-- Dropdown to select intern ID -->
                         <form method="POST" action="/bisag/admin/submit_relieving_record">
                             <div class="row">
                                 <div class="col-md-6">
@@ -67,7 +65,7 @@
                                         <select class="form-select" id="internId" name="internId">
                                             <option value="">-- Select Intern ID --</option>
                                             <th:block th:each="intern : ${interns}">
-                                                <option th:value="${intern.internId}" th:text="${intern.internId}"></option>
+                                                <option th:value="${intern.internId}" th:text="${intern.internId+ ' ' + intern.firstName}"></option>
                                             </th:block>
                                         </select>
                                     </div>
@@ -119,18 +117,18 @@
                                         <input type="radio" name="password" value="No" required
                                                th:checked="${record != null and record.password == 'No'}"> No
                                         <input type="radio" name="password" value="Not Applicable" required
-                                               th:checked="${record != null and record.password == 'Not Applicable'}"> Not Applicable
+                                               th:checked="${record == null or record.password == 'Not Applicable'}"> Not Applicable
                                     </div>
                                 </div>
                                 <div class="col-md-6 form-group">
                                     <label>CD's/DVD's or Other Media:</label>
                                     <div class="radio-group">
                                         <input type="radio" name="media" value="Yes" required
-                                               th:checked="${record != null and record.media == 'Yes'}"> Yes
+                                               th:checked="${record != null and record.password == 'Yes'}"> Yes
                                         <input type="radio" name="media" value="No" required
-                                               th:checked="${record != null and record.media == 'No'}"> No
+                                               th:checked="${record != null and record.password == 'No'}"> No
                                         <input type="radio" name="media" value="Not Applicable" required
-                                               th:checked="${record != null and record.media == 'Not Applicable'}"> Not Applicable
+                                               th:checked="${record == null or record.password == 'Not Applicable'}"> Not Applicable
                                     </div>
                                 </div>
                             </div>
@@ -143,7 +141,7 @@
                                         <input type="radio" name="status" value="No" required
                                                th:checked="${record != null and record.status == 'No'}"> No
                                         <input type="radio" name="status" value="Not Applicable" required
-                                               th:checked="${record != null and record.status == 'Not Applicable'}"> Not Applicable
+                                               th:checked="${record == null or record.password == 'Not Applicable'}"> Not Applicable
                                     </div>
                                 </div>
                                 <div class="col-md-6 form-group">
@@ -154,7 +152,7 @@
                                         <input type="radio" name="project" value="No" required
                                                th:checked="${record != null and record.project == 'No'}"> No
                                         <input type="radio" name="project" value="Not Applicable" required
-                                               th:checked="${record != null and record.project == 'Not Applicable'}"> Not Applicable
+                                               th:checked="${record == null or record.password == 'Not Applicable'}"> Not Applicable
                                     </div>
                                 </div>
 <!--                                <div class="col-md-6 form-group">-->
@@ -176,7 +174,7 @@
                                         <input type="radio" name="books" value="No" required
                                                th:checked="${record != null and record.books == 'No'}"> No
                                         <input type="radio" name="books" value="Not Applicable" required
-                                               th:checked="${record != null and record.books == 'Not Applicable'}"> Not Applicable
+                                               th:checked="${record == null or record.password == 'Not Applicable'}"> Not Applicable
                                     </div>
                                 </div>
                                 <div class="col-md-6 form-group">
@@ -187,7 +185,7 @@
                                         <input type="radio" name="subscription" value="No" required
                                                th:checked="${record != null and record.subscription == 'No'}"> No
                                         <input type="radio" name="subscription" value="Not Applicable" required
-                                               th:checked="${record != null and record.subscription == 'Not Applicable'}"> Not Applicable
+                                               th:checked="${record == null or record.password == 'Not Applicable'}"> Not Applicable
                                     </div>
                                 </div>
                                 <div class="col-md-6 form-group">
@@ -198,7 +196,7 @@
                                         <input type="radio" name="accessRights" value="No" required
                                                th:checked="${record != null and record.accessRights == 'No'}"> No
                                         <input type="radio" name="accessRights" value="Not Applicable" required
-                                               th:checked="${record != null and record.accessRights == 'Not Applicable'}"> Not Applicable
+                                               th:checked="${record == null or record.password == 'Not Applicable'}"> Not Applicable
                                     </div>
                                 </div>
                                 <div class="col-md-6 form-group">
@@ -209,7 +207,7 @@
                                         <input type="radio" name="pendrives" value="No" required
                                                th:checked="${record != null and record.pendrives == 'No'}"> No
                                         <input type="radio" name="pendrives" value="Not Applicable" required
-                                               th:checked="${record != null and record.pendrives == 'Not Applicable'}"> Not Applicable
+                                               th:checked="${record == null or record.password == 'Not Applicable'}"> Not Applicable
                                     </div>
                                 </div>
                                 <div class="col-md-6 form-group">
@@ -220,7 +218,7 @@
                                         <input type="radio" name="unusedCd" value="No" required
                                                th:checked="${record != null and record.unusedCd == 'No'}"> No
                                         <input type="radio" name="unusedCd" value="Not Applicable" required
-                                               th:checked="${record != null and record.unusedCd == 'Not Applicable'}"> Not Applicable
+                                               th:checked="${record == null or record.password == 'Not Applicable'}"> Not Applicable
                                     </div>
                                 </div>
                                 <div class="col-md-6 form-group">
@@ -231,7 +229,7 @@
                                         <input type="radio" name="backupProject" value="No" required
                                                th:checked="${record != null and record.backupProject == 'No'}"> No
                                         <input type="radio" name="backupProject" value="Not Applicable" required
-                                               th:checked="${record != null and record.backupProject == 'Not Applicable'}"> Not Applicable
+                                               th:checked="${record == null or record.password == 'Not Applicable'}"> Not Applicable
                                     </div>
                                 </div>
                                 <div class="col-md-6 form-group">
@@ -242,7 +240,7 @@
                                         <input type="radio" name="system" value="No" required
                                                th:checked="${record != null and record.system == 'No'}"> No
                                         <input type="radio" name="system" value="Not Applicable" required
-                                               th:checked="${record != null and record.system == 'Not Applicable'}"> Not Applicable
+                                               th:checked="${record == null or record.password == 'Not Applicable'}"> Not Applicable
                                     </div>
                                 </div>
                                 <div class="col-md-6 form-group">
@@ -253,7 +251,7 @@
                                         <input type="radio" name="stipend" value="No" required
                                                th:checked="${record != null and record.stipend == 'No'}"> No
                                         <input type="radio" name="stipend" value="Not Applicable" required
-                                               th:checked="${record != null and record.stipend == 'Not Applicable'}"> Not Applicable
+                                               th:checked="${record == null or record.password == 'Not Applicable'}"> Not Applicable
                                     </div>
                                 </div>
                                 <div class="col-md-6 form-group">
@@ -264,7 +262,7 @@
                                         <input type="radio" name="information" value="No" required
                                                th:checked="${record != null and record.information == 'No'}"> No
                                         <input type="radio" name="information" value="Not Applicable" required
-                                               th:checked="${record != null and record.information == 'Not Applicable'}"> Not Applicable
+                                               th:checked="${record == null or record.password == 'Not Applicable'}"> Not Applicable
                                     </div>
                                 </div>
                                 <div class="col-md-6 form-group">
@@ -307,7 +305,7 @@
                                     <div class="radio-group">
                                         <input type="text" name="others" class="form-control" id="others"
                                                placeholder="Any Other:" required
-                                               th:value="${record != null ? record.others : ''}">
+                                               th:value="${record == null ? 'Nill' : record.others}">
                                     </div>
                                 </div>
                             </div>

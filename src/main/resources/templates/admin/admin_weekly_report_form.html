@@ -27,17 +27,11 @@
     }
   </style>
 </head>
-
 <body>
-
-<!-- Include Header -->
-<div th:replace="fragments/headerFragment :: header"></div>
-
-<!-- Include Sidebar -->
-<div th:replace="fragments/asideFragment :: aside"></div>
+<th:block th:replace="~{fragments/headerFragment :: header}"></th:block>
+<th:block th:replace="~{fragments/asideFragment :: aside}"></th:block>
 
 <main id="main" class="main">
-
   <div class="pagetitle">
     <h1>Submit Weekly Report</h1>
     <nav>
@@ -54,14 +48,11 @@
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Enter Weekly Report Details</h5>
-            <!-- Success/Error Messages -->
-            <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
-            <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+            <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
+            <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
 
-            <!-- Form for Weekly Report Submission -->
             <form th:action="@{/bisag/admin/admin_weekly_report_form}" method="post" enctype="multipart/form-data">
 
-              <!-- Independent Dropdown for Group ID -->
               <div class="form-floating">
                 <select id="groupId" name="groupId" class="form-select" required>
                   <option value="">-- Select Group --</option>
@@ -70,7 +61,6 @@
                 <label>Select Group ID:</label>
               </div>
 
-              <!-- Independent Dropdown for Intern ID -->
               <div class="form-floating">
                 <select id="internId" name="internId" class="form-select" required>
                   <option value="">-- Select Intern --</option>
@@ -79,21 +69,22 @@
                 <label>Select Intern ID:</label>
               </div>
 
-              <!-- Display Intern Name (Read-Only) -->
               <div class="form-floating">
                 <input type="text" id="internName" name="internName" class="form-control" readonly />
                 <label>Intern Name:</label>
               </div>
 
-              <!-- Guide ID Dropdown -->
               <div class="form-floating">
-                <select id="guideId" name="guide" class="form-select">
-                  <option value="">-- Select Guide --</option>
-                </select>
-                <label>Select Guide ID:</label>
+                <input type="text" id="guideId" name="guideId" class="form-control" readonly />
+                <label>Guide ID:</label>
               </div>
 
-              <!-- Deadline Date with Default Time -->
+              <!-- Auto-filled Guide Name (do NOT submit this) -->
+              <div class="form-floating">
+                <input type="text" id="guideName" class="form-control" readonly />
+                <label>Guide Name:</label>
+              </div>
+
               <div class="form-floating">
                 <input type="datetime-local" id="deadline" name="deadline" class="form-control" required/>
                 <label for="deadline">Deadline:</label>
@@ -162,23 +153,25 @@
 
           if (internId) {
             $.ajax({
-              url: '/bisag/admin/getInternName/' + internId,
+              url: '/bisag/admin/getInternNamee/' + internId,
               type: 'GET',
               success: function (data) {
                 $('#internName').val(data.internName);
+                $('#guideId').val(data.guideId || '');
+                $('#guideName').val(data.guideName || '');
               },
               error: function () {
                 alert('Error fetching intern details.');
+                $('#internName, #guideId, #guideName').val('');
               }
             });
           } else {
-            $('#internName').val('');
+            $('#internName, #guideId, #guideName').val('');
           }
         });
       });
     });
 
-    // Set default deadline time to 11:30
     document.addEventListener("DOMContentLoaded", function () {
       let deadlineField = document.getElementById("deadline");
       let today = new Date().toISOString().split("T")[0];
@@ -187,7 +180,8 @@
   </script>
 
   <!-- Include Footer -->
-  <div th:replace="fragments/footerFragment :: footer"></div>
+  <th:block th:replace="~{fragments/footerFragment :: footer}"></th:block>
+
 </main>
 
 </body>

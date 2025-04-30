@@ -112,6 +112,7 @@
 		<thead>
 		<tr>
 			<th><i class="fa-solid fa-sort mx-2"></i>Group ID</th>
+			<th><i class="fa-solid fa-sort mx-2"></i>Intern(s)</th>
 			<th><i class="fa-solid fa-sort mx-2"></i>Project Definition</th>
 			<th><i class="fa-solid fa-sort mx-2"></i>Description</th>
 			<th><i class="fa-solid fa-sort mx-2"></i>Abstract</th>
@@ -125,8 +126,9 @@
 					th:action="@{'/bisag/admin/admin_pending_def_approvals/' + ${group.groupId}}"
 					method="post">
 				<td><a
-						th:href="@{'/bisag/admin/allocate_guide/' + ${group.groupId}}"><span
+						th:href="@{'/bisag/admin/group/' + ${group.groupId}} + '/members'"><span
 						th:text="${group.groupId}"></span></a></td>
+				<td th:text="${groupToInternNameMap[group.groupId]}">-</td>
 				<td><input type="text" name="projectDefinition"
 						   th:value="${group != null ? group.projectDefinition : ''}" /></td>
 				<td><input type="text" name="description"

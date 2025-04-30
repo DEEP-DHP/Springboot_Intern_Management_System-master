@@ -96,31 +96,32 @@
 		}
 
 		.upper-container {
-			display: flex; /* Use flexbox for layout */
-			align-items: center; /* Center items vertically */
+			display: flex;
+			align-items: center;
 		}
 
 		.card-title {
-			margin-right: 10px; /* Add some spacing between elements */
+			margin-right: 10px;
 		}
 
 		#searchInput {
-			margin-left: auto; /* Align the input to the right */
+			margin-left: auto;
 			margin-right: 20px;
 		}
 		.filter-container {
 			display: flex;
 			flex-wrap: wrap;
-			gap: 10px; /* Spacing between filters */
+			gap: 10px;
 			justify-content: space-between;
 			max-width: 100%;
 			margin-bottom: 10px;
+			align-items: flex-end;
 		}
 
 		.filter-group {
 			display: flex;
 			flex-direction: column;
-			width: calc(33.33% - 10px); /* Three filters per row */
+			width: calc(33.33% - 10px);
 			min-width: 180px;
 		}
 
@@ -146,19 +147,40 @@
 			border: 1px solid #ccc;
 			border-radius: 5px;
 		}
+		.table-scroll-wrapper {
+			overflow-x: auto;
+			max-width: 100%;
+		}
+		.fixed-scrollbar {
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			height: 16px;
+			background: #f1f1f1;
+			z-index: 999;
+			overflow-x: auto;
+			overflow-y: hidden;
+		}
+
+		.scrollbar-content {
+			height: 1px;
+			width: 2000px;
+		}
+
+		body {
+			padding-bottom: 24px;
+		}
+		.filter-group button {
+			height: 38px;
+		}
 	</style>
 </head>
 
 <body>
-
-<!-- Include the header fragment -->
-<div th:replace="fragments/headerFragment :: header"></div>
-
-<!-- Include the aside fragment -->
-<div th:replace="fragments/asideFragment :: aside"></div>
-
+<th:block th:replace="~{fragments/headerFragment :: header}"></th:block>
+<th:block th:replace="~{fragments/asideFragment :: aside}"></th:block>
 <main id="main" class="main">
-
 	<div class="pagetitle">
 		<h1>Total Interns</h1>
 		<nav>
@@ -168,8 +190,6 @@
 			</ol>
 		</nav>
 	</div>
-	<!-- End Page Title -->
-
 	<section class="section">
 		<div class="row">
 			<div class="col-lg-12">
@@ -181,54 +201,60 @@
 						<button id="downloadExcel" class="btn btn-success">Download Excel</button>
 						<input type="text" id="searchInput" placeholder="Search...">
 					</div>
+					<div th:if="${alertSuccess}" class="alert alert-success" role="alert">
+						<span th:text="${alertSuccess}"></span>
+					</div>
+					<div th:if="${alertError}" class="alert alert-danger" role="alert">
+						<span th:text="${alertError}"></span>
+					</div>
 					<div class="card-body table-wrapper">
 						<div class="filter-container">
 							<div class="filter-group">
-							<label for="filter-guide">Guide:</label>
-							<select id="filter-guide">
-								<option value="">All</option>
-								<option th:each="guide : ${guides}" th:value="${guide.name}" th:text="${guide.name}"></option>
-							</select>
+								<label for="filter-guide">Guide:</label>
+								<select id="filter-guide">
+									<option value="">All</option>
+									<option th:each="guide : ${guides}" th:value="${guide.name}" th:text="${guide.name}"></option>
+								</select>
 							</div>
 
 							<div class="filter-group">
-							<label for="filter-college">College:</label>
-							<select id="filter-college">
-								<option value="">All</option>
-								<option th:each="college : ${colleges}" th:value="${college.name}" th:text="${college.name}"></option>
-							</select>
+								<label for="filter-college">College:</label>
+								<select id="filter-college">
+									<option value="">All</option>
+									<option th:each="college : ${colleges}" th:value="${college.name}" th:text="${college.name}"></option>
+								</select>
 							</div>
 
 							<div class="filter-group">
-							<label for="filter-degree">Degree:</label>
-							<select id="filter-degree">
-								<option value="">All</option>
-								<option th:each="degree : ${degrees}" th:value="${degree.name}" th:text="${degree.name}"></option>
-							</select>
+								<label for="filter-degree">Degree:</label>
+								<select id="filter-degree">
+									<option value="">All</option>
+									<option th:each="degree : ${degrees}" th:value="${degree.name}" th:text="${degree.name}"></option>
+								</select>
 							</div>
 
 							<div class="filter-group">
-							<label for="filter-domain">Domain:</label>
-							<select id="filter-domain">
-								<option value="">All</option>
-								<option th:each="domain : ${domains}" th:value="${domain.name}" th:text="${domain.name}"></option>
-							</select>
+								<label for="filter-domain">Domain:</label>
+								<select id="filter-domain">
+									<option value="">All</option>
+									<option th:each="domain : ${domains}" th:value="${domain.name}" th:text="${domain.name}"></option>
+								</select>
 							</div>
 
 							<div class="filter-group">
-							<label for="filter-gender">Gender:</label>
-							<select id="filter-gender">
-								<option value="">All</option>
-								<option th:each="gender : ${genders}" th:value="${gender}" th:text="${gender}"></option>
-							</select>
+								<label for="filter-gender">Gender:</label>
+								<select id="filter-gender">
+									<option value="">All</option>
+									<option th:each="gender : ${genders}" th:value="${gender}" th:text="${gender}"></option>
+								</select>
 							</div>
 
 							<div class="filter-group">
-							<label for="filter-intern">Intern ID:</label>
-							<select id="filter-intern">
-								<option value="">All</option>
-								<option th:each="intern : ${interns}" th:value="${intern.internId}" th:text="${intern.internId}"></option>
-							</select>
+								<label for="filter-intern">Intern ID:</label>
+								<select id="filter-intern">
+									<option value="">All</option>
+									<option th:each="intern : ${interns}" th:value="${intern.internId}" th:text="${intern.internId}"></option>
+								</select>
 							</div>
 
 							<div class="filter-group">
@@ -241,13 +267,12 @@
 									<option value="Cancelled">Cancelled</option>
 								</select>
 							</div>
-
 							<div class="filter-group">
-							<label for="filter-project">Project Definition Name:</label>
-							<select id="filter-project">
-								<option value="">All</option>
-								<option th:each="project : ${project_definition_name}" th:value="${project}" th:text="${project}"></option>
-							</select>
+								<label for="filter-project">Project Definition Name:</label>
+								<select id="filter-project">
+									<option value="">All</option>
+									<option th:each="project : ${project_definition_name}" th:value="${project}" th:text="${project}"></option>
+								</select>
 							</div>
 							<div class="filter-container">
 								<div class="filter-group">
@@ -280,8 +305,6 @@
 									joiningDate: document.getElementById("filter-joining-date"),
 									completionDate: document.getElementById("filter-completion-date"),
 								};
-
-								// Store the original dataset from the table
 								let originalData = [];
 								document.querySelectorAll(".datatable tbody tr").forEach(row => {
 									let rowData = {
@@ -300,16 +323,25 @@
 									originalData.push(rowData);
 								});
 
-								// Function to update available options dynamically
+								function updateVisibleRowCount() {
+									const tableBody = document.querySelector('.datatable tbody');
+									const counter = document.getElementById('visibleRowCount');
+
+									if (!tableBody || !counter) return;
+
+									const visibleRows = Array.from(tableBody.querySelectorAll('tr')).filter(row => {
+										return row.style.display !== 'none';
+									});
+
+									counter.textContent = visibleRows.length;
+								}
+
 								function updateFilterOptions() {
 									let filteredData = originalData.filter(rowData => rowData.rowElement.style.display !== "none");
-
 									Object.keys(filters).forEach(filterKey => {
 										let filterElement = filters[filterKey];
 										let selectedValue = filterElement.value;
-
 										let uniqueValues = [...new Set(filteredData.map(row => row[filterKey]).filter(value => value))];
-
 										filterElement.innerHTML = `<option value="">All</option>`;
 										uniqueValues.forEach(value => {
 											let option = document.createElement("option");
@@ -320,98 +352,106 @@
 										});
 									});
 								}
-
-								// Function to filter table rows
-								function filterTable() {
-									let selectedFilters = {};
-									Object.keys(filters).forEach(filterKey => {
-										selectedFilters[filterKey] = filters[filterKey].value.trim().toLowerCase();
+								function applyAllFilters() {
+									const selectedFilters = {};
+									Object.keys(filters).forEach(key => {
+										selectedFilters[key] = filters[key].value.trim().toLowerCase();
 									});
+
+									const joiningDateValue = filters.joiningDate.value ? new Date(filters.joiningDate.value) : null;
+									const completionDateValue = filters.completionDate.value ? new Date(filters.completionDate.value) : null;
 
 									originalData.forEach(rowData => {
 										let showRow = true;
 										Object.keys(selectedFilters).forEach(filterKey => {
+											if (['joiningDate', 'completionDate'].includes(filterKey)) return;
 											if (selectedFilters[filterKey] && rowData[filterKey].toLowerCase() !== selectedFilters[filterKey]) {
 												showRow = false;
 											}
 										});
+										if (showRow) {
+											let rowJoiningDate = rowData.joiningDate ? new Date(rowData.joiningDate.split("-").reverse().join("-")) : null;
+											let rowCompletionDate = rowData.completionDate ? new Date(rowData.completionDate.split("-").reverse().join("-")) : null;
+
+											if (joiningDateValue && rowJoiningDate && rowJoiningDate < joiningDateValue) {
+												showRow = false;
+											}
+											if (completionDateValue && rowCompletionDate && rowCompletionDate > completionDateValue) {
+												showRow = false;
+											}
+										}
+
 										rowData.rowElement.style.display = showRow ? "" : "none";
 									});
 
 									updateFilterOptions();
+									updateVisibleRowCount();
 								}
-
-								// Apply event listeners to all filters
 								Object.values(filters).forEach(filter => {
-									filter.addEventListener("change", filterTable);
+									if (filter.tagName === "SELECT") {
+										filter.addEventListener("change", applyAllFilters);
+									}
 								});
-
-								// Handle date filter with button click
 								document.getElementById("apply-date-filter").addEventListener("click", function () {
-									let joiningDateValue = filters.joiningDate.value ? new Date(filters.joiningDate.value) : null;
-									let completionDateValue = filters.completionDate.value ? new Date(filters.completionDate.value) : null;
-
-									originalData.forEach(rowData => {
-										let rowJoiningDate = rowData.joiningDate ? new Date(rowData.joiningDate.split("-").reverse().join("-")) : null;
-										let rowCompletionDate = rowData.completionDate ? new Date(rowData.completionDate.split("-").reverse().join("-")) : null;
-
-										let showRow = true;
-										if (joiningDateValue && rowJoiningDate && rowJoiningDate < joiningDateValue) {
-											showRow = false;
-										}
-										if (completionDateValue && rowCompletionDate && rowCompletionDate > completionDateValue) {
-											showRow = false;
-										}
-
-										rowData.rowElement.style.display = showRow ? "" : "none";
-									});
-
-									updateFilterOptions();
+									applyAllFilters();
 								});
 
-								// Initial update
+								updateVisibleRowCount();
 								updateFilterOptions();
 							});
 						</script>
-						<table class="table table-bordered datatable">
-							<thead>
-							<tr>
-								<th><i class="fa-solid fa-sort mx-2"></i>ID</th>
-								<th>Documents</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Full Name</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Contact No</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Email ID</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Group ID</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Guide</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Domain</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>College</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Semester</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Permanent
-									Address</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Date of Birth</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Gender</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>College Guide/HOD Name</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Degree</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Aggregate
-									Percentage</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Project
-									Definition Name</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Joining Date</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Completion Date</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Used Resources</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Created At</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Updated At</th>
-								<!--								<th><i class="fa-solid fa-sort mx-2"></i>Cancellation Status</th>-->
-								<th><i class="fa-solid fa-sort mx-2"></i>Current Status</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Report TimeStamp</th>
-								<th><i class="fa-solid fa-sort mx-2"></i>Cancel Time</th>
+						<div class="d-flex justify-content-end mb-2">
+							<a th:if="${!showAll}"
+							   class="btn btn-outline-primary btn-sm"
+							   th:href="@{'/bisag/admin/intern_application/new_interns'(all=true)}">Show All</a>
 
-							</tr>
-							</thead>
-							<tbody>
-							<tr th:each="intern : ${intern}"
-								th:class="${intern.cancellationStatus == 'Cancelled' ? 'table-danger' : ''}"
-								th:classappend="${intern.firstName == null or intern.firstName == '' or
+							<a th:if="${showAll}"
+							   class="btn btn-outline-secondary btn-sm"
+							   th:href="@{'/bisag/admin/intern_application/new_interns'(all=false)}">Show Paginated</a>
+						</div>
+						<div>
+							<strong>Interns:</strong> <span id="visibleRowCount">0</span>
+						</div>
+						<div id="table-scroll-wrapper" class="table-scroll-wrapper">
+							<table class="table table-bordered datatable">
+								<thead>
+								<tr>
+									<th><i class="fa-solid fa-sort mx-2"></i>ID</th>
+									<th>Documents</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Full Name</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Contact No</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Email ID</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Group ID</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Guide</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Domain</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>College</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Semester</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Permanent
+										Address</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Date of Birth</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Gender</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>College Guide/HOD Name</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Degree</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Aggregate
+										Percentage</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Project
+										Definition Name</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Joining Date</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Completion Date</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Used Resources</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Created At</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Updated At</th>
+									<!--								<th><i class="fa-solid fa-sort mx-2"></i>Cancellation Status</th>-->
+									<th><i class="fa-solid fa-sort mx-2"></i>Current Status</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Report TimeStamp</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Cancel Time</th>
+
+								</tr>
+								</thead>
+								<tbody>
+								<tr th:each="intern : ${intern}"
+									th:class="${intern.cancellationStatus == 'Cancelled' ? 'table-danger' : ''}"
+									th:classappend="${intern.firstName == null or intern.firstName == '' or
 
                      intern.contactNo == null or intern.contactNo == '' or
                      intern.email == null or intern.email == '' or
@@ -432,74 +472,102 @@
                      intern.createdAt == null or intern.createdAt == '' or
                      intern.updatedAt == null or intern.updatedAt == ''
                      ? 'table-warning' : ''}">
-								<td><a
-										th:href="@{'/bisag/admin/intern/' + ${intern.internId}}"><span
-										th:text="${intern.internId}"></span></a></td>
-								<td><a
-										th:href="@{'/bisag/admin/intern_docs/' + ${intern.internId}}"
-										class="btn"><i class="fa-solid fa-book my-0"></i></a></td>
-								<td th:text="${intern.firstName}"></td>
-<!--								<td th:text="${intern.lastName}"></td>-->
-								<td th:text="${intern.contactNo}"></td>
-								<td th:text="${intern.email}"></td>
-								<td th:text="${intern.group.groupId}"></td>
-								<td th:if="${intern.group != null}" th:text="${intern.group.guide != null} ? ${intern.group.guide.name} : 'Guide Not Assigned'"></td>
-								<td th:text="${intern.domain}"></td>
-								<td th:text="${intern.collegeName}"></td>
-								<td th:text="${intern.semester}"></td>
-								<td th:text="${intern.permanentAddress}"></td>
-								<td th:text="${#dates.format(intern.dateOfBirth, 'dd-MM-yyyy')}"></td>
-								<td th:text="${intern.gender}"></td>
-								<td th:text="${intern.collegeGuideHodName}"></td>
-								<td th:text="${intern.degree}"></td>
-								<td th:text="${intern.aggregatePercentage}"></td>
-								<td th:text="${intern.projectDefinitionName}"></td>
-								<td th:text="${#dates.format(intern.joiningDate, 'dd-MM-yyyy')}"></td>
-								<td th:text="${#dates.format(intern.completionDate, 'dd-MM-yyyy')}"></td>
-								<td th:text="${intern.usedResource}"></td>
-								<td th:text="${#dates.format(T(java.util.Date).from(intern.createdAt.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss')}"></td>
-								<td th:text="${intern.updatedAt != null ? #dates.format(T(java.util.Date).from(intern.updatedAt.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss') : 'N/A'}"></td>
-								<!--								<td th:text="${intern.cancellationStatus}"></td>-->
-								<td th:with="today=${#dates.createNow()}"
-									th:text="${intern.cancellationStatus == 'Cancelled'} ? 'Cancelled' :
-             (${intern.completionDate != null and intern.joiningDate != null} ?
-             (${#dates.format(today, 'yyyy-MM-dd') >= #dates.format(intern.joiningDate, 'yyyy-MM-dd') and
-               #dates.format(today, 'yyyy-MM-dd') <= #dates.format(intern.completionDate, 'yyyy-MM-dd')} ? 'Working' :
-              (${#dates.format(today, 'yyyy-MM-dd') > #dates.format(intern.completionDate, 'yyyy-MM-dd')} ?
-               (${finalReportStatuses[intern.internId] == 'Yes'} ? 'Completed' : 'Report Pending') :
+									<td><a
+											th:href="@{'/bisag/admin/intern/' + ${intern.internId}}"><span
+											th:text="${intern.internId}"></span></a></td>
+									<td><a
+											th:href="@{'/bisag/admin/intern_docs/' + ${intern.internId}}"
+											class="btn"><i class="fa-solid fa-book my-0"></i></a></td>
+									<td th:text="${intern.firstName}"></td>
+									<!--								<td th:text="${intern.lastName}"></td>-->
+									<td th:text="${intern.contactNo}"></td>
+									<td th:text="${intern.email}"></td>
+									<td>
+										<a th:href="@{'/bisag/admin/group/' + ${intern.group.groupId} + '/members'}"
+										   th:text="${intern.group.groupId}"
+										   style="text-decoration: none; color: #0d6efd;">
+										</a>
+									</td>
+									<td>
+										<span th:if="${intern.group != null and intern.group.guide != null}" th:text="${intern.group.guide.name}"></span>
+										<span th:if="${intern.group == null or intern.group.guide == null}">Guide Not Assigned</span>
+									</td>
+									<td th:text="${intern.domain}"></td>
+									<td th:text="${intern.collegeName}"></td>
+									<td th:text="${intern.semester}"></td>
+									<td th:text="${intern.permanentAddress}"></td>
+									<td th:text="${#dates.format(intern.dateOfBirth, 'dd-MM-yyyy')}"></td>
+									<td th:text="${intern.gender}"></td>
+									<td th:text="${intern.collegeGuideHodName}"></td>
+									<td th:text="${intern.degree}"></td>
+									<td th:text="${intern.aggregatePercentage}"></td>
+									<td th:text="${intern.projectDefinitionName}"></td>
+									<td th:text="${#dates.format(intern.joiningDate, 'dd-MM-yyyy')}"></td>
+									<td th:text="${#dates.format(intern.completionDate, 'dd-MM-yyyy')}"></td>
+									<td th:text="${intern.usedResource}"></td>
+									<td th:text="${#temporals.format(intern.createdAt, 'dd-MM-yyyy HH:mm:ss')}"></td>
+									<td th:text="${intern.updatedAt != null ? #dates.format(T(java.util.Date).from(intern.updatedAt.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss') : 'N/A'}"></td>
+									<!--								<td th:text="${intern.cancellationStatus}"></td>-->
+									<td th:with="today=${#dates.createNow()}"
+										th:text="${intern.cancellationStatus == 'Cancelled' ? 'Cancelled' :
+             (intern.completionDate != null and intern.joiningDate != null) ?
+             (#dates.format(today, 'yyyy-MM-dd') >= #dates.format(intern.joiningDate, 'yyyy-MM-dd') and
+              #dates.format(today, 'yyyy-MM-dd') <= #dates.format(intern.completionDate, 'yyyy-MM-dd') ? 'Working' :
+              (#dates.format(today, 'yyyy-MM-dd') > #dates.format(intern.completionDate, 'yyyy-MM-dd') ?
+               (finalReportStatuses[intern.internId] == 'Yes' ? 'Completed' : 'Report Pending') :
                intern.status)) :
-             intern.status)">
-								</td>
-								<td th:text="${reportTimestamps[intern.internId]}"></td>
-								<td th:text="${intern.cancelTime != null ? #dates.format(T(java.util.Date).from(intern.cancelTime.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss') : 'N/A'}"></td>
-								<input type="hidden" class="intern-id" th:value="${intern.internId}" />
-								<input type="hidden" class="current-status" th:value="${intern.status}" />
+             intern.status}">
+									</td>
+									<td th:text="${reportTimestamps[intern.internId]}"></td>
+									<td th:text="${intern.cancelTime != null ? #dates.format(T(java.util.Date).from(intern.cancelTime.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss') : 'N/A'}"></td>
+									<input type="hidden" class="intern-id" th:value="${intern.internId}" />
+									<input type="hidden" class="current-status" th:value="${intern.status}" />
+								</tr>
+								</tbody>
+							</table>
+						</div>
 
+						<div class="pagination-container mt-3" th:if="${!showAll}">
+							<nav>
+								<ul class="pagination justify-content-center">
+									<li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+										<a class="page-link" th:href="@{'/bisag/admin/intern_application/new_interns'(page=${currentPage - 1}, size=${pageSize})}">Previous</a>
+									</li>
 
-							</tr>
-							</tbody>
-						</table>
+									<li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+										th:classappend="${i == currentPage} ? 'active'">
+										<a class="page-link" th:href="@{'/bisag/admin/intern_application/new_interns'(page=${i}, size=${pageSize})}" th:text="${i + 1}">1</a>
+									</li>
+
+									<li class="page-item" th:classappend="${currentPage + 1 == totalPages} ? 'disabled'">
+										<a class="page-link" th:href="@{'/bisag/admin/intern_application/new_interns'(page=${currentPage + 1}, size=${pageSize})}">Next</a>
+									</li>
+								</ul>
+							</nav>
+						</div>
+						<div id="horizontal-scrollbar" class="fixed-scrollbar" style="overflow-x: auto; padding-left: 11cm;">
+							<div class="scrollbar-content"></div>
+						</div>
 					</div>
 				</div>
-
 			</div>
 		</div>
 
 	</section>
-	<div th:replace="fragments/footerFragment :: footer"></div>
+	<th:block th:replace="~{fragments/footerFragment :: footer}"></th:block>
+
 </main>
 <script
 		src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
 <script>
 	document.addEventListener("DOMContentLoaded", function() {
 		function getVisibleTableData() {
 			let headers = [];
 			let data = [];
-			let excludeColumnIndexes = []; // Store indices of columns to exclude
+			let excludeColumnIndexes = [];
 
 			document.querySelectorAll(".datatable thead th").forEach((th, index) => {
 				let headerText = th.innerText.trim();
@@ -686,8 +754,22 @@
 						}
 					}).catch(error => console.error("Error:", error));
 				}
-			}, 2000); // Check every 2 seconds
+			}, 2000);
 		});
+	});
+	const fixedScrollbar = document.getElementById('horizontal-scrollbar');
+	const scrollbarContent = fixedScrollbar.querySelector('.scrollbar-content');
+	const tableWrapper = document.getElementById('table-scroll-wrapper');
+	scrollbarContent.style.width = tableWrapper.scrollWidth + 'px';
+	fixedScrollbar.addEventListener('scroll', () => {
+		tableWrapper.scrollLeft = fixedScrollbar.scrollLeft;
+	});
+
+	tableWrapper.addEventListener('scroll', () => {
+		fixedScrollbar.scrollLeft = tableWrapper.scrollLeft;
+	});
+	window.addEventListener('resize', () => {
+		scrollbarContent.style.width = tableWrapper.scrollWidth + 'px';
 	});
 </script>
 </body>

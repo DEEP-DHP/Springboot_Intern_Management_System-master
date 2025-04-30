@@ -46,7 +46,7 @@
 							<label for="cancelled" class="form-label">Select
 								Type:</label> <select class="form-select" id="cancelled" name="cancelled" required>
 							<option value="current" selected>Current</option>
-							<option value="cancelled">Cancelled</option>
+							<option value="Cancelled">Cancelled</option>
 							<option value="pending">Pending</option>
 						</select>
 						</div>
@@ -91,45 +91,45 @@
 									th:value="${degree.name}"></option>
 						</select>
 						</div>
-						<div class="form-group col-md-4">
-							<label for="intern" class="form-label">Select Intern:</label>
-							<select class="form-select" id="intern" name="intern" required>
-								<option value="All" selected>All</option>
-								<option th:each="intern : ${interns}" th:text="${intern.internId}" th:value="${intern.internId}"></option>
-							</select>
-						</div>
-						<div class="form-group col-md-4">
-							<label for="gender" class="form-label">Select Gender:</label>
-							<select class="form-select" id="gender" name="gender" required>
-								<option value="All" selected>All</option>
-								<option th:each="gender : ${genders}" th:text="${gender}" th:value="${gender}"></option>
-							</select>
-						</div>
+<!--						<div class="form-group col-md-4">-->
+<!--							<label for="intern" class="form-label">Select Intern:</label>-->
+<!--							<select class="form-select" id="intern" name="intern" required>-->
+<!--								<option value="All" selected>All</option>-->
+<!--								<option th:each="intern : ${interns}" th:text="${intern.internId}" th:value="${intern.internId}"></option>-->
+<!--							</select>-->
+<!--						</div>-->
+<!--&lt;!&ndash;						<div class="form-group col-md-4">&ndash;&gt;-->
+<!--							<label for="gender" class="form-label">Select Gender:</label>-->
+<!--							<select class="form-select" id="gender" name="gender" required>-->
+<!--								<option value="All" selected>All</option>-->
+<!--								<option th:each="gender : ${genders}" th:text="${gender}" th:value="${gender}"></option>-->
+<!--							</select>-->
+<!--						</div>-->
 						<form th:action="@{/generate_intern_report}" th:object="${internReportForm}" method="post">
-							<div class="form-group col-md-4">
-								<label for="aggregate_percentage" class="form-label">Select Percentage:</label>
-								<input type="range" class="form-range" id="aggregate_percentage" name="aggregatePercentage" min="0" max="100" step="1" value="50" required>
-								<br>
-								<span id="percentage_value">50%</span>
-							</div>
+<!--							<div class="form-group col-md-4">-->
+<!--								<label for="aggregate_percentage" class="form-label">Select Percentage:</label>-->
+<!--								<input type="range" class="form-range" id="aggregate_percentage" name="aggregatePercentage" min="0" max="100" step="1" value="50" required>-->
+<!--								<br>-->
+<!--								<span id="percentage_value">50%</span>-->
+<!--							</div>-->
 
-							<script>
-								const rangeInput = document.getElementById("aggregate_percentage");
-								const percentageDisplay = document.getElementById("percentage_value");
+<!--							<script>-->
+<!--								const rangeInput = document.getElementById("aggregate_percentage");-->
+<!--								const percentageDisplay = document.getElementById("percentage_value");-->
 
-								rangeInput.addEventListener("input", function() {
-									percentageDisplay.textContent = rangeInput.value + "%";
-								});
-							</script>
-							<div class="form-group col-md-4">
-								<label for="project_definition_name" class="form-label">Select Project Definition:</label>
-								<select class="form-select" id="project_definition_name" name="project_definition_name" required>
-									<option value="All" selected>All</option>
-									<option th:each="project_definition_name : ${project_definition_name}"
-											th:text="${project_definition_name}"
-											th:value="${project_definition_name}"></option>
-								</select>
-							</div>
+<!--								rangeInput.addEventListener("input", function() {-->
+<!--									percentageDisplay.textContent = rangeInput.value + "%";-->
+<!--								});-->
+<!--							</script>-->
+<!--							<div class="form-group col-md-4">-->
+<!--								<label for="project_definition_name" class="form-label">Select Project Definition:</label>-->
+<!--								<select class="form-select" id="project_definition_name" name="project_definition_name" required>-->
+<!--									<option value="All" selected>All</option>-->
+<!--									<option th:each="project_definition_name : ${project_definition_name}"-->
+<!--											th:text="${project_definition_name}"-->
+<!--											th:value="${project_definition_name}"></option>-->
+<!--								</select>-->
+<!--							</div>-->
 					</div>
 
 					<div class="form-group row border py-4 shadow mt-4 mx-1">

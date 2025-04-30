@@ -85,12 +85,8 @@
 </head>
 
 <body>
-
-<!-- Include the header fragment -->
-<div th:replace="fragments/headerFragment :: header"></div>
-
-<!-- Include the aside fragment -->
-<div th:replace="fragments/asideFragment :: aside"></div>
+<th:block th:replace="~{fragments/headerFragment :: header}"></th:block>
+<th:block th:replace="~{fragments/asideFragment :: aside}"></th:block>
 
 <main id="main" class="main">
 
@@ -112,7 +108,40 @@
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Activity Log Data</h5>
-            <!-- Table with stripped rows -->
+            <form method="get" th:action="@{/bisag/admin/your-logs-endpoint}">
+              <div class="row mb-3">
+                <div class="col">
+                  <label for="startDate">From:</label>
+                  <input type="date" id="startDate" name="startDate" class="form-control" th:value="${startDate}">
+                </div>
+                <div class="col">
+                  <label for="endDate">To:</label>
+                  <input type="date" id="endDate" name="endDate" class="form-control" th:value="${endDate}">
+                </div>
+                <div class="col d-flex align-items-end">
+                  <button type="submit" class="btn btn-primary">Filter</button>
+                  <a href="#" th:href="@{/bisag/admin/your-logs-endpoint}" class="btn btn-secondary ms-2">Reset</a>
+                </div>
+              </div>
+            </form>
+            <form method="post" th:action="@{/bisag/admin/delete-visible-logs}" style="display: inline;">
+              <input type="hidden" name="startDate" th:value="${startDate}" />
+              <input type="hidden" name="endDate" th:value="${endDate}" />
+              <button type="submit" class="btn btn-danger ms-2" onclick="return confirm('Are you sure you want to delete the logs?')">Delete Logs</button>
+            </form>
+            <button id="downloadCSV" class="btn btn-success ms-2">Download Excel</button>
+            <p class="mt-2">
+              Showing <strong th:text="${logs.size()}"></strong> logs.
+            </p>
+            <!-- Toggle Button Form -->
+            <form id="toggleForm" method="get" action="/bisag/admin/activity_logs">
+              <input type="hidden" name="page" value="0" />
+              <input type="hidden" name="showAll" th:value="${!showAll}" id="showAllInput" />
+
+              <button type="submit" class="btn btn-primary" id="toggleButton">
+                <span th:text="${showAll ? 'Show Paginated' : 'Show All Logs'}"></span>
+              </button>
+            </form>
             <table class="table datatable table-bordered">
               <thead>
               <tr>
@@ -131,6 +160,13 @@
               </tr>
               </tbody>
             </table>
+            <div th:if="${!showAll}" class="d-flex justify-content-between">
+              <a th:href="@{/bisag/admin/activity_logs(page=${currentPage - 1}, showAll=false)}"
+                 th:if="${currentPage > 0}" class="btn btn-outline-primary">Previous</a>
+
+              <a th:href="@{/bisag/admin/activity_logs(page=${currentPage + 1}, showAll=false)}"
+                 th:if="${!isLastPage}" class="btn btn-outline-primary">Next</a>
+            </div>
           </div>
         </div>
 
@@ -138,7 +174,7 @@
     </div>
 
   </section>
-  <div th:replace="fragments/footerFragment :: footer"></div>
+  <th:block th:replace="~{fragments/footerFragment :: footer}"></th:block>
 </main>
 <script
         src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -202,16 +238,6 @@
       });
     });
   });
-</script>
-</body>
-
-</html>
-
-</tbody>
-</table>
-</div>
-
-<script>
   document.getElementById('searchInput').addEventListener('input', function () {
     let searchText = this.value.toLowerCase();
     let rows = document.querySelectorAll("tbody tr");
@@ -222,6 +248,36 @@
     });
   });
 </script>
+<script>
+  document.getElementById("downloadCSV").addEventListener("click", function () {
+    let csv = [];
+    const rows = document.querySelectorAll("table.table tbody tr");
 
+    const headers = Array.from(document.querySelectorAll("table.table thead th"))
+            .map(th => th.innerText.trim());
+    csv.push(headers.join(","));
+
+    rows.forEach(row => {
+      if (row.offsetParent !== null) { // ensures it's visible
+        const cols = row.querySelectorAll("td");
+        let rowData = [];
+        cols.forEach(col => {
+          let data = col.innerText.replace(/"/g, '""'); // escape quotes
+          rowData.push(`"${data}"`);
+        });
+        csv.push(rowData.join(","));
+      }
+    });
+
+    const csvContent = csv.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.setAttribute("href", URL.createObjectURL(blob));
+    link.setAttribute("download", "Activity Logs.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+</script>
 </body>
 </html>

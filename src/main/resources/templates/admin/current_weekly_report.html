@@ -109,15 +109,15 @@
 </head>
 
 <body>
-<div th:replace="fragments/headerFragment :: header"></div>
-<div th:replace="fragments/asideFragment :: aside"></div>
+<th:block th:replace="~{fragments/headerFragment :: header}"></th:block>
+<th:block th:replace="~{fragments/asideFragment :: aside}"></th:block>
 
 <main id="main" class="main">
     <div class="pagetitle">
-        <h1>Manage Weekly Reports</h1>
+        <h1>Current Weekly Reports</h1>
         <nav>
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/bisag/admin/admin_weekly_report">Reports</a></li>
+                <li class="breadcrumb-item"><a href="/bisag/admin/admin_current_working_groups_weekly_report">Reports</a></li>
                 <li class="breadcrumb-item active">Manage Weekly Reports</li>
             </ol>
         </nav>
@@ -134,15 +134,15 @@
                     <button type="submit"  class="btn btn-primary " style="background-color: #0a58ca" >Filter</button>
                 </form>
             </div>
-<!--            <div>-->
-<!--                <form th:action="@{/bisag/admin/admin_weekly_report}" method="get" style="display: inline;">-->
-<!--                    <input type="hidden" name="showAll" th:value="${!showAll}" />-->
-<!--                    <button type="submit" class="btn btn-primary">-->
-<!--                        <span th:if="${!showAll}">Show All</span>-->
-<!--                        <span th:if="${showAll}">Paginate</span>-->
-<!--                    </button>-->
-<!--                </form>-->
-<!--            </div>-->
+            <!--            <div>-->
+            <!--                <form th:action="@{/bisag/admin/admin_weekly_report}" method="get" style="display: inline;">-->
+            <!--                    <input type="hidden" name="showAll" th:value="${!showAll}" />-->
+            <!--                    <button type="submit" class="btn btn-primary">-->
+            <!--                        <span th:if="${!showAll}">Show All</span>-->
+            <!--                        <span th:if="${showAll}">Paginate</span>-->
+            <!--                    </button>-->
+            <!--                </form>-->
+            <!--            </div>-->
         </div>
     </div>
     <script>
@@ -158,13 +158,13 @@
                   th:text="${totalUnreadReports}"
                   class="badge badge-danger ml-2">
     </span>
-        </div></a></li>
+            </div></a></li>
         <li class="nav-item"><a class="nav-link" id="tab2" href="javascript:void(0)"></a></li>
     </ul>
 
     <div class="form-container active" id="form1">
         <div class="container mt-3 mb-5 p-5 border shadow">
-            <!-- Container for all group blocks -->
+            <!-- Container for all group blocks --><p>Current Groups: <span th:text="${totalGroupsCount}"></span></p>
             <div id="group-container">
                 <!-- Group blocks will be sorted using JS -->
                 <div th:each="group : ${groups}" class="group-block" th:attr="data-group-id=${group.groupId}">
@@ -251,13 +251,6 @@
                 </div> <!-- group-block -->
             </div> <!-- #group-container -->
         </div>
-    </div>
-    <div>
-        <a th:href="@{/bisag/admin/admin_weekly_report(page=${currentPage - 1}, showAll=${showAll})}"
-           th:if="${currentPage > 0}" class="btn btn-secondary">Previous</a>
-
-        <a th:href="@{/bisag/admin/admin_weekly_report(page=${currentPage + 1}, showAll=${showAll})}"
-           th:if="${currentPage + 1 < totalPages}" class="btn btn-secondary ml-2">Next</a>
     </div>
     <script>
         window.addEventListener("load", function () {

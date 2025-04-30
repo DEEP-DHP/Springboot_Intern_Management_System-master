@@ -4,22 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Half Day Leave Application</title>
+    <title>Half Day Leave Applications</title>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztn3QTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQ9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
             background-color: #f8f9fa;
+            font-family: Arial, sans-serif;
+            padding: 2rem;
         }
 
         .container {
@@ -27,25 +22,18 @@
             padding: 2rem;
             border-radius: 8px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            max-width: 800px;
-            width: 100%;
+            margin-bottom: 3rem;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
             margin-bottom: 1.5rem;
         }
 
-        .date-section {
-            text-align: right;
-        }
-
         .subject {
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             font-weight: bold;
-            color: #343a40;
         }
 
         .leave-body {
@@ -73,7 +61,7 @@
             cursor: pointer;
             font-size: 1rem;
             display: block;
-            margin: 20px auto;
+            margin: 10px auto 30px;
         }
 
         .download-btn:hover {
@@ -88,54 +76,90 @@
 <div th:replace="fragments/asideFragment :: aside"></div>
 
 <main id="main" class="main">
-    <div id="leaveApplication" class="container">
-        <div class="header">
-            <div class="subject" th:text="${leave.subject}">Subject: Leave Application</div>
-            <div class="date-section">
-                <div th:text="${#dates.format(#dates.createNow(), 'dd MMMM yyyy')}">Current Date</div>
-                <div th:text="${#dates.format(#dates.createNow(), 'EEEE')}">Day of the Week</div>
-            </div>
-        </div>
+    <div id="pdfContent">
+    <div th:if="${#lists.isEmpty(leaveDetails)}" class="container text-center">
+        <h4>No half-day leave applications for today.</h4>
+    </div>
 
-        <div class="leave-body">
-            <p>Respected Sir/Ma'am,</p>
-            <p>
-                I am writing to formally request a half-day leave on <span th:text="${leave.fromDate}"></span> due to
-                <span th:text="${leave.subject}"></span>. I assure you that I will complete any pending tasks and make up for the lost time.
-            </p>
-            <p>Thank you for your understanding.</p>
-        </div>
-        <div class="footer">
-            <div>
-                <p><strong>Intern ID:</strong> <span th:text="${leave.internId}"></span></p>
-                <p><strong>Group ID:</strong> <span th:text="${groupId}"></span></p>
-                <p><strong>Intern Name:</strong> <span data-intern-name th:text="${internName}"></span></p>
+    <div th:each="leave, iterStat : ${leaveDetails}" class="leave-container">
+        <div class="container" th:attr="id='leaveApplication_' + ${iterStat.index}">
+            <div class="header">
+                <div class="subject">Half Day Leave Application</div>
+                <p style="color: red; font-weight: bold;">Exit time only after 1:30</p>
+                <div class="date-section text-end">
+                    <div th:text="${#dates.format(#dates.createNow(), 'dd MMM yyyy')}">Current Date</div>
+                    <div th:text="${#dates.format(#dates.createNow(), 'EEEE')}">Day of the Week</div>
+                </div>
             </div>
-            <div class="signature">
-                <p><strong><span th:text="${adminName}"></span></strong></p>
-                <div class="signature-line">Signature</div>
+
+            <div class="leave-body">
+                <p>Respected Sir/Ma'am,</p>
+                <p>
+                    I am writing to formally request a half-day leave on
+                    <span th:text="${leave.fromDate}">Leave Date</span>
+                    due to <span th:text="${leave.subject}">Reason</span>.
+                    I assure you that I will complete any pending tasks and make up for the lost time.
+                </p>
+                <p>Thank you for your understanding.</p>
+            </div>
+
+            <div class="footer">
+                <div>
+                    <p><strong>Intern ID:</strong> <span th:text="${leave.internId}">Intern ID</span></p>
+                    <p><strong>Group ID:</strong> <span th:text="${leave.groupId}">Group ID</span></p>
+                    <p><strong>Intern Name:</strong> <span data-intern-name th:text="${leave.internName}">Intern Name</span></p>
+                </div>
+                <div class="signature text-end">
+                    <p><strong><span th:text="${adminName}">Admin Name</span></strong></p>
+                    <div class="signature-line">Signature</div>
+                </div>
             </div>
         </div>
     </div>
-
-    <button class="download-btn" onclick="downloadPDF()">Download PDF</button>
+    </div>
+    <button class="download-btn" onclick="downloadAllLeaveApplications()">Download PDF</button>
 </main>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
-    function downloadPDF() {
-        const element = document.getElementById('leaveApplication');
-        const internName = document.querySelector('[data-intern-name]').textContent.trim();
-        const fileName = `Half Day Leave Application_${internName}.pdf`;
+    function downloadAllLeaveApplications() {
+        const element = document.getElementById('pdfContent');
 
-        html2pdf(element, {
-            margin: 10,
-            filename: fileName,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        });
+        const opt = {
+            margin:       [10, 10, 10, 10], // top, left, bottom, right
+            filename:     'Half_Day_Leave_Applications.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  {
+                scale: 2,
+                useCORS: true,
+                scrollX: 0,
+                scrollY: 0,
+                windowWidth: document.body.scrollWidth,
+                windowHeight: document.body.scrollHeight
+            },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        html2pdf().set(opt).from(element).save();
     }
 </script>
+<!--<button class="download-btn" onclick="downloadPDF()">Download PDF</button>-->
+
+<!--<script>-->
+<!--    function downloadPDF() {-->
+<!--        const element = document.getElementById('leaveApplication');-->
+<!--        const internName = document.querySelector('[data-intern-name]').textContent.trim();-->
+<!--        const fileName = Half Day Leave Application_${internName}.pdf;-->
+
+<!--        html2pdf(element, {-->
+<!--            margin: 10,-->
+<!--            filename: fileName,-->
+<!--            image: { type: 'jpeg', quality: 0.98 },-->
+<!--            html2canvas: { scale: 2 },-->
+<!--            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }-->
+<!--        });-->
+<!--    }-->
+<!--</script>-->
 
 </body>
 </html>

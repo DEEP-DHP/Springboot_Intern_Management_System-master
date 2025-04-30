@@ -27,7 +27,16 @@
     <div class="card">
       <div class="card-body">
         <h5 class="card-title">List of Rejected Verifications</h5>
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+          <span th:text="${success}"></span>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
 
+        <!-- Error Message -->
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+          <span th:text="${error}"></span>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
         <button class="btn btn-danger mb-3" onclick="downloadRejectedVerificationsPDF()">Download PDF</button>
         <button class="btn btn-success mb-3" onclick="downloadRejectedVerificationsExcel()">Download Excel</button>
 

@@ -99,6 +99,7 @@
 		<thead>
 		<tr>
 			<th>Group ID</th>
+			<th>Intern(s)</th>
 			<th>Domain</th>
 			<th>Reports</th>
 			<th>Status</th>
@@ -109,24 +110,36 @@
 
 		<tr th:each="group : ${groups}" th:if="${group.finalReportStatus == 'gapproved'}">
 			<td th:text="${group.groupId}"></td>
-			<td th:text="${group.groupId}"></td>
-			<td><a
-					th:href="@{'/files/final_reports/' + ${group.groupId} + '/' + ${group.finalReport}}"
-					target="_blank"> Open Document </a></td>
 			<td>
-				<form action="/bisag/admin/admin_pending_final_reports/ans"
-					  method="post">
-					<input type="radio" name="apendingAns" value="approve"
-						   id="approveRadio${group.groupId}"
-						   th:checked="${group.finalReportStatus == 'approved'}" />
-					<label for="approveRadio${group.groupId}">Approve</label> <input
-						type="radio" name="apendingAns" value="reject"
-						id="rejectRadio${group.groupId}"
-						th:checked="${group.finalReportStatus == 'apending'}" />
-					<label for="rejectRadio${group.groupId}">Reject</label>
+				<span th:each="intern : ${interns}"
+					  th:if="${intern.group != null and intern.group.groupId == group.groupId}"
+					  th:text="${intern.firstName} + ' '" class="d-block"></span>
+			</td>
+			<td th:text="${group.domain}"></td>
+<!--			<td><a-->
+<!--					th:href="@{'/files/final_reports/' + ${group.groupId} + '/' + ${group.finalReport}}"-->
+<!--					target="_blank"> Open Document </a></td>-->
+			<td><a th:href="@{'/bisag/admin/final_reports/' + ${group.groupId} + '/finalReport.pdf'}" target="_blank">Open Document</a></td>
 
-					<!-- Add hidden input for groupId -->
+			<td>
+				<form action="/bisag/admin/admin_pending_final_reports/ans" method="post" enctype="multipart/form-data" onsubmit="return validateForm(this)">
+					<input type="radio" name="apendingAns" value="approve"
+						   id="approveRadio[[${group.groupId}]]"
+						   th:checked="${group.finalReportStatus == 'approved'}"
+						   onclick="toggleFileInput(this)" />
+					<label for="approveRadio[[${group.groupId}]]">Approve</label>
+
+					<input type="radio" name="apendingAns" value="reject"
+						   id="rejectRadio[[${group.groupId}]]"
+						   th:checked="${group.finalReportStatus == 'apending'}"
+						   onclick="toggleFileInput(this)" />
+					<label for="rejectRadio[[${group.groupId}]]">Changes Required</label>
+
 					<input type="hidden" name="groupId" th:value="${group.groupId}" />
+
+					<div th:attr="id='fileInputContainer_' + ${group.groupId}" style="display: none; margin-top: 8px;">
+						<input type="file" name="rejectionFile" />
+					</div>
 
 					<button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure ?')">Submit</button>
 				</form>
@@ -136,15 +149,104 @@
 		</tbody>
 	</table>
 
-	<!-- Include the footer fragment -->
+	<h4 class="text-primary fw-bold mt-4 mb-3">Approved Final Reports</h4>
+	<div>
+		<a th:if="${!showAll}"
+		   class="btn btn-outline-primary btn-sm"
+		   th:href="@{'/bisag/admin/admin_pending_final_reports'(showAll=true)}">
+			Show All
+		</a>
+
+		<a th:if="${showAll}"
+		   class="btn btn-outline-secondary btn-sm"
+		   th:href="@{'/bisag/admin/admin_pending_final_reports'(showAll=false, page=0, size=${pageSize})}">
+			Show Paginated
+		</a>
+	</div>
+	<table class="table dataTable">
+		<thead>
+		<tr>
+			<th>Group ID</th>
+			<th>Intern(s)</th>
+			<th>Guide Timestamp</th>
+			<th>Admin Timestamp</th>
+		</tr>
+		</thead>
+		<tbody>
+		<tr th:each="group : ${approvedGroups}">
+			<td th:text="${group.groupId}"></td>
+			<td>
+				<span th:each="intern : ${interns}"
+					  th:if="${intern.group != null and intern.group.groupId == group.groupId}"
+					  th:text="${intern.firstName} + ' '" class="d-block"></span>
+			</td>
+			<td th:text="${#temporals.format(group.finalReportStatusUpdatedAt, 'dd-MM-yyyy HH:mm:ss')}"></td>
+			<td th:text="${#temporals.format(group.adminfinalReportStatusUpdatedAt, 'dd-MM-yyyy HH:mm:ss')}"></td>
+		</tr>
+		</tbody>
+	</table>
+	<div class="d-flex justify-content-between align-items-center mt-3">
+		<!-- Toggle Button -->
+
+
+		<!-- Pagination Controls -->
+		<div class="pagination-container" th:if="${!showAll and approvedTotalPages > 1}">
+			<nav>
+				<ul class="pagination justify-content-center mb-0">
+					<li class="page-item" th:classappend="${approvedCurrentPage == 0} ? 'disabled'">
+						<a class="page-link"
+						   th:href="@{'/bisag/admin/admin_pending_final_reports'(page=${approvedCurrentPage - 1}, size=${pageSize})}">
+							Previous
+						</a>
+					</li>
+
+					<li class="page-item"
+						th:each="i : ${#numbers.sequence(0, approvedTotalPages - 1)}"
+						th:classappend="${i == approvedCurrentPage} ? 'active'">
+						<a class="page-link"
+						   th:href="@{'/bisag/admin/admin_pending_final_reports'(page=${i}, size=${pageSize})}"
+						   th:text="${i + 1}"></a>
+					</li>
+
+					<li class="page-item" th:classappend="${approvedCurrentPage + 1 == approvedTotalPages} ? 'disabled'">
+						<a class="page-link"
+						   th:href="@{'/bisag/admin/admin_pending_final_reports'(page=${approvedCurrentPage + 1}, size=${pageSize})}">
+							Next
+						</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
 	<div th:replace="fragments/footerFragment :: footer"></div>
 </main>
-<!-- End #main -->
-
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script
 		src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script>
+	function toggleFileInput(radio) {
+		const form = radio.closest('form');
+		const groupId = form.querySelector('input[name="groupId"]').value;
+		const container = document.getElementById("fileInputContainer_" + groupId);
 
+		if (radio.value === 'reject') {
+			container.style.display = 'block';
+		} else {
+			container.style.display = 'none';
+		}
+	}
+
+	function validateForm(form) {
+		const rejectRadio = form.querySelector('input[value="reject"]');
+		const isRejectSelected = rejectRadio.checked;
+		const fileInput = form.querySelector('input[type="file"]');
+
+		if (isRejectSelected && (!fileInput || fileInput.files.length === 0)) {
+			alert("Please upload a file for required changes.");
+			return false;
+		}
+		return true;
+	}
+</script>
 </body>
-
 </html>

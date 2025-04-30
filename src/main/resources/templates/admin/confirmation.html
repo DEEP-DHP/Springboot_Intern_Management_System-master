@@ -58,12 +58,21 @@
       cursor: pointer;
       font-size: 1em;
     }
+    .sr-col {
+      width: 80px;
+      text-align: center;
+    }
+    .page-content {
+      padding: 2cm;
+      border: 1px solid transparent; /* optional, if you want visible edge */
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
 
 <button id="downloadBtn">Download as PDF</button>
-
+<div class="page-content">
 <h2>Bhaskaracharya National Institute for Space Applications & Geo-Informatics (BISAG-N)</h2>
 <div class="date">
   <b><u><p>Date: <span th:text="${#temporals.format(currentDate, 'dd-MM-yyyy')}"></span></p></u></b>
@@ -89,7 +98,7 @@
   </thead>
   <tbody>
   <tr th:each="intern, iterStat : ${interns}">
-    <td th:text="${iterStat.index + 1}"></td>
+    <td class="sr-col" th:text="${iterStat.index + 1}"></td>
     <td th:text="${intern.firstName}"></td>
   </tr>
   </tbody>
@@ -99,6 +108,7 @@
   <p>________________________</p>
   <p>Training Cell</p>
   <p>BISAG-N, Gandhinagar</p>
+</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.0/jspdf.umd.min.js"></script>

@@ -68,15 +68,9 @@
                     <select class="form-select" id="internId" name="intern">
                       <option value="">-- Select Intern ID --</option>
                       <th:block th:each="intern : ${interns}">
-                        <option th:value="${intern.internId}" th:text="${intern.internId}"></option>
+                        <option th:value="${intern.internId}" th:text="${intern.internId} +' '+ ${intern.firstName}" th:attr="data-name=${intern.firstName}"></option>
                       </th:block>
                     </select>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="form-floating">
-                    <input type="text" name="assignedById" class="form-control" id="assignedById" required>
-                    <label for="assignedById">Assigned By (ID)</label>
                   </div>
                 </div>
                 <div class="col-md-4">
@@ -115,7 +109,18 @@
             <!-- Task Table -->
             <div class="table-responsive">
               <h5 class="card-title mt-4">Assigned Tasks</h5>
+              <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                  const internSelect = document.getElementById("internId");
+                  const internNameInput = document.getElementById("internName");
 
+                  internSelect.addEventListener("change", function () {
+                    const selectedOption = internSelect.options[internSelect.selectedIndex];
+                    const internName = selectedOption.getAttribute("data-name");
+                    internNameInput.value = internName ? internName : "";
+                  });
+                });
+              </script>
               <script>
                 function enableEditing(taskId) {
                   let statusSelect = document.getElementById('statusSelect_' + taskId);
@@ -170,12 +175,18 @@
                   }
                 });
               </script>
+              <div class="mb-3">
+                <button class="btn btn-info" th:text="${showAll ? 'Show Paginated' : 'Show All'}"
+                        th:href="@{/bisag/admin/tasks_assignments(showAll=${!showAll}, page=${currentPage}, size=${size})}">
+                </button>
+              </div>
 
               <table class="table datatable table-bordered">
                 <thead>
                 <tr>
                   <th>ID</th>
                   <th>Intern ID</th>
+                  <th>Intern Name</th>
                   <th>Assigned By</th>
                   <th>Task Description</th>
                   <th>Start Date</th>
@@ -195,6 +206,7 @@
                     </a>
                   </td>
                   <td th:text="${task.intern}"></td>
+                  <td th:text="${internIdToNameMap[task.intern]}"></td>
                   <td th:text="${task.assignedByRole}"></td>
                   <td th:text="${task.taskDescription}"></td>
                   <td th:text="${#dates.format(task.startDate, 'dd-MM-yyyy')}"></td>
@@ -229,6 +241,27 @@
                 </tr>
                 </tbody>
               </table>
+              <div th:if="${!showAll}">
+                <nav>
+                  <ul class="pagination justify-content-center">
+                    <li class="page-item" th:class="${currentPage == 0 ? 'disabled' : ''}">
+                      <a class="page-link" th:href="@{/bisag/admin/tasks_assignments(showAll=${showAll}, page=${currentPage - 1}, size=${size})}">Previous</a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                        th:class="${i == currentPage ? 'active' : ''}">
+                      <a class="page-link" th:href="@{/bisag/admin/tasks_assignments(showAll=${showAll}, page=${i}, size=${size})}" th:text="${i + 1}"></a>
+                    </li>
+                    <li class="page-item" th:class="${currentPage == totalPages - 1 ? 'disabled' : ''}">
+                      <a class="page-link" th:href="@{/bisag/admin/tasks_assignments(showAll=${showAll}, page=${currentPage + 1}, size=${size})}">Next</a>
+                    </li>
+                  </ul>
+                </nav>
+              </div>
+
+              <!-- Show All Tasks (if toggled) -->
+              <div th:if="${showAll}">
+                <p>Showing all tasks</p>
+              </div>
             </div>
             <!-- End Task Table -->
           </div>
