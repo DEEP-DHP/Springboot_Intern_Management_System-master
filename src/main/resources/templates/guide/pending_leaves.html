@@ -112,6 +112,7 @@
               <tr>
                 <th>ID</th>
                 <th>Intern ID</th>
+                <th>Intern Name</th>
                 <th>From Date</th>
                 <th>To Date</th>
                 <th>Subject</th>
@@ -130,6 +131,7 @@
                   </a>
                 </td>
                 <td th:text="${leave.internId}"></td>
+                <td th:text="${internNames[leave.internId]}"></td>
                 <td th:text="${#temporals.format(leave.fromDate, 'dd-MM-yyyy')}"></td>
                 <td th:text="${#temporals.format(leave.toDate, 'dd-MM-yyyy')}"></td>
                 <td th:text="${leave.subject}"></td>

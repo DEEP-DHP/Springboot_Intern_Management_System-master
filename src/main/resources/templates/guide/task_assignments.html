@@ -68,28 +68,27 @@
                     <select class="form-select" id="internId" name="intern">
                       <option value="">-- Select Intern ID --</option>
                       <th:block th:each="intern : ${interns}">
-                        <option th:value="${intern.internId}" th:text="${intern.internId}"></option>
+                        <option th:value="${intern.internId}" th:text="${intern.internId} +' '+ ${intern.firstName}" th:attr="data-name=${intern.firstName}"></option>
                       </th:block>
                     </select>
                   </div>
                 </div>
+<!--                <div class="col-md-4">-->
+<!--                  <div class="form-floating">-->
+<!--                    <input type="text" id="internName" class="form-control" readonly>-->
+<!--                    <label for="internName">Intern Name</label>-->
+<!--                  </div>-->
+<!--                </div>-->
                 <div class="col-md-4">
                   <div class="form-floating">
-                    <input type="text" name="assignedById" class="form-control" id="assignedById" required>
-                    <label for="assignedById">Assigned By (ID)</label>
+                    <input type="text" name="assignedByRole" id="assignedByRole" class="form-control"
+                           th:value="${guide.name}" readonly required>
+                    <label for="assignedByRole">Assigned By (Guide Name)</label>
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="form-floating">
-                    <select name="assignedByRole" class="form-control" id="assignedByRole" required>
-                      <option value="Guide">Guide</option>
-                    </select>
-                    <label for="assignedByRole">Assigned By (Role)</label>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="form-floating">
-                    <textarea name="taskDescription" class="form-control" id="taskDescription" style="height: 100px" required></textarea>
+                    <textarea name="taskDescription" class="form-control" id="taskDescription" style="height: 80px" required></textarea>
                     <label for="taskDescription">Task Description</label>
                   </div>
                 </div>
@@ -115,7 +114,18 @@
             <!-- Task Table -->
             <div class="table-responsive">
               <h5 class="card-title mt-4">Assigned Tasks</h5>
+              <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                  const internSelect = document.getElementById("internId");
+                  const internNameInput = document.getElementById("internName");
 
+                  internSelect.addEventListener("change", function () {
+                    const selectedOption = internSelect.options[internSelect.selectedIndex];
+                    const internName = selectedOption.getAttribute("data-name");
+                    internNameInput.value = internName ? internName : "";
+                  });
+                });
+              </script>
               <script>
                 function enableEditing(taskId) {
                   let statusSelect = document.getElementById('statusSelect_' + taskId);
@@ -154,6 +164,21 @@
                           })
                           .catch(error => console.error("Error:", error));
                 }
+                document.getElementById('internId').addEventListener('change', function() {
+                  const internId = this.value;
+                  if (internId) {
+                    // Fetch Intern Name based on the selected Intern ID
+                    fetch(`/bisag/guide/getInternName/${internId}`)
+                            .then(response => response.json()) // ✅ Parse JSON response
+                            .then(data => {
+                              // ✅ Set the Intern Name correctly
+                              document.getElementById('FirstName').value = data.internName;
+                            })
+                            .catch(error => {
+                              console.error("Error fetching intern name: ", error);
+                            });
+                  }
+                });
               </script>
 
               <table class="table datatable table-bordered">
@@ -161,12 +186,14 @@
                 <tr>
                   <th>ID</th>
                   <th>Intern ID</th>
+                  <th>Intern Name</th>
                   <th>Assigned By</th>
                   <th>Task Description</th>
                   <th>Start Date</th>
                   <th>End Date</th>
                   <th>Proof of Document</th>
                   <th>Status</th>
+                  <th>Completion Timestamp</th>
                   <th>Actions</th>
                 </tr>
                 </thead>
@@ -179,6 +206,7 @@
                     </a>
                   </td>
                   <td th:text="${task.intern}"></td>
+                  <td th:text="${internIdToNameMap[task.intern]}"></td>
                   <td th:text="${task.assignedByRole}"></td>
                   <td th:text="${task.taskDescription}"></td>
                   <td th:text="${#dates.format(task.startDate, 'dd-MM-yyyy')}"></td>
@@ -196,6 +224,9 @@
                       <option value="In Progress" th:selected="${task.status == 'In Progress'}">In Progress</option>
                       <option value="Completed" th:selected="${task.status == 'Completed'}">Completed</option>
                     </select>
+                  </td>
+                  <td>
+                    <span th:text="${task.completionTimestamp != null ? #temporals.format(task.completionTimestamp, 'dd-MM-yyyy HH:mm:ss') : 'N/A'}"></span>
                   </td>
                   <td>
                     <button class="btn btn-warning btn-sm" th:id="'editBtn_' + ${task.id}"

@@ -239,7 +239,7 @@
 		<thead>
 		<tr>
 			<th>Group ID</th>
-			<th>Domain</th>
+			<th>Intern(s)</th>
 			<th>Project Definition</th>
 			<th>Description</th>
 			<th>Abstract</th>
@@ -252,7 +252,7 @@
 		<tr th:each="group : ${groups}"
 			th:if="${group.projectDefinitionStatus == 'gpending'}">
 			<td th:text="${group.groupId}"></td>
-			<td th:text="${group.groupId}"></td>
+			<td th:text="${groupToInternNameMap[group.groupId]}">-</td>
 			<td th:text="${group.projectDefinition}"></td>
 			<td th:text="${group.description}"></td>
 			<td>
@@ -262,34 +262,24 @@
 				</a>
 
 			<td>
-				<form action="/bisag/guide/guide_pending_def_approvals/ans" method="post" class="status-form">
-					<div class="radio-group">
-						<input
-								type="radio"
-								name="gpendingAns"
-								value="approve"
-								id="approveRadio${group.groupId}"
-								class="radio-input"
-								th:checked="${group.projectDefinitionStatus == 'gapproved'}"
-						/>
-						<label for="approveRadio${group.groupId}" class="radio-label approve">Approve</label>
-					</div>
-					<div class="radio-group">
-						<input
-								type="radio"
-								name="gpendingAns"
-								value="reject"
-								id="rejectRadio${group.groupId}"
-								class="radio-input"
-								th:checked="${group.projectDefinitionStatus == 'pending'}"
-						/>
-						<label for="rejectRadio${group.groupId}" class="radio-label reject">Reject</label>
-					</div>
+				<form action="/bisag/guide/guide_pending_def_approvals/ans"
+					  method="post">
+					<input type="radio" name="gpendingAns" value="approve"
+						   id="approveRadio${group.groupId}"
+						   th:checked="${group.projectDefinitionStatus == 'gapproved'}" />
+					<label for="approveRadio${group.groupId}">Approve</label> <input
+						type="radio" name="gpendingAns" value="reject"
+						id="rejectRadio${group.groupId}"
+						th:checked="${group.projectDefinitionStatus == 'pending'}" /> <label
+						for="rejectRadio${group.groupId}">Reject</label>
+
+					<!-- Add hidden input for groupId -->
 					<input type="hidden" name="groupId" th:value="${group.groupId}" />
-					<button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure ?')">Submit</button>
+
+					<button type="submit" class="btn btn-primary"
+							onclick="return confirm('Are you sure ?')">Submit</button>
 				</form>
 			</td>
-
 		</tr>
 
 

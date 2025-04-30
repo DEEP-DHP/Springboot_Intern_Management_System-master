@@ -52,6 +52,12 @@
 			color: #000;
 			align-self: flex-start;
 		}
+		.unread-option::after {
+			content: ' ●';
+			color: red;
+			font-weight: bold;
+			margin-left: 5px;
+		}
 	</style>
 </head>
 <body>
@@ -85,8 +91,16 @@
 						<div class="col-md-3">
 							<select id="receiverId" name="receiverId" class="form-select">
 								<option value="">Select Receiver</option>
-								<option th:each="admin : ${admins}" th:value="${admin.adminId}" th:text="${admin.name}"></option>
-								<option th:each="intern : ${interns}" th:value="${intern.internId}" th:text="${intern.firstName}"></option>
+								<option th:each="admin : ${admins}"
+										th:value="${admin.adminId}"
+										th:text="${unreadCounts[admin.adminId] != null ? '🔴 ' + admin.name : admin.name}">
+								</option>
+
+								<!-- Interns -->
+								<option th:each="intern : ${interns}"
+										th:value="${intern.internId}"
+										th:text="${unreadCounts[intern.internId] != null ? '🔴 ' + intern.firstName : intern.firstName}">
+								</option>
 							</select>
 						</div>
 
