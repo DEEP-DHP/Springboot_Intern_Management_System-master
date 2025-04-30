@@ -25,10 +25,19 @@
 			border: 2px solid;
 			border-radius: 10px;
 		}
+		.badge-danger {
+			background-color: red;
+			color: white;
+			font-size: 12px;
+			font-weight: bold;
+			border-radius: 50%;
+			padding: 5px 10px;
+			margin-left: 8px;
+			display: inline-block;
+			min-width: 20px;
+			text-align: center;
+		}
 	</style>
-
-
-
 
 	<ul class="sidebar-nav" id="interns-nav">
 		<li class="nav-item"><a class="nav-link "
@@ -53,7 +62,16 @@
 			<ul id="guide-components-nav" class="nav-content collapse "
 				data-bs-parent="#guide-nav">
 				<li><a th:href="@{/bisag/guide/approved_interns}"><i
-						class="bi bi-circle"></i><span>Shortlisted Intern Application</span></a></li>
+						class="bi bi-circle"></i><span>Shortlisted Intern Application</span>
+					<span th:if="${notificationCounts['pendingInterviewApplications'] > 0}"
+						  th:text="${notificationCounts['pendingInterviewApplications']}"
+						  class="badge badge-danger">
+            </span></a></li>
+			</ul>
+			<ul id="guide-components-nav" class="nav-content collapse "
+				data-bs-parent="#guide-nav">
+				<li><a th:href="@{/bisag/guide/interns}"><i
+						class="bi bi-circle"></i><span>All Interns</span></a></li>
 			</ul>
 			<ul id="guide-components-nav" class="nav-content collapse "
 				data-bs-parent="#guide-nav">
@@ -81,12 +99,22 @@
 				<li class="nav-item"><a class="nav-link collapsed"
 										data-bs-target="#preject-def-nav" data-bs-toggle="collapse"
 										href="#"> <i class="bi bi-menu-button-wide"></i><span>Project
-							Definition</span><i class="bi bi-chevron-down ms-auto"></i>
+							Definition</span><span th:if="${notificationCounts['countGPendingGroups'] > 0}"
+												   th:text="${notificationCounts['countGPendingGroups']}"
+												   class="badge badge-danger">
+            </span><i class="bi bi-chevron-down ms-auto"></i>
 				</a>
 					<ul id="preject-def-nav" class="nav-content collapse "
 						data-bs-parent="#guide-nav">
 						<li><a th:href="@{/bisag/guide/guide_pending_def_approvals}">
 							<i class="bi bi-circle"></i><span>Pending Definitions</span>
+							<span th:if="${notificationCounts['countGPendingGroups'] > 0}"
+								  th:text="${notificationCounts['countGPendingGroups']}"
+								  class="badge badge-danger">
+            </span>
+						</a></li>
+						<li><a th:href="@{/bisag/guide/create_project_def}">
+							<i class="bi bi-circle"></i><span>Update Definition</span>
 						</a></li>
 					</ul></li>
 			</ul>
@@ -94,12 +122,19 @@
 			<ul class="sidebar-nav" id="def-nav">
 				<li class="nav-item"><a class="nav-link collapsed"
 										data-bs-target="#leave-def-nav" data-bs-toggle="collapse"
-										href="#"> <i class="bi bi-menu-button-wide"></i><span>Leave Application</span><i class="bi bi-chevron-down ms-auto"></i>
+										href="#"> <i class="bi bi-menu-button-wide"></i><span>Leave Application</span><span th:if="${notificationCounts['pendingLeaveCount'] > 0}"
+																															th:text="${notificationCounts['pendingLeaveCount']}"
+																															class="badge badge-danger">
+            </span><i class="bi bi-chevron-down ms-auto"></i>
 				</a>
 					<ul id="leave-def-nav" class="nav-content collapse "
 						data-bs-parent="#guide-nav">
 						<li><a th:href="@{/bisag/guide/pending_leaves}">
 							<i class="bi bi-circle"></i><span>Pending Applications</span>
+							<span th:if="${notificationCounts['pendingLeaveCount'] > 0}"
+								  th:text="${notificationCounts['pendingLeaveCount']}"
+								  class="badge badge-danger">
+            </span>
 						</a></li>
 					</ul></li>
 			</ul>
