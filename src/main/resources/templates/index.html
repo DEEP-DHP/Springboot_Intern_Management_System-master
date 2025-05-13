@@ -12,13 +12,9 @@
 <!-- Favicons -->
 <link href="assets/img/logo.jpg" rel="icon">
 <link href="assets/img/logo.jpg" rel="apple-touch-icon">
-
-<!-- Google Fonts -->
 <link
 	href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Raleway:300,300i,400,400i,500,500i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i"
 	rel="stylesheet">
-
-<!-- Vendor CSS Files -->
 <link href="assets/vendor/bootstrap/css/bootstrap.min.css"
 	rel="stylesheet">
 <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css"
@@ -33,58 +29,43 @@
 </head>
 
 <body>
+<<header id="header-bar">
+	<div class="container d-flex justify-content-between align-items-center">
+		<!-- Left side: Logo and Institute Name -->
+		<div class="header-left">
+			<h1 style="color: #0c0c0c">BISAG-N</h1>
+			<h2 id="typing-text">Bhaskaracharya National Institute for Space Applications and Geo-informatics</h2>
+		</div>
 
-	<!-- ======= Header ======= -->
-	<header id="header">
-		<div class="container mx-5">
-
-			<h1>
-				<a href="index.html">BISAG-N</a>
-			</h1>
-
-			<div class="typing-container">
-				<h2 id="typing-text">Bhaskaracharya National Institute for
-					Space Applications and Geo-informatics</h2>
-			</div>
-
-			<div class="mt-4 social-links">
-				<a th:href="@{/login}" class="btn btn-primary" target="_blank">Login</a>
-				<a th:href="@{/bisag_internship}" class="btn btn-primary mx-2"
-					target="_blank">Apply For Internship</a>
-			</div>
-
-			<nav id="navbar" class="navbar">
-				<ul>
-					<li><a class="nav-link active" href="#header">Home</a></li>
-					<li><a class="nav-link" href="#about">About</a></li>
-					<li><a class="nav-link" href="#contact">Contact</a></li>
-					<li><a class="nav-link" href="https://bisag-n.gov.in/"
-						target="_blank">Portfolio</a></li>
-					<li><a class="nav-link" th:href="@{/login}" target="_blank">Login</a></li>
-					<li><a class="nav-link" th:href="@{/bisag_internship}"
-						target="_blank">Apply</a></li>
+		<!-- Right side: Buttons and Navbar -->
+		<div class="header-right d-flex align-items-center">
+			<nav class="navbar">
+				<ul class="nav-list d-flex">
+					<li><a href="#header">Home</a></li>
+					<li><a href="#about">About</a></li>
+					<li><a href="https://bisag-n.gov.in/" target="_blank">Portfolio</a></li>
 				</ul>
-				<i class="bi bi-list mobile-nav-toggle"></i>
 			</nav>
-			<!-- .navbar -->
-
-
+			<div class="btn-group me-3">
+				<a th:href="@{/bisag_internship}" class="btn btn-primary mx-2" target="_blank">Apply For Internship</a>
+				<a th:href="@{/login}" class="btn btn-primary" target="_blank">Login</a>
+			</div>
 
 		</div>
-	</header>
-	<!-- End Header -->
-
-	<!-- ======= About Section ======= -->
+	</div>
+</header>
+<div class="background-slideshow">
+	<div class="bg-slide bg1"></div>
+	<div class="bg-slide bg2"></div>
+	<div class="bg-slide bg3"></div>
+	<div class="bg-slide bg4"></div>
+</div>
 	<section id="about" class="about">
-
-		<!-- ======= About Me ======= -->
 		<div class="about-me container">
-
 			<div class="section-title">
 				<h2>About</h2>
-				<p>Learn more about bisag</p>
+				<p>Learn more about Bisag</p>
 			</div>
-
 			<div class="row">
 				<div class="col-lg-4 mt-3" data-aos="fade-right">
 					<img src="assets/img/slides-1.jpg" class="img-fluid" alt="">
@@ -120,11 +101,7 @@
 					</div>
 				</div>
 			</div>
-
 		</div>
-		<!-- End About Me -->
-
-		<!-- ======= Counts ======= -->
 		<div class="counts container">
 
 			<div class="row">
@@ -169,10 +146,8 @@
 
 		</div>
 		<!-- End Counts -->
-
 		<!-- ======= Skills  ======= -->
 		<div class="skills container">
-
 			<div class="section-title">
 				<h2>Training Domains</h2>
 			</div>
@@ -251,7 +226,7 @@
 				<div class="col-lg-3 col-md-4">
 					<div class="icon-box">
 						<i class="ri-store-line" style="color: #ffbb2c;"></i>
-						<h3>Satelite Communication</h3>
+						<h3>Satellite Communication</h3>
 					</div>
 				</div>
 				<div class="col-lg-3 col-md-4 mt-4 mt-md-0">
@@ -327,9 +302,6 @@
 
 	</section>
 	<!-- End About Section -->
-
-
-
 	<!-- ======= Portfolio Section ======= -->
 	<section id="portfolio" class="portfolio">
 		<div class="container">
@@ -612,7 +584,7 @@
 	</section>
 	<!-- End Contact Section -->
 
-	<div class="credits">Designed by Group-24RH4</div>
+	<div class="credits" style="color: black;">Designed by BISAG-N</div>
 
 	<!-- Vendor JS Files -->
 	<script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
