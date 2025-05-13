@@ -3,26 +3,26 @@
 }
 
 .notif {
-    background-color: red;
-    border-radius: 50%; /* Make it a circle */
-    width: 20px; /* Adjust the width */
-    height: 20px; /* Adjust the height */
-    margin-inline: 5%;
-    color: white;
-    display: inline-block; /* Ensure it doesn't affect the text flow */
-    text-align: center; /* Center the text inside the circle */
-    line-height: 20px; /* Center the text vertically */
+  background-color: red;
+  border-radius: 50%; /* Make it a circle */
+  width: 20px; /* Adjust the width */
+  height: 20px; /* Adjust the height */
+  margin-inline: 5%;
+  color: white;
+  display: inline-block; /* Ensure it doesn't affect the text flow */
+  text-align: center; /* Center the text inside the circle */
+  line-height: 20px; /* Center the text vertically */
 }
 
 .notif-bell {
-    background-color: red;
-    border-radius: 50%;
-    width: 8px; /* Adjust the width */
-    height: 8px; /* Adjust the height */
-    display: inline-block;
-    position: absolute;
-    top: 5px;
-    right: 5px;
+  background-color: red;
+  border-radius: 50%;
+  width: 8px; /* Adjust the width */
+  height: 8px; /* Adjust the height */
+  display: inline-block;
+  position: absolute;
+  top: 5px;
+  right: 5px;
 }
 
 
@@ -69,9 +69,9 @@ h6 {
 }
 
 #about {
-    padding: 3rem 0px;
-    width: 100%;
-    float: left;
+  padding: 3rem 0px;
+  width: 100%;
+  float: left;
 }
 
 /*--------------------------------------------------------------
