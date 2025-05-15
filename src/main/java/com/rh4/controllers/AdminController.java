@@ -1,29 +1,37 @@
 package com.rh4.controllers;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.rh4.repositories.*;
 import com.rh4.entities.*;
 import org.apache.catalina.Group;
+import org.apache.poi.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.*;
@@ -121,6 +129,10 @@ public class AdminController {
     private MyUserService userService;
     @Autowired
     private ThesisStorageService thesisStorageService;
+    @Autowired
+    private MessageRepo messageRepo;
+    @Autowired
+    private RecordRepo recordRepo;
 
 
     @Value("${app.storage.base-dir}")
@@ -268,6 +280,9 @@ public class AdminController {
         long countGuide = guideService.countGuides();
         model.addAttribute("countGuide", countGuide);
 
+        long countGroup = groupService.countGroups();
+        model.addAttribute("countGroup", countGroup);
+
         long pendingLeaveApplicationsCount = leaveApplicationService.countPendingLeaveApplications();
         model.addAttribute("pendingLeaveApplicationsCount", pendingLeaveApplicationsCount);
 
@@ -285,6 +300,7 @@ public class AdminController {
         long pendingCancellationCount = internService.countRequestedCancellations();
         long pendingVerificationCount = verificationService.countPendingVerificationRequests();
         long adminPendingProjectDefinitionCount = groupService.adminPendingProjectDefinitionCount();
+        long gApprovedFinalReportCount = groupService.countGApprovedFinalReports();
         long totalInternNotifications = approveInternCount + pendingInterviewApplications + pendingCancellationCount;
 
         Map<String, Long> notificationCounts = new HashMap<>();
@@ -294,6 +310,7 @@ public class AdminController {
         notificationCounts.put("pendingCancellationCount", pendingCancellationCount);
         notificationCounts.put("pendingVerificationCount", pendingVerificationCount);
         notificationCounts.put("adminPendingProjectDefinitionCount", adminPendingProjectDefinitionCount);
+        notificationCounts.put("gApprovedFinalReportCount", gApprovedFinalReportCount);
         notificationCounts.put("totalInternNotifications", totalInternNotifications);
         model.addAttribute("notificationCounts", notificationCounts);
     }
@@ -320,7 +337,45 @@ public class AdminController {
 
             long countInterns = internService.countInterns();
             model.addAttribute("countInterns", countInterns);
+            List<Intern> allInterns = internService.getAllInterns();
+            LocalDate today = LocalDate.now();
+            int workingCount = 0;
+            int reportPendingCount = 0;
+            int cancelledCount = 0;
+            int completedCount = 0;
 
+            Map<String, String> finalReportStatuses = recordService.getFinalReportStatusMap();
+
+            for (Intern intern : allInterns) {
+                if ("Cancelled".equalsIgnoreCase(intern.getCancellationStatus())) {
+                    cancelledCount++;
+                    continue;
+                }
+
+                java.sql.Date joiningDateSql = intern.getJoiningDate();
+                java.sql.Date completionDateSql = intern.getCompletionDate();
+
+                if (joiningDateSql != null && completionDateSql != null) {
+                    LocalDate joiningDate = joiningDateSql.toLocalDate();
+                    LocalDate completionDate = completionDateSql.toLocalDate();
+
+                    if (!today.isBefore(joiningDate) && !today.isAfter(completionDate)) {
+                        workingCount++;
+                    } else if (today.isAfter(completionDate)) {
+                        String reportStatus = finalReportStatuses.getOrDefault(intern.getInternId(), "No");
+                        if (!"Yes".equalsIgnoreCase(reportStatus)) {
+                            reportPendingCount++;
+                        }
+                        else {
+                            completedCount++; // Increment for completed interns
+                        }
+                    }
+                }
+            }
+            model.addAttribute("workingInternsCount", workingCount);
+            model.addAttribute("reportPendingInternsCount", reportPendingCount);
+            model.addAttribute("cancelledInternsCount", cancelledCount);
+            model.addAttribute("completedInternsCount", completedCount); // Add this
             mv.addObject("username", username);
             mv.addObject("admin", admin);
         } else {
@@ -487,11 +542,13 @@ public class AdminController {
         List<Domain> domains = fieldService.getDomains();
 //        List<Branch> branches = fieldService.getBranches();
         List<GroupEntity> groups = groupService.getGroups();
+        List<Degree> degrees = fieldService.getDegrees();
 
         mv.addObject("colleges", colleges);
         mv.addObject("domains", domains);
 //        mv.addObject("branches", branches);
         mv.addObject("groups", groups);
+        mv.addObject("degrees", degrees);
 
         mv.setViewName("admin/intern_detail");
 
@@ -1410,175 +1467,208 @@ public class AdminController {
 
     @PostMapping("/intern_application/ans")
     public String internApplicationSubmission(@RequestParam String message, @RequestParam long id,
-                                              @RequestParam String status, @RequestParam String finalStatus) {
-        System.out.println("id: " + id + ", status: " + status);
+                                              @RequestParam String status, @RequestParam String finalStatus,
+                                              RedirectAttributes redirectAttributes) {
+        try {
+            System.out.println("id: " + id + ", status: " + status);
 
-        Optional<InternApplication> intern = internService.getInternApplication(id);
+            Optional<InternApplication> intern = internService.getInternApplication(id);
 
-        if (intern.isPresent()) {
-            intern.get().setStatus(status);
-            intern.get().setFinalStatus(finalStatus);
-            internService.addInternApplication(intern.get());
+            if (intern.isPresent()) {
+                intern.get().setStatus(status);
+                intern.get().setFinalStatus(finalStatus);
+                internService.addInternApplication(intern.get());
 
-            logService.saveLog(String.valueOf(id), "Updated application status for intern", "Status Change");
+                logService.saveLog(String.valueOf(id), "Updated application status for intern", "Status Change");
 
-            // Send email notifications based on status
-            if (status.equals("rejected")) {
-                emailService.sendSimpleEmail(intern.get().getEmail(),
-                        "Notification: Rejection of BISAG Internship Application\r\n" + "\r\n" + "Dear "
-                                + intern.get().getFirstName() + ",\r\n" + "\r\n"
-                                + "We appreciate your interest in the BISAG internship program and the effort you put into your application. After careful consideration, we regret to inform you that your application has not been successful on this occasion.\r\n"
-                                + "\r\n"
-                                + "Please know that the decision was a difficult one, and we had many qualified candidates. We want to thank you for your interest in joining our team and for taking the time to apply for the internship position.\r\n"
-                                + "\r\n"
-                                + "We encourage you to continue pursuing your goals, and we wish you the best in your future endeavors. If you have any feedback or questions about the decision, you may reach out to [Contact Person/Department].\r\n"
-                                + "\r\n"
-                                + "Thank you again for considering BISAG for your internship opportunity. We appreciate your understanding.\r\n"
-                                + "\r\n" + "Best regards,\r\n" + "\r\n" + "Your Colleague,\r\n"
-                                + "Internship Coordinator\r\n" + "BISAG INTERNSHIP PROGRAM\r\n" + "1231231231",
-                        "BISAG INTERNSHIP RESULT");
+                // Send email notifications based on status
+                if (status.equals("rejected")) {
+                    emailService.sendSimpleEmail(intern.get().getEmail(),
+                            "Notification: Rejection of BISAG Internship Application\r\n" + "\r\n" + "Dear "
+                                    + intern.get().getFirstName() + ",\r\n" + "\r\n"
+                                    + "We appreciate your interest in the BISAG internship program and the effort you put into your application. After careful consideration, we regret to inform you that your application has not been successful on this occasion.\r\n"
+                                    + "\r\n"
+                                    + "Please know that the decision was a difficult one, and we had many qualified candidates. We want to thank you for your interest in joining our team and for taking the time to apply for the internship position.\r\n"
+                                    + "\r\n"
+                                    + "We encourage you to continue pursuing your goals, and we wish you the best in your future endeavors. If you have any feedback or questions about the decision, you may reach out to [Contact Person/Department].\r\n"
+                                    + "\r\n"
+                                    + "Thank you again for considering BISAG for your internship opportunity. We appreciate your understanding.\r\n"
+                                    + "\r\n" + "Best regards,\r\n" + "\r\n" + "Your Colleague,\r\n"
+                                    + "Internship Coordinator\r\n" + "BISAG INTERNSHIP PROGRAM\r\n" + "1231231231",
+                            "BISAG INTERNSHIP RESULT");
+                } else {
+                    emailService.sendSimpleEmail(intern.get().getEmail(), message + " your unique id is " + intern.get().getId(),
+                            "BISAG INTERNSHIP RESULT");
+                }
+
+                redirectAttributes.addFlashAttribute("successMessage", "Application status updated as shortlisted for interview.");
             } else {
-                emailService.sendSimpleEmail(intern.get().getEmail(), message + " your unique id is " + intern.get().getId(),
-                        "BISAG INTERNSHIP RESULT");
+                redirectAttributes.addFlashAttribute("errorMessage", "Intern application not found.");
             }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Failed to update intern application status");
         }
-        return "redirect:/bisag/admin/intern_application";
+
+        return "redirect:/bisag/admin/intern_application/approved_interns";
     }
 
 
     @PostMapping("/intern_application/update")
-    public String internApplicationSubmission(@RequestParam long id, InternApplication internApplication, MultipartHttpServletRequest req) throws IllegalStateException, IOException, Exception {
-        Optional<InternApplication> intern = internService.getInternApplication(id);
+    public String internApplicationSubmission(@RequestParam long id,
+                                              InternApplication internApplication,
+                                              MultipartHttpServletRequest req,
+                                              RedirectAttributes redirectAttributes) throws IllegalStateException, IOException, Exception {
+        try {
+            Optional<InternApplication> intern = internService.getInternApplication(id);
 
-        if (internApplication.getIsActive()) {
-            intern.get().setFirstName(internApplication.getFirstName());
-//            intern.get().setLastName(internApplication.getLastName());
-            intern.get().setContactNo(internApplication.getContactNo());
+            if (intern.isPresent()) {
+                if (internApplication.getIsActive()) {
+                    intern.get().setFirstName(internApplication.getFirstName());
+//                intern.get().setLastName(internApplication.getLastName());
+                    intern.get().setContactNo(internApplication.getContactNo());
 
-            MyUser user = myUserService.getUserByUsername(intern.get().getEmail());
-            user.setUsername(internApplication.getEmail());
-            userRepo.save(user);
+                    MyUser user = myUserService.getUserByUsername(intern.get().getEmail());
+                    user.setUsername(internApplication.getEmail());
+                    userRepo.save(user);
 
-            intern.get().setEmail(internApplication.getEmail());
-            intern.get().setCollegeName(internApplication.getCollegeName());
-            intern.get().setIsActive(true);
-//            intern.get().setBranch(internApplication.getBranch());
-            intern.get().setDomain(internApplication.getDomain());
-            intern.get().setSemester(internApplication.getSemester());
-            intern.get().setJoiningDate(internApplication.getJoiningDate());
-            intern.get().setCompletionDate(internApplication.getCompletionDate());
-            intern.get().setGuideName(internApplication.getGuideName());
-            intern.get().setGuideId(internApplication.getGuideId());
+                    intern.get().setEmail(internApplication.getEmail());
+                    intern.get().setCollegeName(internApplication.getCollegeName());
+                    intern.get().setIsActive(true);
+//                intern.get().setBranch(internApplication.getBranch());
+                    intern.get().setDomain(internApplication.getDomain());
+                    intern.get().setSemester(internApplication.getSemester());
+                    intern.get().setJoiningDate(internApplication.getJoiningDate());
+                    intern.get().setCompletionDate(internApplication.getCompletionDate());
+                    intern.get().setGuideName(internApplication.getGuideName());
+                    intern.get().setGuideId(internApplication.getGuideId());
 
-            logService.saveLog(String.valueOf(id), "Updated intern application details", "InternApplication Update");
-        } else {
-            intern.get().setIsActive(false);
-            Cancelled cancelledEntry = new Cancelled();
-            cancelledEntry.setTableName("InternApplication");
-            cancelledEntry.setCancelId(Long.toString(intern.get().getId()));
-            cancelledRepo.save(cancelledEntry);
+                    logService.saveLog(String.valueOf(id), "Updated intern application details", "InternApplication Update");
+                    redirectAttributes.addFlashAttribute("successMessage", "Intern application updated successfully.");
+                } else {
+                    intern.get().setIsActive(false);
+                    Cancelled cancelledEntry = new Cancelled();
+                    cancelledEntry.setTableName("InternApplication");
+                    cancelledEntry.setCancelId(Long.toString(intern.get().getId()));
+                    cancelledRepo.save(cancelledEntry);
 
-            logService.saveLog(String.valueOf(id), "Cancelled intern application", "InternApplication Cancellation");
+                    logService.saveLog(String.valueOf(id), "Cancelled intern application", "InternApplication Cancellation");
+                    redirectAttributes.addFlashAttribute("successMessage", "Intern application marked as cancelled.");
+                }
+
+                intern.get().setUpdatedAt(LocalDateTime.now());
+                internService.addInternApplication(intern.get());
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Intern application not found.");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error updating intern application");
         }
 
-        intern.get().setUpdatedAt(LocalDateTime.now());
-        internService.addInternApplication(intern.get());
         return "redirect:/bisag/admin/intern_application/" + id;
     }
 
     @PostMapping("/intern/update")
-    public String updateIntern(@RequestParam String id, Intern internApplication, @RequestParam("groupId") String groupId, @RequestParam("cancellationRemarks") String cancellationRemarks, MultipartHttpServletRequest req) throws IllegalStateException, IOException, Exception {
-        Optional<Intern> intern = internService.getIntern(id);
+    public String updateIntern(@RequestParam String id,
+                               Intern internApplication,
+                               @RequestParam("groupId") String groupId,
+                               @RequestParam("cancellationRemarks") String cancellationRemarks,
+                               MultipartHttpServletRequest req,
+                               RedirectAttributes redirectAttributes) throws IllegalStateException, IOException, Exception {
+        try {
+            Optional<Intern> intern = internService.getIntern(id);
 
-        if (groupId.equals("createOwnGroup")) {
-            String generatedId = generateGroupId();
-            GroupEntity group = new GroupEntity();
-            group.setGroupId(generatedId);
-            groupService.registerGroup(group);
-            intern.get().setGroup(group);
-        } else {
-            intern.get().setGroup(groupService.getGroup(groupId));
-        }
-
-        if (intern.get().getIsActive()) {
-            intern.get().setFirstName(internApplication.getFirstName());
-//            intern.get().setLastName(internApplication.getLastName());
-            intern.get().setContactNo(internApplication.getContactNo());
-
-            MyUser user = myUserService.getUserByUsername(intern.get().getEmail());
-            user.setUsername(internApplication.getEmail());
-            userRepo.save(user);
-
-            InternApplication internA = internService.getInternApplicationByUsername(intern.get().getEmail());
-            internA.setEmail(internApplication.getEmail());
-            internApplicationRepo.save(internA);
-
-            intern.get().setEmail(internApplication.getEmail());
-            intern.get().setCollegeName(internApplication.getCollegeName());
-//            intern.get().setBranch(internApplication.getBranch());
-            intern.get().setIsActive(true);
-            intern.get().setDomain(internApplication.getDomain());
-            intern.get().setSemester(internApplication.getSemester());
-            intern.get().setJoiningDate(internApplication.getJoiningDate());
-            intern.get().setCompletionDate(internApplication.getCompletionDate());
-            intern.get().setPermanentAddress(internApplication.getPermanentAddress());
-            intern.get().setDateOfBirth(internApplication.getDateOfBirth());
-            intern.get().setGender(internApplication.getGender());
-            intern.get().setCollegeGuideHodName(internApplication.getCollegeGuideHodName());
-            intern.get().setDegree(internApplication.getDegree());
-            intern.get().setAggregatePercentage(internApplication.getAggregatePercentage());
-            intern.get().setUsedResource(internApplication.getUsedResource());
-            intern.get().setCancellationRemarks(cancellationRemarks);
-
-            logService.saveLog(id, "Updated intern details", "Intern Update");
-        }
-
-        if (!internApplication.getIsActive()) {
-            Intern internData = intern.get();
-
-            if (internData.getFirstName() != null &&
-//                    internData.getLastName() != null &&
-                    internData.getContactNo() != null &&
-                    internData.getEmail() != null &&
-                    internData.getCollegeName() != null &&
-//                    internData.getBranch() != null &&
-                    internData.getDomain() != null &&
-                    internData.getJoiningDate() != null &&
-                    internData.getCompletionDate() != null &&
-                    internData.getPermanentAddress() != null &&
-                    internData.getDateOfBirth() != null &&
-                    internData.getGender() != null &&
-                    internData.getCollegeGuideHodName() != null &&
-                    internData.getDegree() != null &&
-                    internData.getAggregatePercentage() != null &&
-                    internData.getUsedResource() != null &&
-                    internData.getIcardForm() != null &&
-                    internData.getDegree() != null &&
-                    internData.getGender() != null &&
-                    internData.getNocPdf() != null &&
-                    internData.getProjectDefinitionName() != null &&
-                    internData.getRegistrationForm() != null &&
-                    internData.getResumePdf() != null &&
-                    internData.getSecurityForm() != null &&
-                    internData.getProjectDefinitionForm() != null) {
-
-                internData.setIsActive(false);
-                internData.setCancellationStatus("Cancelled");
-
-                Cancelled cancelledEntry = new Cancelled();
-                cancelledEntry.setTableName("intern");
-                cancelledEntry.setCancelId(internData.getInternId());
-                cancelledRepo.save(cancelledEntry);
-
-                logService.saveLog(id, "Cancelled intern", "Intern Cancellation");
+            if (groupId.equals("createOwnGroup")) {
+                String generatedId = generateGroupId();
+                GroupEntity group = new GroupEntity();
+                group.setGroupId(generatedId);
+                groupService.registerGroup(group);
+                intern.get().setGroup(group);
             } else {
-                System.out.println("All fields must be filled to cancel intern.");
+                intern.get().setGroup(groupService.getGroup(groupId));
             }
+
+            if (intern.get().getIsActive()) {
+                intern.get().setFirstName(internApplication.getFirstName());
+                intern.get().setContactNo(internApplication.getContactNo());
+
+                MyUser user = myUserService.getUserByUsername(intern.get().getEmail());
+                user.setUsername(internApplication.getEmail());
+                userRepo.save(user);
+
+                InternApplication internA = internService.getInternApplicationByUsername(intern.get().getEmail());
+                internA.setEmail(internApplication.getEmail());
+                internApplicationRepo.save(internA);
+
+                intern.get().setEmail(internApplication.getEmail());
+                intern.get().setCollegeName(internApplication.getCollegeName());
+                intern.get().setIsActive(true);
+                intern.get().setDomain(internApplication.getDomain());
+                intern.get().setSemester(internApplication.getSemester());
+                intern.get().setJoiningDate(internApplication.getJoiningDate());
+                intern.get().setCompletionDate(internApplication.getCompletionDate());
+                intern.get().setPermanentAddress(internApplication.getPermanentAddress());
+                intern.get().setDateOfBirth(internApplication.getDateOfBirth());
+                intern.get().setGender(internApplication.getGender());
+                intern.get().setCollegeGuideHodName(internApplication.getCollegeGuideHodName());
+                intern.get().setDegree(internApplication.getDegree());
+                intern.get().setAggregatePercentage(internApplication.getAggregatePercentage());
+                intern.get().setUsedResource(internApplication.getUsedResource());
+                intern.get().setCancellationRemarks(cancellationRemarks);
+
+                logService.saveLog(id, "Updated intern details", "Intern Update");
+            }
+
+            if (!internApplication.getIsActive()) {
+                Intern internData = intern.get();
+
+                if (internData.getFirstName() != null &&
+                        internData.getContactNo() != null &&
+                        internData.getEmail() != null &&
+                        internData.getCollegeName() != null &&
+                        internData.getDomain() != null &&
+                        internData.getJoiningDate() != null &&
+                        internData.getCompletionDate() != null &&
+                        internData.getPermanentAddress() != null &&
+                        internData.getDateOfBirth() != null &&
+                        internData.getGender() != null &&
+                        internData.getCollegeGuideHodName() != null &&
+                        internData.getDegree() != null &&
+                        internData.getAggregatePercentage() != null &&
+                        internData.getUsedResource() != null &&
+                        internData.getIcardForm() != null &&
+                        internData.getDegree() != null &&
+                        internData.getGender() != null &&
+                        internData.getNocPdf() != null &&
+                        internData.getProjectDefinitionName() != null &&
+                        internData.getRegistrationForm() != null &&
+                        internData.getResumePdf() != null &&
+                        internData.getSecurityForm() != null &&
+                        internData.getProjectDefinitionForm() != null) {
+
+                    internData.setIsActive(false);
+                    internData.setCancellationStatus("Cancelled");
+
+                    Cancelled cancelledEntry = new Cancelled();
+                    cancelledEntry.setTableName("intern");
+                    cancelledEntry.setCancelId(internData.getInternId());
+                    cancelledRepo.save(cancelledEntry);
+
+                    logService.saveLog(id, "Cancelled intern", "Intern Cancellation");
+                } else {
+                    redirectAttributes.addFlashAttribute("alertError", "All fields must be filled to cancel intern.");
+                    return "redirect:/bisag/admin/intern_application/new_interns";
+                }
+            }
+
+            intern.get().setUpdatedAt(LocalDateTime.now());
+            internRepo.save(intern.get());
+
+            redirectAttributes.addFlashAttribute("alertSuccess", "Intern updated successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("alertError", "Error occurred while updating intern.");
         }
 
-        intern.get().setUpdatedAt(LocalDateTime.now());
-        internRepo.save(intern.get());
-        return "redirect:/bisag/admin/intern/" + id;
+        return "redirect:/bisag/admin/intern_application/new_interns";
     }
 
     @GetMapping("/intern_application/approved_interns")
@@ -1646,37 +1736,54 @@ public class AdminController {
     }
 
     @PostMapping("/intern_application/approved_intern/update")
-    public String approvedInterns(@RequestParam long id, InternApplication internApplication, MultipartHttpServletRequest req)
-            throws IllegalStateException, IOException, Exception {
-        Optional<InternApplication> intern = internService.getInternApplication(id);
+    public String approvedInterns(@RequestParam long id,
+                                  InternApplication internApplication,
+                                  MultipartHttpServletRequest req,
+                                  RedirectAttributes redirectAttributes) throws IllegalStateException, IOException, Exception {
+        try {
+            Optional<InternApplication> intern = internService.getInternApplication(id);
 
-        if (internApplication.getIsActive()) {
-            intern.get().setFirstName(internApplication.getFirstName());
-//            intern.get().setLastName(internApplication.getLastName());
-            intern.get().setContactNo(internApplication.getContactNo());
-            intern.get().setEmail(internApplication.getEmail());
-            intern.get().setIsActive(true);
-            intern.get().setCollegeName(internApplication.getCollegeName());
-//            intern.get().setBranch(internApplication.getBranch());
-            intern.get().setDomain(internApplication.getDomain());
-            intern.get().setSemester(internApplication.getSemester());
-            intern.get().setJoiningDate(internApplication.getJoiningDate());
-            intern.get().setCompletionDate(internApplication.getCompletionDate());
-        } else {
-            intern.get().setIsActive(false);
-            Cancelled cancelledEntry = new Cancelled();
-            cancelledEntry.setTableName("InternApplication");
-            cancelledEntry.setCancelId(Long.toString(intern.get().getId()));
-            cancelledRepo.save(cancelledEntry);
-        }
+            if (intern.isPresent()) {
+                if (internApplication.getIsActive()) {
+                    intern.get().setFirstName(internApplication.getFirstName());
+//                intern.get().setLastName(internApplication.getLastName());
+                    intern.get().setContactNo(internApplication.getContactNo());
+                    intern.get().setEmail(internApplication.getEmail());
+                    intern.get().setIsActive(true);
+                    intern.get().setCollegeName(internApplication.getCollegeName());
+//                intern.get().setBranch(internApplication.getBranch());
+                    intern.get().setDomain(internApplication.getDomain());
+                    intern.get().setSemester(internApplication.getSemester());
+                    intern.get().setJoiningDate(internApplication.getJoiningDate());
+                    intern.get().setCompletionDate(internApplication.getCompletionDate());
 
-        internService.addInternApplication(intern.get());
+                    redirectAttributes.addFlashAttribute("successMessage", "Approved intern details updated successfully.");
+                } else {
+                    intern.get().setIsActive(false);
+                    Cancelled cancelledEntry = new Cancelled();
+                    cancelledEntry.setTableName("InternApplication");
+                    cancelledEntry.setCancelId(Long.toString(intern.get().getId()));
+                    cancelledRepo.save(cancelledEntry);
 
-        String username = (String) session.getAttribute("username");
-        Admin admin = adminService.getAdminByUsername(username);
-        if (admin != null) {
-            logService.saveLog(String.valueOf(admin.getAdminId()), "Update Approved Intern",
-                    "Admin " + admin.getName() + " updated details of approved intern with ID: " + id);
+                    redirectAttributes.addFlashAttribute("successMessage", "Approved intern has been deactivated.");
+                }
+
+                internService.addInternApplication(intern.get());
+
+                String username = (String) session.getAttribute("username");
+                Admin admin = adminService.getAdminByUsername(username);
+                if (admin != null) {
+                    logService.saveLog(
+                            String.valueOf(admin.getAdminId()),
+                            "Update Approved Intern",
+                            "Admin " + admin.getName() + " updated details of approved intern with ID: " + id
+                    );
+                }
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Intern not found.");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error updating intern: " + e.getMessage());
         }
 
         return "redirect:/bisag/admin/intern_application/approved_interns";
@@ -1707,61 +1814,167 @@ public class AdminController {
         return "redirect:/bisag/admin/intern_application/approved_interns";
     }
 
-@GetMapping("/intern_application/new_interns")
-public ModelAndView newInterns(Model model) {
-    ModelAndView mv = new ModelAndView();
-    List<Intern> intern = internService.getInterns();
-    mv.addObject("intern", intern);
-    model = countNotifications(model);
-    mv.setViewName("admin/new_interns");
-    mv.addObject("admin", adminName(session));
-    List<RRecord> records = recordService.getAllRecords();
-    model.addAttribute("records", records);
-    List<College> college = fieldService.getColleges();
-//    List<Branch> branch = fieldService.getBranches();
-    List<Domain> domain = fieldService.getDomains();
-    List<Guide> guide = guideService.getGuide();
-    List<Degree> degree = fieldService.getDegrees();
-    List<GroupEntity> groupEntities = groupService.getGroups();
-    List<String> projectDefinitions = internService.getDistinctProjectDefinitions();
-    List<Intern> interns = internService.getAllInterns();
-    List<String> genders = internService.getDistinctGenders();
-    mv.addObject("interns", interns);
-    mv.addObject("project_definition_name", projectDefinitions);
-    mv.addObject("colleges", college);
-//    mv.addObject("branches", branch);
-    mv.addObject("domains", domain);
-    mv.addObject("guides", guide);
-    mv.addObject("degrees", degree);
-    mv.addObject("genders", genders);
-    mv.addObject("admin", adminName(session));
-    Map<String, String> finalReportStatuses = new HashMap<>();
-    for (Intern i : intern) {
-        String finalReport = recordService.findFinalReportByInternId(i.getInternId());
-        finalReportStatuses.put(i.getInternId(), finalReport != null ? finalReport : "no");
-    }
-    model.addAttribute("finalReportStatuses", finalReportStatuses);
+    @GetMapping("/intern_application/new_interns")
+    public ModelAndView newInterns(
+            Model model,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(required = false) Boolean all
+    ) {
+        ModelAndView mv = new ModelAndView();
 
-    Map<String, String> reportTimestamps = new HashMap<>();
-    for (Intern i : intern) {
-        RRecord record = recordService.findLatestRecordByInternId(i.getInternId());
-        if (record != null && record.getSubmissionTimestamp() != null) {
-            reportTimestamps.put(i.getInternId(),
-                    record.getSubmissionTimestamp().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")));
+        List<Intern> intern;
+        if (Boolean.TRUE.equals(all)) {
+            intern = internService.getInternsSortedByInternIdDesc();
+            mv.addObject("showAll", true);
         } else {
-            reportTimestamps.put(i.getInternId(), "N/A");
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("internId"))); // Sorting by internId in descending order
+            Page<Intern> internPage = internRepo.findAllWithGroupAndGuideUsingEntityGraph(pageable);
+            intern = internPage.getContent();
+            mv.addObject("currentPage", page);
+            mv.addObject("totalPages", internPage.getTotalPages());
+            mv.addObject("pageSize", size);
+            mv.addObject("showAll", false);
         }
-    }
-    model.addAttribute("reportTimestamps", reportTimestamps);
-    String username = (String) session.getAttribute("username");
-    Admin admin = adminService.getAdminByUsername(username);
-    if (admin != null) {
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed New Interns",
-                "Admin " + admin.getName() + " accessed the new interns page.");
-    }
 
-    return mv;
-}
+        mv.addObject("intern", intern);
+
+        model = countNotifications(model);
+        mv.setViewName("admin/new_interns");
+        mv.addObject("admin", adminName(session));
+
+        List<RRecord> records = recordService.getAllRecords();
+        model.addAttribute("records", records);
+        List<College> college = fieldService.getColleges();
+        List<Domain> domain = fieldService.getDomains();
+        List<Guide> guide = guideService.getGuide();
+        List<Degree> degree = fieldService.getDegrees();
+//        List<GroupEntity> groupEntities = groupService.getGroups();
+        List<String> projectDefinitions = internService.getDistinctProjectDefinitions();
+        List<Intern> interns = internService.getAllInterns(); // used separately
+//        List<String> genders = internService.getDistinctGenders();
+
+        mv.addObject("interns", interns);
+        mv.addObject("project_definition_name", projectDefinitions);
+        mv.addObject("colleges", college);
+        mv.addObject("domains", domain);
+        mv.addObject("guides", guide);
+        mv.addObject("degrees", degree);
+//        mv.addObject("genders", genders);
+        mv.addObject("admin", adminName(session));
+        List<String> internIds = intern.stream()
+            .map(Intern::getInternId)
+            .collect(Collectors.toList());
+
+    Map<String, String> finalReportStatuses = recordService.findFinalReportsForInternIds(internIds);
+    model.addAttribute("finalReportStatuses", finalReportStatuses);
+    Map<String, String> reportTimestamps = recordService.findLatestTimestampsForInternIds(internIds);
+    mv.addObject("reportTimestamps", reportTimestamps);
+//        Map<String, String> finalReportStatuses = new HashMap<>();
+//        for (Intern i : intern) {
+//            String finalReport = recordService.findFinalReportByInternId(i.getInternId());
+//            finalReportStatuses.put(i.getInternId(), finalReport != null ? finalReport : "no");
+//        }
+//        model.addAttribute("finalReportStatuses", finalReportStatuses);
+//
+//        Map<String, String> reportTimestamps = new HashMap<>();
+//        for (Intern i : intern) {
+//            RRecord record = recordService.findLatestRecordByInternId(i.getInternId());
+//            if (record != null && record.getSubmissionTimestamp() != null) {
+//                reportTimestamps.put(i.getInternId(),
+//                        record.getSubmissionTimestamp().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")));
+//            } else {
+//                reportTimestamps.put(i.getInternId(), "N/A");
+//            }
+//        }
+//        model.addAttribute("reportTimestamps", reportTimestamps);
+
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed New Interns",
+                    "Admin " + admin.getName() + " accessed the new interns page.");
+        }
+
+        return mv;
+    }
+//@GetMapping("/intern_application/new_interns")
+//public ModelAndView newInterns(
+//        Model model,
+//        @RequestParam(defaultValue = "0") int page,
+//        @RequestParam(defaultValue = "25") int size,
+//        @RequestParam(required = false) Boolean all
+//) {
+//    ModelAndView mv = new ModelAndView();
+//
+//    List<Intern> intern;
+//    if (Boolean.TRUE.equals(all)) {
+////        intern = internService.getInterns();
+//        intern = internService.getInternsWithGroup();
+//        mv.addObject("showAll", true);
+//    } else {
+//        Pageable pageable = PageRequest.of(page, size);
+//        Page<Intern> internPage = internService.getInternsPaginatedWithGroup(pageable);
+//        intern = internPage.getContent();
+//        mv.addObject("currentPage", page);
+//        mv.addObject("totalPages", internPage.getTotalPages());
+//        mv.addObject("pageSize", size);
+//        mv.addObject("showAll", false);
+//    }
+//
+//    mv.addObject("intern", intern);
+//
+//    model = countNotifications(model);
+//    mv.setViewName("admin/new_interns");
+//    mv.addObject("admin", adminName(session));
+//
+//    List<RRecord> records = recordService.getAllRecords();
+//    model.addAttribute("records", records);
+//    List<College> college = fieldService.getColleges();
+//    List<Domain> domain = fieldService.getDomains();
+//    List<Guide> guide = guideService.getGuide();
+//    List<Degree> degree = fieldService.getDegrees();
+//    List<GroupEntity> groupEntities = groupService.getGroups();
+//    List<String> projectDefinitions = internService.getDistinctProjectDefinitions();
+//    List<Intern> interns = internService.getAllInterns(); // used separately
+//    List<String> genders = internService.getDistinctGenders();
+//
+//    mv.addObject("interns", interns);
+//    mv.addObject("project_definition_name", projectDefinitions);
+//    mv.addObject("colleges", college);
+//    mv.addObject("domains", domain);
+//    mv.addObject("guides", guide);
+//    mv.addObject("degrees", degree);
+//    mv.addObject("genders", genders);
+//    mv.addObject("admin", adminName(session));
+//
+//    // Final Report Statuses: avoid N+1 by batch query
+//    List<String> internIds = intern.stream()
+//            .map(Intern::getInternId)
+//            .collect(Collectors.toList());
+//
+//    Map<String, String> finalReportStatuses = recordService.findFinalReportsForInternIds(internIds);
+//    model.addAttribute("finalReportStatuses", finalReportStatuses);
+//    Map<String, String> reportTimestamps = recordService.findLatestTimestampsForInternIds(internIds);
+//    mv.addObject("reportTimestamps", reportTimestamps);
+//
+//    // Report submission timestamps
+////    List<String> internIds = intern.stream()
+////            .map(Intern::getInternId)
+////            .collect(Collectors.toList());
+////
+////    Map<String, String> reportTimestamps = recordService.findLatestTimestampsForInternIds(internIds);
+////    mv.addObject("reportTimestamps", reportTimestamps);
+//
+//    String username = (String) session.getAttribute("username");
+//    Admin admin = adminService.getAdminByUsername(username);
+//    if (admin != null) {
+//        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed New Interns",
+//                "Admin " + admin.getName() + " accessed the new interns page.");
+//    }
+//
+//    return mv;
+//}
     // Group Creation
 
     @GetMapping("/create_group")
@@ -1784,47 +1997,54 @@ public ModelAndView newInterns(Model model) {
     }
 
     @PostMapping("/create_group_details")
-    public String createGroup(@RequestParam("selectedInterns") List<Long> selectedInterns) {
+    public String createGroup(@RequestParam("selectedInterns") List<Long> selectedInterns,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            System.out.println("Selected Intern IDs: " + selectedInterns);
+            String id = generateGroupId();
+            GroupEntity group = new GroupEntity();
+            Optional<InternApplication> internoptional = internService.getInternApplication(selectedInterns.get(0));
+            group.setDomain(internoptional.get().getDomain());
+            group.setGroupId(id);
+            groupService.registerGroup(group);
 
-        System.out.println("Selected Intern IDs: " + selectedInterns);
-        String id = generateGroupId();
-        GroupEntity group = new GroupEntity();
-        Optional<InternApplication> internoptional = internService.getInternApplication(selectedInterns.get(0));
-        group.setDomain(internoptional.get().getDomain());
-        group.setGroupId(id);
-        groupService.registerGroup(group);
+            for (Long internId : selectedInterns) {
+                Optional<InternApplication> internApplicationOptional = internService.getInternApplication(internId);
 
-        for (Long internId : selectedInterns) {
-            Optional<InternApplication> internApplicationOptional = internService.getInternApplication(internId);
+                if (internApplicationOptional.isPresent()) {
+                    InternApplication internApplication = internApplicationOptional.get();
+                    internApplication.setGroupCreated(true);
+                    internService.addInternApplication(internApplication);
 
-            if (internApplicationOptional.isPresent()) {
-                InternApplication internApplication = internApplicationOptional.get();
-                internApplication.setGroupCreated(true);
-                internService.addInternApplication(internApplication);
-
-                Intern intern = new Intern(internApplication.getFirstName(),
+                    Intern intern = new Intern(internApplication.getFirstName(),
 //                        internApplication.getLastName(),
-                        internApplication.getContactNo(), internApplication.getEmail(),
-                        internApplication.getCollegeName(), internApplication.getJoiningDate(),
-                        internApplication.getCompletionDate(),
+                            internApplication.getContactNo(), internApplication.getEmail(),
+                            internApplication.getCollegeName(), internApplication.getJoiningDate(),
+                            internApplication.getCompletionDate(),
 //                        internApplication.getBranch(),
-                        internApplication.getDegree(),
-                        internApplication.getPassword(), internApplication.getCollegeIcardImage(),
-                        internApplication.getNocPdf(), internApplication.getResumePdf(), internApplication.getPassportSizeImage(),
-                        internApplication.getSemester(), internApplication.getDomain(), group);
+                            internApplication.getDegree(),
+                            internApplication.getPassword(), internApplication.getCollegeIcardImage(),
+                            internApplication.getNocPdf(), internApplication.getResumePdf(), internApplication.getPassportSizeImage(),
+                            internApplication.getSemester(), internApplication.getDomain(), group);
 
-                intern.setInternId(generateInternId());
-                internService.addIntern(intern);
+                    intern.setInternId(generateInternId());
+                    internService.addIntern(intern);
 
-                String username = (String) session.getAttribute("username");
-                Admin admin = adminService.getAdminByUsername(username);
-                if (admin != null) {
-                    logService.saveLog(String.valueOf(admin.getAdminId()), "Created Group and Registered Intern",
-                            "Admin " + admin.getName() + " created a group and registered intern "
-                                    + internApplication.getFirstName());
+                    String username = (String) session.getAttribute("username");
+                    Admin admin = adminService.getAdminByUsername(username);
+                    if (admin != null) {
+                        logService.saveLog(String.valueOf(admin.getAdminId()), "Created Group and Registered Intern",
+                                "Admin " + admin.getName() + " created a group and registered intern "
+                                        + internApplication.getFirstName());
+                    }
                 }
             }
+
+            redirectAttributes.addFlashAttribute("successMessage", "Group created and interns registered successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Failed to create group or register interns: " + e.getMessage());
         }
+
         return "redirect:/bisag/admin/create_group";
     }
     // Add dynamic fields(college, branch)
@@ -2042,30 +2262,36 @@ public ModelAndView newInterns(Model model) {
     }
 
     @PostMapping("/register_guide")
-    public String registerGuide(@ModelAttribute("guide") Guide guide) {
-        guideService.registerGuide(guide);
+    public String registerGuide(@ModelAttribute("guide") Guide guide, RedirectAttributes redirectAttributes) {
+        try {
+            guideService.registerGuide(guide);
 
-        emailService.sendSimpleEmail(guide.getEmailId(), "Notification: Appointment as Administrator\r\n" + "\r\n"
-                        + "Dear " + guide.getName() + "\r\n" + "\r\n"
-                        + "I trust this email finds you well. We are pleased to inform you that you have been appointed as an administrator within our organization, effective immediately. Your dedication and contributions to the team have not gone unnoticed, and we believe that your new role will bring value to our operations.\r\n"
-                        + "\r\n"
-                        + "As an administrator, you now hold a position of responsibility within the organization. We trust that you will approach your duties with diligence, professionalism, and a commitment to upholding the values of our organization.\r\n"
-                        + "\r\n"
-                        + "It is imperative to recognize the importance of your role and the impact it may have on the functioning of our team. We have confidence in your ability to handle the responsibilities that come with this position and to contribute positively to the continued success of our organization.\r\n"
-                        + "\r\n"
-                        + "We would like to emphasize the importance of maintaining the highest standards of integrity and ethics in your role. It is expected that you will use your administrative privileges responsibly and refrain from any misuse.\r\n"
-                        + "\r\n"
-                        + "Should you have any questions or require further clarification regarding your new responsibilities, please do not hesitate to reach out to [Contact Person/Department].\r\n"
-                        + "\r\n"
-                        + "Once again, congratulations on your appointment as an administrator. We look forward to your continued contributions and success in this elevated role.\r\n"
-                        + "\r\n" + "Best regards,\r\n" + "\r\n" + "Your Colleague,\r\n" + "Administrator\r\n" + "1231231231",
-                "BISAG ADMINISTRATIVE OFFICE");
+            emailService.sendSimpleEmail(guide.getEmailId(), "Notification: Appointment as Administrator\r\n" + "\r\n"
+                            + "Dear " + guide.getName() + "\r\n" + "\r\n"
+                            + "I trust this email finds you well. We are pleased to inform you that you have been appointed as an administrator within our organization, effective immediately. Your dedication and contributions to the team have not gone unnoticed, and we believe that your new role will bring value to our operations.\r\n"
+                            + "\r\n"
+                            + "As an administrator, you now hold a position of responsibility within the organization. We trust that you will approach your duties with diligence, professionalism, and a commitment to upholding the values of our organization.\r\n"
+                            + "\r\n"
+                            + "It is imperative to recognize the importance of your role and the impact it may have on the functioning of our team. We have confidence in your ability to handle the responsibilities that come with this position and to contribute positively to the continued success of our organization.\r\n"
+                            + "\r\n"
+                            + "We would like to emphasize the importance of maintaining the highest standards of integrity and ethics in your role. It is expected that you will use your administrative privileges responsibly and refrain from any misuse.\r\n"
+                            + "\r\n"
+                            + "Should you have any questions or require further clarification regarding your new responsibilities, please do not hesitate to reach out to [Contact Person/Department].\r\n"
+                            + "\r\n"
+                            + "Once again, congratulations on your appointment as an administrator. We look forward to your continued contributions and success in this elevated role.\r\n"
+                            + "\r\n" + "Best regards,\r\n" + "\r\n" + "Your Colleague,\r\n" + "Administrator\r\n" + "1231231231",
+                    "BISAG ADMINISTRATIVE OFFICE");
 
-        String username = (String) session.getAttribute("username");
-        Admin admin = adminService.getAdminByUsername(username);
-        if (admin != null) {
-            logService.saveLog(String.valueOf(admin.getAdminId()), "Registered Guide",
-                    "Admin " + admin.getName() + " registered guide " + guide.getName() + " as an administrator.");
+            String username = (String) session.getAttribute("username");
+            Admin admin = adminService.getAdminByUsername(username);
+            if (admin != null) {
+                logService.saveLog(String.valueOf(admin.getAdminId()), "Registered Guide",
+                        "Admin " + admin.getName() + " registered guide " + guide.getName() + " as an administrator.");
+            }
+
+            redirectAttributes.addFlashAttribute("successMessage", "Guide registered successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Failed to register guide: ");
         }
 
         return "redirect:/bisag/admin/guide_list";
@@ -2125,44 +2351,63 @@ public ModelAndView newInterns(Model model) {
     }
 
     @PostMapping("/update_guide/{id}")
-    public String updateGuide(@ModelAttribute("guide") Guide guide, @PathVariable("id") long id) {
+    public String updateGuide(@ModelAttribute("guide") Guide guide,
+                              @PathVariable("id") long id,
+                              RedirectAttributes redirectAttributes,
+                              HttpSession session) {
+
         Optional<Guide> existingGuide = guideService.getGuide(guide.getGuideId());
 
         if (existingGuide.isPresent()) {
+            try {
+                String currentPassword = existingGuide.get().getPassword();
+                Guide updatedGuide = existingGuide.get();
+                updatedGuide.setName(guide.getName());
+                updatedGuide.setLocation(guide.getLocation());
+                updatedGuide.setFloor(guide.getFloor());
+                updatedGuide.setLabNo(guide.getLabNo());
+                updatedGuide.setContactNo(guide.getContactNo());
+                updatedGuide.setEmailId(guide.getEmailId());
 
-            String currentPassword = existingGuide.get().getPassword();
-            Guide updatedGuide = existingGuide.get();
-            updatedGuide.setName(guide.getName());
-            updatedGuide.setLocation(guide.getLocation());
-            updatedGuide.setFloor(guide.getFloor());
-            updatedGuide.setLabNo(guide.getLabNo());
-            updatedGuide.setContactNo(guide.getContactNo());
-            updatedGuide.setEmailId(guide.getEmailId());
-            if (!currentPassword.equals(encodePassword(guide.getPassword())) && guide.getPassword() != "") {
-                updatedGuide.setPassword(encodePassword(guide.getPassword()));
+                if (!currentPassword.equals(encodePassword(guide.getPassword())) && !guide.getPassword().isEmpty()) {
+                    updatedGuide.setPassword(encodePassword(guide.getPassword()));
+                }
+
+                guideService.updateGuide(updatedGuide, existingGuide);
+
+                String username = (String) session.getAttribute("username");
+                Admin admin = adminService.getAdminByUsername(username);
+                if (admin != null) {
+                    logService.saveLog(String.valueOf(admin.getAdminId()), "Updated Guide Information",
+                            "Admin " + admin.getName() + " updated the guide information with ID: " + id);
+                }
+
+                redirectAttributes.addFlashAttribute("successMessage", "Guide updated successfully.");
+            } catch (Exception e) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Failed to update guide: " + e.getMessage());
             }
-            guideService.updateGuide(updatedGuide, existingGuide);
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Guide not found.");
+        }
+
+        return "redirect:/bisag/admin/guide_list";
+    }
+
+    @PostMapping("/guide_list/delete/{id}")
+    public String deleteGuide(@PathVariable("id") long id, RedirectAttributes redirectAttributes, HttpSession session) {
+        try {
+            guideService.deleteGuide(id);
 
             String username = (String) session.getAttribute("username");
             Admin admin = adminService.getAdminByUsername(username);
             if (admin != null) {
-                logService.saveLog(String.valueOf(admin.getAdminId()), "Updated Guide Information",
-                        "Admin " + admin.getName() + " updated the guide information with ID: " + id);
+                logService.saveLog(String.valueOf(admin.getAdminId()), "Deleted Guide",
+                        "Admin " + admin.getName() + " deleted the guide with ID: " + id);
             }
-        }
-        return "redirect:/bisag/admin/guide_list";
-    }
 
-    // Delete Guide
-    @PostMapping("/guide_list/delete/{id}")
-    public String deleteGuide(@PathVariable("id") long id) {
-        guideService.deleteGuide(id);
-
-        String username = (String) session.getAttribute("username");
-        Admin admin = adminService.getAdminByUsername(username);
-        if (admin != null) {
-            logService.saveLog(String.valueOf(admin.getAdminId()), "Deleted Guide",
-                    "Admin " + admin.getName() + " deleted the guide with ID: " + id);
+            redirectAttributes.addFlashAttribute("successMessage", "Guide deleted successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Failed to delete guide: " + e.getMessage());
         }
 
         return "redirect:/bisag/admin/guide_list";
@@ -2202,7 +2447,9 @@ public ModelAndView newInterns(Model model) {
     }
 
     @PostMapping("/allocate_guide/assign_guide")
-    public String assignGuide(@RequestParam("guideid") long guideid, @RequestParam("groupId") String groupId) {
+    public String assignGuide(@RequestParam("guideid") long guideid,
+                              @RequestParam("groupId") String groupId,
+                              RedirectAttributes redirectAttributes) {
         System.out.println("guide id: " + guideid);
         groupService.assignGuide(groupId, guideid);
 
@@ -2213,6 +2460,7 @@ public ModelAndView newInterns(Model model) {
                     "Admin " + admin.getName() + " assigned guide with ID: " + guideid + " to group with ID: " + groupId);
         }
 
+        redirectAttributes.addFlashAttribute("successMessage", "✅ Guide assigned successfully to Group ID: " + groupId);
         return "redirect:/bisag/admin/allocate_guide";
     }
 
@@ -2223,6 +2471,7 @@ public ModelAndView newInterns(Model model) {
         List<GroupEntity> groups = groupService.getAPendingGroups();
         model = countNotifications(model);
 
+        // Get current admin
         String username = (String) session.getAttribute("username");
         Admin admin = adminService.getAdminByUsername(username);
         if (admin != null) {
@@ -2230,8 +2479,21 @@ public ModelAndView newInterns(Model model) {
                     "Admin " + admin.getName() + " accessed the pending project definition approvals page.");
         }
 
+        // Create groupId → intern first names map
+        Map<String, String> groupToInternNameMap = new HashMap<>();
+        for (GroupEntity group : groups) {
+            List<Intern> interns = internService.findByGroup(group);
+            if (!interns.isEmpty()) {
+                String names = interns.stream()
+                        .map(Intern::getFirstName)
+                        .collect(Collectors.joining(", "));
+                groupToInternNameMap.put(group.getGroupId(), names); // ✅ Use groupId (String) here
+            }
+        }
+
         mv.addObject("groups", groups);
         mv.addObject("admin", adminName(session));
+        mv.addObject("groupToInternNameMap", groupToInternNameMap);
         return mv;
     }
 
@@ -2239,100 +2501,280 @@ public ModelAndView newInterns(Model model) {
     public String pendingFromAdmin(@RequestParam("apendingAns") String apendingAns,
                                    @PathVariable("groupId") String groupId,
                                    @RequestParam("projectDefinition") String projectDefinition,
-                                   @RequestParam("description") String description) {
+                                   @RequestParam("description") String description,
+                                   RedirectAttributes redirectAttributes) {
 
-        GroupEntity group = groupService.getGroup(groupId);
-        if (group != null) {
-            group.setProjectDefinition(projectDefinition);
-            group.setDescription(description);
+        try {
+            GroupEntity group = groupService.getGroup(groupId);
+            if (group != null) {
+                group.setProjectDefinition(projectDefinition);
+                group.setDescription(description);
 
-            if (apendingAns.equals("approve")) {
-                group.setProjectDefinitionStatus("approved");
-                List<Intern> interns = internService.getInternsByGroupId(group.getId());
-                for (Intern intern : interns) {
-                    intern.setProjectDefinitionName(group.getProjectDefinition());
-                    internRepo.save(intern);
+                if (apendingAns.equals("approve")) {
+                    group.setProjectDefinitionStatus("approved");
+                    List<Intern> interns = internService.getInternsByGroupId(group.getId());
+                    for (Intern intern : interns) {
+                        intern.setProjectDefinitionName(group.getProjectDefinition());
+                        internRepo.save(intern);
+                    }
+
+                    String username = (String) session.getAttribute("username");
+                    Admin admin = adminService.getAdminByUsername(username);
+                    if (admin != null) {
+                        logService.saveLog(String.valueOf(admin.getAdminId()), "Project Definition Approved",
+                                "Admin " + admin.getName() + " approved project definition for group with ID: " + groupId);
+                    }
+
+                    redirectAttributes.addFlashAttribute("successMessage", "Project definition approved for group: " + groupId);
+                } else {
+                    group.setProjectDefinitionStatus("pending");
+                    redirectAttributes.addFlashAttribute("successMessage", "Project definition marked as pending for group: " + groupId);
                 }
-
-                String username = (String) session.getAttribute("username");
-                Admin admin = adminService.getAdminByUsername(username);
-                if (admin != null) {
-                    logService.saveLog(String.valueOf(admin.getAdminId()), "Project Definition Approved",
-                            "Admin " + admin.getName() + " approved project definition for group with ID: " + groupId);
-                }
-
+                groupRepo.save(group);
             } else {
-                group.setProjectDefinitionStatus("pending");
+                redirectAttributes.addFlashAttribute("errorMessage", "Group not found for ID: " + groupId);
             }
-            groupRepo.save(group);
-        } else {
-
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error processing request: " + e.getMessage());
         }
+
         return "redirect:/bisag/admin/admin_pending_def_approvals";
     }
 
-    @GetMapping("admin_weekly_report")
-    public ModelAndView weeklyReport(Model model) {
-        ModelAndView mv = new ModelAndView("/admin/admin_weekly_report");
-        List<GroupEntity> groups = groupService.getAllocatedGroups();
-        List<WeeklyReport> reports = weeklyReportService.getAllReports();
-
-        Map<String, Long> unreadReportCounts = new HashMap<>();
-        long totalUnreadReports = 0;
-
-        for (GroupEntity group : groups) {
-            long unreadCount = reports.stream()
-                    .filter(report -> report.getGroup().getGroupId().equals(group.getGroupId()) && report.getIsRead() == 0)
-                    .count();
-            unreadReportCounts.put(group.getGroupId(), unreadCount);
-            totalUnreadReports += unreadCount;
-        }
-
-        groups.sort(Comparator.comparing(GroupEntity::getGroupId));
-        model = countNotifications(model);
-
-        mv.addObject("groups", groups);
-        mv.addObject("reports", reports);
-        mv.addObject("admin", adminName(session));
-        mv.addObject("unreadReportCounts", unreadReportCounts);
-        mv.addObject("totalUnreadReports", totalUnreadReports);
-
-        String username = (String) session.getAttribute("username");
-        Admin admin = adminService.getAdminByUsername(username);
-        if (admin != null) {
-            logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Weekly Reports",
-                    "Admin " + admin.getName() + " accessed the weekly reports page.");
-        }
-
-        return mv;
-    }
-
-//    @GetMapping("/admin_weekly_report_details/{groupId}/{weekNo}")
-//    public ModelAndView changeWeeklyReportSubmission(@PathVariable("groupId") String groupId, @PathVariable("weekNo") int weekNo, Model model) {
-//        ModelAndView mv = new ModelAndView("/admin/admin_weekly_report_details");
-//        model = countNotifications(model);
-//        Admin admin = getSignedInAdmin();
-//        model.addAttribute("admin", admin);
+//    @GetMapping("admin_weekly_report")
+//    public ModelAndView weeklyReport(Model model) {
+//        ModelAndView mv = new ModelAndView("/admin/admin_weekly_report");
+//        List<GroupEntity> groups = groupService.getAllocatedGroups();
+//        Pageable pageable = PageRequest.of(0, 20); // Page 0, size 20 reports
+//        Page<WeeklyReport> reportPage = weeklyReportService.getAllReportss(pageable);
+//        List<WeeklyReport> reports = reportPage.getContent();
 //
-//        GroupEntity group = groupService.getGroup(groupId);
-//        WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
-//        MyUser user = myUserService.getUserByUsername(admin.getEmailId());
+//        Map<String, Long> unreadReportCounts = new HashMap<>();
+//        long totalUnreadReports = 0;
 //
-//        if (user.getRole().equals("ADMIN")) {
-//            String name = admin.getName();
-//            mv.addObject("replacedBy", name);
-//
-//            logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Weekly Report Details",
-//                    "Admin " + admin.getName() + " accessed weekly report details for group " + groupId + " and week " + weekNo);
-//        } else if (user.getRole().equals("INTERN")) {
-//            Intern intern = internService.getInternByUsername(user.getUsername());
-//            mv.addObject("replacedBy", intern.getFirstName() + intern.getLastName());
-//        } else {
-//
+//        for (GroupEntity group : groups) {
+//            long unreadCount = reports.stream()
+//                    .filter(report -> report.getGroup().getGroupId().equals(group.getGroupId()) && report.getIsRead() == 0)
+//                    .count();
+//            unreadReportCounts.put(group.getGroupId(), unreadCount);
+//            totalUnreadReports += unreadCount;
 //        }
 //
-//        mv.addObject("report", report);
-//        mv.addObject("group", group);
+//        groups.sort(Comparator.comparing(GroupEntity::getGroupId));
+//        model = countNotifications(model);
+//
+//        mv.addObject("groups", groups);
+//        mv.addObject("reports", reports);
+//        mv.addObject("admin", adminName(session));
+//        mv.addObject("unreadReportCounts", unreadReportCounts);
+//        mv.addObject("totalUnreadReports", totalUnreadReports);
+//
+//        String username = (String) session.getAttribute("username");
+//        Admin admin = adminService.getAdminByUsername(username);
+//        if (admin != null) {
+//            logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Weekly Reports",
+//                    "Admin " + admin.getName() + " accessed the weekly reports page.");
+//        }
+//
+//        return mv;
+//    }
+//@GetMapping("admin_weekly_report")
+//public ModelAndView weeklyReport(@RequestParam(defaultValue = "0") int page,
+//                                 @RequestParam(defaultValue = "false") boolean showAll) {
+//    ModelAndView mv = new ModelAndView("/admin/admin_weekly_report");
+//
+//    int pageSize = 20;
+//
+//    List<GroupEntity> groups = new ArrayList<>(groupService.getAllocatedGroups()); // Create a copy
+//    List<WeeklyReport> reports = weeklyReportService.getAllReportss(); // gets all reports with joins
+//
+//    // Always sort groups first before pagination
+//    groups.sort(Comparator.comparing(GroupEntity::getGroupId));
+//
+//    List<GroupEntity> paginatedGroups;
+//    if (showAll) {
+//        paginatedGroups = groups;  // Show all groups
+//    } else {
+//        int start = page * pageSize;
+//        int end = Math.min(start + pageSize, groups.size());
+//        if (start > groups.size()) {
+//            start = 0;
+//            end = Math.min(pageSize, groups.size());
+//        }
+//        paginatedGroups = groups.subList(start, end);  // Paginate groups
+//    }
+//
+//    Map<String, Long> unreadReportCounts = new HashMap<>();
+//    long totalUnreadReports = 0;
+//
+//    for (GroupEntity group : groups) {
+//        long unreadCount = reports.stream()
+//                .filter(report -> report.getGroup().getGroupId().equals(group.getGroupId()) && report.getIsRead() == 0)
+//                .count();
+//        unreadReportCounts.put(group.getGroupId(), unreadCount);
+//        totalUnreadReports += unreadCount;
+//    }
+//
+//    mv.addObject("groups", paginatedGroups);
+//    mv.addObject("reports", reports);
+//    mv.addObject("unreadReportCounts", unreadReportCounts);
+//    mv.addObject("totalUnreadReports", totalUnreadReports);
+//
+//    mv.addObject("currentPage", page);
+//    mv.addObject("totalPages", (groups.size() + pageSize - 1) / pageSize);
+//    mv.addObject("showAll", showAll);
+//
+//    mv.addObject("admin", adminName(session));
+//
+//    String username = (String) session.getAttribute("username");
+//    Admin admin = adminService.getAdminByUsername(username);
+//    if (admin != null) {
+//        logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Weekly Reports",
+//                "Admin " + admin.getName() + " accessed the weekly reports page.");
+//    }
+//
+//    return mv;
+//}
+
+    @GetMapping("admin_weekly_report")
+    public ModelAndView weeklyReport(@RequestParam(defaultValue = "0") int page,
+                                 @RequestParam(defaultValue = "false") boolean showAll) {
+    ModelAndView mv = new ModelAndView("/admin/admin_weekly_report");
+
+    int pageSize = 20;
+
+    List<GroupEntity> groups = new ArrayList<>(groupService.getAllocatedGroups());
+
+        groups.sort(Comparator.comparing(GroupEntity::getGroupId).reversed());
+
+    List<GroupEntity> paginatedGroups;
+    if (showAll) {
+        paginatedGroups = groups;
+    } else {
+        int start = page * pageSize;
+        int end = Math.min(start + pageSize, groups.size());
+        if (start > groups.size()) {
+            start = 0;
+            end = Math.min(pageSize, groups.size());
+        }
+        paginatedGroups = groups.subList(start, end);
+    }
+
+    List<Long> paginatedGroupIds = paginatedGroups.stream()
+            .map(GroupEntity::getId)
+            .collect(Collectors.toList());
+
+    List<WeeklyReport> reports = weeklyReportService.getReportsByGroupIds(paginatedGroupIds);
+        reports.sort(Comparator.comparingInt(WeeklyReport::getWeekNo).reversed());
+
+    Map<String, Long> unreadReportCounts = new HashMap<>();
+    long totalUnreadReports = 0;
+
+    for (GroupEntity group : groups) {
+        long unreadCount = reports.stream()
+                .filter(report -> report.getGroup().getGroupId().equals(group.getGroupId()) && report.getIsRead() == 0)
+                .count();
+        unreadReportCounts.put(group.getGroupId(), unreadCount);
+        totalUnreadReports += unreadCount;
+    }
+
+    mv.addObject("groups", paginatedGroups);
+    mv.addObject("reports", reports);
+    mv.addObject("unreadReportCounts", unreadReportCounts);
+    mv.addObject("totalUnreadReports", totalUnreadReports);
+
+    mv.addObject("currentPage", page);
+    mv.addObject("totalPages", showAll ? 1 : (groups.size() + pageSize - 1) / pageSize);
+    mv.addObject("showAll", showAll);
+
+    mv.addObject("admin", adminName(session));
+
+    String username = (String) session.getAttribute("username");
+    Admin admin = adminService.getAdminByUsername(username);
+    if (admin != null) {
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Weekly Reports",
+                "Admin " + admin.getName() + " accessed the weekly reports page.");
+    }
+
+    return mv;
+}
+
+//    @GetMapping("admin_weekly_report")
+//    public ModelAndView weeklyReport(@RequestParam(defaultValue = "0") int page,
+//                                     @RequestParam(defaultValue = "false") boolean showAll) {
+//        ModelAndView mv = new ModelAndView("/admin/admin_weekly_report");
+//
+//        int pageSize = 20;
+//
+//        List<GroupEntity> groups = new ArrayList<>(groupService.getAllocatedGroups()); // Create a copy
+//
+//        // Fetch groupIds (Long) for all groups
+//        List<Long> allGroupIds = groups.stream()
+//                .map(GroupEntity::getId)
+//                .collect(Collectors.toList());
+//
+//        // Get all reports for those group IDs
+//        List<WeeklyReport> reports = weeklyReportService.getReportsByGroupIds(allGroupIds);
+//
+//        // Map: groupId (Long) -> hasUnread (true if any report in that group has isRead == 0)
+//        Map<Long, Boolean> groupHasUnread = new HashMap<>();
+//        for (Long groupId : allGroupIds) {
+//            boolean hasUnread = reports.stream()
+//                    .anyMatch(report -> report.getGroup().getId() == groupId && report.getIsRead() == 0);
+//            groupHasUnread.put(groupId, hasUnread);
+//        }
+//
+//        // ✅ Sort groups:
+//        // - First by unread status (unread reports first)
+//        // - Then by groupId (String)
+//        groups.sort(Comparator
+//                .comparing((GroupEntity g) -> !groupHasUnread.getOrDefault(g.getId(), false))  // false (unread) comes first
+//                .thenComparing(GroupEntity::getGroupId)
+//        );
+//
+//        // Pagination
+//        List<GroupEntity> paginatedGroups;
+//        if (showAll) {
+//            paginatedGroups = groups;
+//        } else {
+//            int start = page * pageSize;
+//            int end = Math.min(start + pageSize, groups.size());
+//            if (start > groups.size()) {
+//                start = 0;
+//                end = Math.min(pageSize, groups.size());
+//            }
+//            paginatedGroups = groups.subList(start, end);
+//        }
+//
+//        // Prepare unread report counts
+//        Map<String, Long> unreadReportCounts = new HashMap<>();
+//        long totalUnreadReports = 0;
+//        for (GroupEntity group : groups) {
+//            long unreadCount = reports.stream()
+//                    .filter(report -> report.getGroup().getGroupId().equals(group.getGroupId()) && report.getIsRead() == 0)
+//                    .count();
+//            unreadReportCounts.put(group.getGroupId(), unreadCount);
+//            totalUnreadReports += unreadCount;
+//        }
+//
+//        mv.addObject("groups", paginatedGroups);
+//        mv.addObject("reports", reports);
+//        mv.addObject("unreadReportCounts", unreadReportCounts);
+//        mv.addObject("totalUnreadReports", totalUnreadReports);
+//
+//        // Adjust pagination controls
+//        mv.addObject("currentPage", page);
+//        mv.addObject("totalPages", showAll ? 1 : (groups.size() + pageSize - 1) / pageSize);
+//        mv.addObject("showAll", showAll);
+//
+//        mv.addObject("admin", adminName(session));
+//
+//        String username = (String) session.getAttribute("username");
+//        Admin admin = adminService.getAdminByUsername(username);
+//        if (admin != null) {
+//            logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Weekly Reports",
+//                    "Admin " + admin.getName() + " accessed the weekly reports page.");
+//        }
 //
 //        return mv;
 //    }
@@ -2341,8 +2783,8 @@ public ModelAndView newInterns(Model model) {
     public ModelAndView showWeeklyReportForm(Model model) {
         ModelAndView mv = new ModelAndView("/admin/admin_weekly_report_form");
 
-        List<GroupEntity> groups = groupService.getAllocatedGroups();
-        List<Intern> interns = internService.getAllInterns();
+        List<GroupEntity> groups = groupService.getGroupsWithInternsHavingFutureCompletion();
+        List<Intern> interns = internService.getInternsWithFutureCompletionDate();
 
         model.addAttribute("groups", groups);
         model.addAttribute("interns", interns);
@@ -2351,7 +2793,6 @@ public ModelAndView newInterns(Model model) {
         mv.addObject("admin", adminName(session));
         mv.addObject("groups", groups);
 
-        // Fetch Admin Details
         String username = (String) session.getAttribute("username");
         Admin admin = adminService.getAdminByUsername(username);
         if (admin != null) {
@@ -2364,72 +2805,46 @@ public ModelAndView newInterns(Model model) {
 
     @PostMapping("/admin_weekly_report_form")
     public String submitWeeklyReport(@RequestParam("groupId") Long groupId,
-                                     @RequestParam("internId") Intern internId,
-                                     @RequestParam("guide") Guide guide,
+                                     @RequestParam("internId") String internIdStr,
+                                     @RequestParam("guideId") Long guideId,
                                      @RequestParam("weekNo") int weekNo,
                                      @RequestParam("deadline") String deadlineString,
                                      @RequestParam("status") String status,
-                                     @RequestParam("submittedPdf") MultipartFile submittedPdf) {
-
-        // Convert String to Date
-        Date deadline = null;
+                                     @RequestParam("submittedPdf") MultipartFile submittedPdf,
+                                     RedirectAttributes redirectAttributes) {
         try {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
-            deadline = dateFormat.parse(deadlineString);
-        } catch (ParseException e) {
-            e.printStackTrace(); // Log error
-            return "redirect:/bisag/admin/admin_weekly_report_form?error";
+            Date deadline = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").parse(deadlineString);
+            Intern intern = internService.findById(internIdStr).orElse(null);
+            Guide guide = guideService.findById(guideId).orElse(null);
+            if (guide == null) {
+                redirectAttributes.addFlashAttribute("error", "Invalid Guide selected.");
+                return "redirect:/bisag/admin/admin_weekly_report_form";
+            }
+
+            if (intern == null || guide == null) {
+                redirectAttributes.addFlashAttribute("error", "Invalid Intern or Guide selected.");
+                return "redirect:/bisag/admin/admin_weekly_report_form";
+            }
+
+            String username = (String) session.getAttribute("username");
+            Admin admin = adminService.getAdminByUsername(username);
+
+            weeklyReportService.submitAdminWeeklyReport(groupId, intern, guide, weekNo, deadline, status, submittedPdf);
+
+            if (admin != null) {
+                logService.saveLog(String.valueOf(admin.getAdminId()), "Submitted Weekly Report",
+                        "Admin " + admin.getName() + " submitted a weekly report for Group ID: " + groupId + ", Week No: " + weekNo);
+            }
+
+            redirectAttributes.addFlashAttribute("success", "Weekly report submitted successfully for " + groupId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Something went wrong while submitting the weekly report.");
         }
 
-        String username = (String) session.getAttribute("username");
-        Admin admin = adminService.getAdminByUsername(username);
-
-        weeklyReportService.submitAdminWeeklyReport(groupId, internId, guide, weekNo, deadline, status, submittedPdf);
-
-        if (admin != null) {
-            logService.saveLog(String.valueOf(admin.getAdminId()), "Submitted Weekly Report",
-                    "Admin " + admin.getName() + " submitted a weekly report for Group ID: " + groupId + ", Week No: " + weekNo);
-        }
-
-        return "redirect:/bisag/admin/admin_weekly_report_form?success";
+        return "redirect:/bisag/admin/admin_weekly_report_form";
     }
 
-
-//    @GetMapping("/admin_weekly_report_details/{groupId}/{weekNo}")
-//    public ModelAndView changeWeeklyReportSubmission(
-//            @PathVariable("groupId") String groupId,
-//            @PathVariable("weekNo") int weekNo,
-//            Model model) {
-//        ModelAndView mv = new ModelAndView("/admin/admin_weekly_report_details");
-//        model = countNotifications(model);
-//
-//        Admin admin = getSignedInAdmin();
-//        GroupEntity group = groupService.getGroup(groupId);
-//
-//        if (group != null) {
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found" + groupId);
-//        }
-//
-//        WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
-//
-//        if (report != null) {
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Weekly Report not found for group:" + groupId);
-//        }
-//
-//        MyUser user = myUserService.getUserByUsername(admin.getEmailId());
-//        if (user.getRole().equals("ADMIN")) {
-//            String name = admin.getName();
-//            mv.addObject("replacedBy", name);
-//        } else if (user.getRole().equals("INTERN")) {
-//            Intern intern = internService.getInternByUsername(user.getUsername());
-//            mv.addObject("replacedBy", intern.getFirstName() + intern.getLastName());
-//        }
-//
-//        mv.addObject("report", report);
-//        mv.addObject("group", group);
-//
-//        return mv;
-//    }
 @GetMapping("/admin_yearly_report")
 public String getReportsByYear(@RequestParam(value = "date", required = true) String selectedDate, Model model) {
     int year = 0;
@@ -2497,23 +2912,49 @@ public String getReportsByYear(@RequestParam(value = "date", required = true) St
         }
     }
 
+    // Method to get the groupId from internId
+    private Long getGroupIdByInternId(String internId) {
+        // Fetch the intern based on internId
+        Intern intern = internService.getInternById(internId);  // Assuming InternService has this method
+
+        if (intern == null || intern.getGroup() == null) {
+            throw new RuntimeException("Group not found for Intern ID: " + internId);
+        }
+
+        return intern.getGroup().getId();  // Get the groupId from the group entity
+    }
+
     @GetMapping("/viewPdf/{internId}/{weekNo}")
     public ResponseEntity<byte[]> viewPdf(@PathVariable String internId, @PathVariable int weekNo) {
-        WeeklyReport report = weeklyReportService.getReportByInternIdAndWeekNo(internId, weekNo);
+        String groupId = internRepo.findGroupIdByInternId(internId);
 
-        if (report == null || report.getSubmittedPdf() == null) {
+        if (groupId == null) {
             return ResponseEntity.notFound().build();
         }
 
-        report.setIsRead(1);
-        weeklyReportService.addReport(report);
+        WeeklyReport report = weeklyReportService.getReportByInternIdAndWeekNo(internId, weekNo);
+        if (report != null) {
+            report.setIsRead(1);
+            weeklyReportService.addReport(report);
+        }
 
-        byte[] pdfContent = report.getSubmittedPdf();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setCacheControl(CacheControl.noCache().mustRevalidate());
+        String baseDir = "E:/User/IMS/Springboot_Intern_Management_System/src/main/resources/static/files/Group Docs/";
+        String filePath = baseDir + groupId + "/Weekly Reports/" + groupId + "_Week" + weekNo + ".pdf";
 
-        return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+        File file = new File(filePath);
+        if (!file.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            byte[] pdfContent = Files.readAllBytes(file.toPath());
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setCacheControl(CacheControl.noCache().mustRevalidate());
+            return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     int CurrentWeekNo;
@@ -2589,60 +3030,6 @@ public String getReportsByYear(@RequestParam(value = "date", required = true) St
         redirectAttributes.addFlashAttribute("success", "Weekly report updated successfully!");
         return "redirect:/bisag/admin/admin_weekly_report_details/" + groupId + "/" + weekNo;
     }
-//@PostMapping("/admin_weekly_report_details/{groupId}/update_report")
-//public String updateWeeklyReport(@PathVariable("groupId") String groupId,
-//                                 @RequestParam("weekNo") int weekNo,
-//                                 @RequestParam("weeklyReportSubmission") MultipartFile file,
-//                                 RedirectAttributes redirectAttributes) {
-//    try {
-//        if (file.isEmpty()) {
-//            redirectAttributes.addFlashAttribute("errorMessage", "File upload failed! Please select a file.");
-//            return "redirect:/bisag/admin/admin_weekly_report_details/" + groupId;
-//        }
-//
-//        // **Define structured storage path**
-//        String groupFolderPath = baseDir2 + "/" + groupId;
-//        String weeklyReportsFolderPath = groupFolderPath + "/Weekly Reports";
-//        String fileName = groupId + "_Week" + weekNo + ".pdf";
-//        String storagePath = weeklyReportsFolderPath + "/" + fileName;
-//
-//        // **Ensure directories exist**
-//        File weeklyReportsFolder = new File(weeklyReportsFolderPath);
-//        if (!weeklyReportsFolder.exists()) {
-//            weeklyReportsFolder.mkdirs();
-//        }
-//
-//        // **Save the file**
-//        File destinationFile = new File(storagePath);
-//        file.transferTo(destinationFile);
-//
-//        // **Update report details**
-//        WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, groupService.getGroup(groupId));
-//
-//        if (report == null) {
-//            redirectAttributes.addFlashAttribute("errorMessage", "No report found for Group ID: " + groupId);
-//            return "redirect:/bisag/admin/admin_weekly_report_details/" + groupId;
-//        }
-//
-//        report.setStatus("Updated");
-//        report.setReportSubmittedDate(new Date());
-//        report.setIsRead(0); // Mark as unread since it's a new update
-//        weeklyReportService.addReport(report);
-//
-//        // **Log the update action**
-//        Admin admin = getSignedInAdmin();
-//        logService.saveLog(String.valueOf(admin.getAdminId()), "Weekly Report Updated",
-//                "Admin " + admin.getName() + " updated the weekly report for Group ID: " + groupId + ", Week No: " + weekNo);
-//
-//        redirectAttributes.addFlashAttribute("successMessage", "Weekly report updated successfully!");
-//    } catch (IOException e) {
-//        redirectAttributes.addFlashAttribute("errorMessage", "Error while saving the file. Please try again.");
-//    } catch (Exception e) {
-//        redirectAttributes.addFlashAttribute("errorMessage", "An unexpected error occurred. Please try again.");
-//    }
-//
-//    return "redirect:/bisag/admin/admin_weekly_report_details/" + groupId + "/" + weekNo;
-//}
 
     //Cancellatin Request
     @GetMapping("/cancellation_requests")
@@ -2674,73 +3061,209 @@ public ModelAndView cancellationRequests(Model model) {
         return "redirect:/bisag/admin/cancellation_requests";
     }
 
-    @GetMapping("/query_to_guide")
-    public ModelAndView queryToGuide(Model model) {
-        ModelAndView mv = new ModelAndView("/admin/query_to_guide");
-        List<Admin> admins = adminService.getAdmin();
-        List<Guide> guides = guideService.getGuide();
-        List<Intern> interns = internService.getInterns();
-        List<GroupEntity> groups = groupService.getAllocatedGroups();
-        model = countNotifications(model);
+//    @GetMapping("/admin_pending_final_reports")
+//    public ModelAndView adminPendingFinalReports(Model model) {
+//        ModelAndView mv = new ModelAndView("/admin/admin_pending_final_reports");
+//
+//        List<GroupEntity> groups = groupService.getAPendingFinalReports();
+//        List<GroupEntity> approvedGroups = groupService.getApprovedFinalReports();
+//        List<Intern> interns = internService.getAllInterns(); // Fetch all interns
+//
+//        model = countNotifications(model);
+//
+//        Admin admin = getSignedInAdmin();
+//        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Pending Final Reports",
+//                "Admin " + admin.getName() + " viewed pending final reports.");
+//
+//        mv.addObject("groups", groups);
+//        model.addAttribute("approvedGroups", approvedGroups);
+//        model.addAttribute("interns", interns); // Add interns to model
+//        mv.addObject("admin", adminName(session));
+//
+//        return mv;
+//    }
+@GetMapping("/admin_pending_final_reports")
+public ModelAndView adminPendingFinalReports(
+        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "40") int pageSize,
+        @RequestParam(defaultValue = "false") boolean showAll,
+        Model model) {
 
-        Admin admin = getSignedInAdmin();
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Chat",
-                "Admin " + admin.getName() + " viewed chat page.");
-
-        mv.addObject("groups", groups);
-        mv.addObject("interns", interns);
-        mv.addObject("admins", admins);
-        mv.addObject("guides", guides);
-        mv.addObject("admin", adminName(session));
-        return mv;
+    List<GroupEntity> groups = groupService.getAPendingFinalReports();
+    List<GroupEntity> approvedGroups;
+    int totalPages = 1;
+    if (showAll) {
+        approvedGroups = new ArrayList<>(groupService.getApprovedFinalReports());
+    } else {
+        Page<GroupEntity> approvedGroupsPage = groupService.getApprovedFinalReports(PageRequest.of(page, pageSize));
+        approvedGroups = new ArrayList<>(approvedGroupsPage.getContent());
+        totalPages = approvedGroupsPage.getTotalPages();
     }
 
-    @GetMapping("/admin_pending_final_reports")
-    public ModelAndView adminPendingFinalReports(Model model) {
-        ModelAndView mv = new ModelAndView("/admin/admin_pending_final_reports");
-        List<GroupEntity> groups = groupService.getAPendingFinalReports();
-        model = countNotifications(model);
-
-        Admin admin = getSignedInAdmin();
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Pending Final Reports",
-                "Admin " + admin.getName() + " viewed pending final reports.");
-
-        mv.addObject("groups", groups);
-        mv.addObject("admin", adminName(session));
-        return mv;
+    approvedGroups.sort(Comparator.comparing(
+            GroupEntity::getAdminfinalReportStatusUpdatedAt,
+            Comparator.nullsLast(Comparator.naturalOrder())
+    ).reversed());
+    if (startDate != null && endDate != null) {
+        approvedGroups = approvedGroups.stream()
+                .filter(group -> {
+                    LocalDateTime reportDate = group.getAdminfinalReportStatusUpdatedAt();
+                    return reportDate != null &&
+                            !reportDate.toLocalDate().isBefore(startDate) &&
+                            !reportDate.toLocalDate().isAfter(endDate);
+                })
+                .collect(Collectors.toList());
     }
+    List<Intern> interns = internService.getAllInterns();
 
-    @PostMapping("/admin_pending_final_reports/ans")
-    public String adminPendingFinalReports(@RequestParam("apendingAns") String apendingAns,
-                                           @RequestParam("groupId") String groupId) {
-        GroupEntity group = groupService.getGroup(groupId);
+    model = countNotifications(model);
 
-        Admin admin = getSignedInAdmin();
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Responded to Final Report",
-                "Admin " + admin.getName() + " responded to final report for group ID " + groupId + " with answer: " + apendingAns);
+    Admin admin = getSignedInAdmin();
+    logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Pending Final Reports",
+            "Admin " + admin.getName() + " viewed pending final reports.");
 
-        if (apendingAns.equals("approve")) {
-            group.setFinalReportStatus("approved");
-        } else {
-            group.setFinalReportStatus("pending");
+    ModelAndView mv = new ModelAndView("/admin/admin_pending_final_reports");
+    mv.addObject("groups", groups);
+    mv.addObject("approvedGroups", approvedGroups);
+    mv.addObject("interns", interns);
+    mv.addObject("admin", adminName(session));
+    mv.addObject("approvedCurrentPage", page);
+    mv.addObject("approvedTotalPages", totalPages);
+    mv.addObject("pageSize", pageSize);
+    mv.addObject("showAll", showAll);
+
+    return mv;
+}
+
+//    @PostMapping("/admin_pending_final_reports/ans")
+//    public String adminPendingFinalReports(@RequestParam("apendingAns") String apendingAns,
+//                                           @RequestParam("groupId") String groupId) {
+//        GroupEntity group = groupService.getGroup(groupId);
+//
+//        Admin admin = getSignedInAdmin();
+//        logService.saveLog(String.valueOf(admin.getAdminId()), "Responded to Final Report",
+//                "Admin " + admin.getName() + " responded to final report for group ID " + groupId + " with answer: " + apendingAns);
+//        group.setAdminfinalReportStatusUpdatedAt(LocalDateTime.now());
+//
+//        if (apendingAns.equals("approve")) {
+//            group.setFinalReportStatus("approved");
+//        } else {
+//            group.setFinalReportStatus("pending");
+//        }
+//        groupRepo.save(group);
+//
+//        return "redirect:/bisag/admin/admin_pending_final_reports";
+//    }
+private String getFileExtension(String filename) {
+    if (filename != null && filename.contains(".")) {
+        return filename.substring(filename.lastIndexOf("."));
+    }
+    return "";
+}
+@PostMapping("/admin_pending_final_reports/ans")
+public String adminPendingFinalReports(@RequestParam("apendingAns") String apendingAns,
+                                       @RequestParam("groupId") String groupId,
+                                       @RequestParam(value = "rejectionFile", required = false) MultipartFile rejectionFile) {
+    GroupEntity group = groupService.getGroup(groupId);
+
+    Admin admin = getSignedInAdmin();
+    logService.saveLog(String.valueOf(admin.getAdminId()), "Responded to Final Report",
+            "Admin " + admin.getName() + " responded to final report for group ID " + groupId + " with answer: " + apendingAns);
+    group.setAdminfinalReportStatusUpdatedAt(LocalDateTime.now());
+
+    if (apendingAns.equals("approve")) {
+        group.setFinalReportStatus("approved");
+    } else {
+        group.setFinalReportStatus("changes");
+        if (rejectionFile != null && !rejectionFile.isEmpty()) {
+            try {
+                String baseDir2 = "E:/User/IMS/Springboot_Intern_Management_System/src/main/resources/static/files/Group Docs/";
+                String storageDir = baseDir2 + group.getGroupId() + "/";
+                File directory = new File(storageDir);
+                if (!directory.exists()) {
+                    directory.mkdirs();
+                }
+                String fileName = "Changes" + getFileExtension(rejectionFile.getOriginalFilename());
+                Path filePath = Paths.get(storageDir + fileName);
+                Files.write(filePath, rejectionFile.getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        groupRepo.save(group);
 
-        return "redirect:/bisag/admin/admin_pending_final_reports";
-    }
-
+    groupRepo.save(group);
+    return "redirect:/bisag/admin/admin_pending_final_reports";
+}
+    groupRepo.save(group);
+    return "redirect:/bisag/admin/admin_pending_final_reports";
+}
     @GetMapping("/weekly-reports/pending")
-    public String getPendingReports(Model model) {
-        Map<String, Integer> pendingReports = weeklyReportService.getPendingReports();
+    public String getPendingReports(Model model, @RequestParam(value = "page", defaultValue = "0") int page) {
+        Pageable pageable = PageRequest.of(page, 10);
+        Map<String, Integer> pendingReports = weeklyReportService.getPendingReports(pageable);
+
+        int totalReports = weeklyReportService.getTotalPendingCount();
+        int totalPages = (int) Math.ceil((double) totalReports / 10);
+
         model.addAttribute("pendingReports", pendingReports);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("prevPage", page > 0 ? page - 1 : 0);
+        model.addAttribute("nextPage", page < totalPages - 1 ? page + 1 : totalPages - 1);
+        model.addAttribute("totalPages", totalPages);
+
         Admin admin = getSignedInAdmin();
         model.addAttribute("admin", admin);
-
         logService.saveLog(String.valueOf(admin.getAdminId()), "Weekly Report Form Access", "Admin " + admin.getName() + " accessed the Add Weekly Report form.");
 
         return "admin/pending-weekly-reports";
     }
 
+    @PostMapping("/weekly-reports/send-alert")
+    public String sendAlert(@RequestParam("groupId") String groupId,
+                            @RequestParam("weekNumber") int weekNumber,
+                            RedirectAttributes redirectAttributes) {
+        internService.sendWeeklyReportAlertToGroup(groupId, weekNumber);
+        redirectAttributes.addFlashAttribute("success", "Alert sent to group " + groupId);
+        return "redirect:/bisag/admin/weekly-reports/pending";
+    }
+
+//    @GetMapping("/weekly-reports/pending")
+//    public String getPendingReports(Model model) {
+//        Admin admin = getSignedInAdmin();
+//        model.addAttribute("admin", admin);
+//
+//        Map<String, Integer> allPendingReports = weeklyReportService.getPendingReports();
+//
+//        // Get only active interns with non-null group and future completion date
+//        List<Intern> validInterns = internService.getAllValidInternsForPendingReports();
+//
+//        Set<String> validGroupIds = validInterns.stream()
+//                .map(intern -> intern.getGroup().getGroupId())
+//                .collect(Collectors.toSet());
+//
+//        // Filter and sort reports by groupId descending
+//        Map<String, Integer> filteredSortedReports = allPendingReports.entrySet().stream()
+//                .filter(entry -> validGroupIds.contains(entry.getKey()))
+//                .sorted(Map.Entry.<String, Integer>comparingByKey().reversed())
+//                .collect(Collectors.toMap(
+//                        Map.Entry::getKey,
+//                        Map.Entry::getValue,
+//                        (e1, e2) -> e1,
+//                        LinkedHashMap::new
+//                ));
+//
+//        model.addAttribute("pendingReports", filteredSortedReports);
+//
+//        logService.saveLog(
+//                String.valueOf(admin.getAdminId()),
+//                "Weekly Report Form Access",
+//                "Admin " + admin.getName() + " accessed the Add Weekly Report form."
+//        );
+//
+//        return "admin/pending-weekly-reports";
+//    }
     //-------------------------------- Leave Application Module------------------------------------
     @GetMapping("/manage_leave_applications")
     public ModelAndView manageLeaveApplications(Model model, HttpSession session) {
@@ -2840,7 +3363,6 @@ public ModelAndView cancellationRequests(Model model) {
         Domain domain;
         Degree degree;
 
-        // Log filter details before applying the filter
         Admin admin = getSignedInAdmin();
         logService.saveLog(String.valueOf(admin.getAdminId()), "Applied Report Filters",
                 "Admin " + admin.getName() + " applied the following filters: College = " + reportFilter.getCollege() +
@@ -2858,6 +3380,12 @@ public ModelAndView cancellationRequests(Model model) {
         } else {
             college = fieldService.findByCollegeName(reportFilter.getCollege());
         }
+
+//        if (reportFilter.getGuide().equals("All")) {
+//            guide = null;
+//        } else {
+//            guide = guideService.getGuideByName(reportFilter.getGuide());
+//        }
 
         if (reportFilter.getGuide().equals("All")) {
             guide = null;
@@ -2878,7 +3406,7 @@ public ModelAndView cancellationRequests(Model model) {
         }
 
         List<Intern> filteredInterns = internService.getFilteredInterns(reportFilter.getCollege(),
-                guide, reportFilter.getDomain(), reportFilter.getCancelled(),
+                guide, reportFilter.getDomain(), reportFilter.getDegree(), reportFilter.getCancelled(),
                 reportFilter.getStartDate(), reportFilter.getEndDate(), reportFilter.getCancelled());
 
         logService.saveLog(String.valueOf(admin.getAdminId()), "Filtered Interns for Report",
@@ -2957,10 +3485,8 @@ public ModelAndView cancellationRequests(Model model) {
                         "Admin " + admin.getName() + " added or updated a thesis with ID: " + thesis.getId());
             }
 
-            // Set success message
             redirectAttributes.addFlashAttribute("successMessage", "Thesis record submitted successfully!");
         } catch (Exception e) {
-            // Set error message
             redirectAttributes.addFlashAttribute("errorMessage", "Error saving thesis record. Please try again.");
         }
 
@@ -3055,21 +3581,37 @@ public ModelAndView cancellationRequests(Model model) {
     // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_Get activity logs-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
     //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     @GetMapping("/activity_logs")
-    public String getInternActivityLogs(Model model) {
-        List<Log> logs = logService.getAllLogs();
+    public String getInternActivityLogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "false") boolean showAll,
+            Model model) {
+
+        List<Log> logs;
+        int pageSize = 500;
+
+        if (showAll) {
+            logs = logService.getAllLogs();
+        } else {
+            logs = logService.getLogsByPage(page * pageSize, pageSize);
+        }
+
         if (logs == null) {
             logs = new ArrayList<>();
         }
+
         System.out.println("Logs fetched: " + logs.size());
 
         Admin admin = getSignedInAdmin();
         model.addAttribute("admin", admin);
 
         String id = String.valueOf(admin.getAdminId());
-
         logInternAction(id, "Viewed Activity Logs", "Admin " + admin.getName() + " accessed the activity logs.");
 
         model.addAttribute("logs", logs);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("showAll", showAll);
+        model.addAttribute("isLastPage", logs.size() < pageSize);
+
         return "admin/activity_logs";
     }
 
@@ -3150,9 +3692,9 @@ public ModelAndView cancellationRequests(Model model) {
             logService.saveLog(adminId, "Verification Approved",
                     "Admin " + admin.getName() + " approved the verification request with ID: " + id);
 
-            redirectAttributes.addFlashAttribute("successMessage", "Verification request approved successfully!");
+            redirectAttributes.addFlashAttribute("success", "Verification request approved successfully!");
         } else {
-            redirectAttributes.addFlashAttribute("errorMessage", "Verification request not found.");
+            redirectAttributes.addFlashAttribute("error", "Verification request not found.");
         }
         return "redirect:/bisag/admin/approved-verifications";
     }
@@ -3169,9 +3711,9 @@ public ModelAndView cancellationRequests(Model model) {
             verificationService.rejectVerification(id, adminId, remarks);
             logService.saveLog(adminId, "Verification Rejected",
                     "Admin " + admin.getName() + " rejected the verification request with ID: " + id);
-            redirectAttributes.addFlashAttribute("successMessage", "Verification request rejected successfully!");
+            redirectAttributes.addFlashAttribute("success", "Verification request rejected successfully!");
         } else {
-            redirectAttributes.addFlashAttribute("errorMessage", "Verification request not found.");
+            redirectAttributes.addFlashAttribute("error", "Verification request not found.");
         }
         return "redirect:/bisag/admin/rejected-verifications";
     }
@@ -3322,16 +3864,49 @@ public ModelAndView cancellationRequests(Model model) {
 
     // Display Approved Verifications
     @GetMapping("/approved-verifications")
-    public String showApprovedVerifications(Model model) {
+    public String showApprovedVerifications(
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "false") boolean showAll,
+            Model model) {
+
         List<Verification> approvedVerifications = verificationService.getApprovedVerifications();
-        model.addAttribute("verifications", approvedVerifications);
+        approvedVerifications.sort((v1, v2) -> v2.getVerifiedDate().compareTo(v1.getVerifiedDate()));
+
+        if (startDate != null && endDate != null) {
+            approvedVerifications = approvedVerifications.stream()
+                    .filter(v -> {
+                        LocalDate verified = v.getVerifiedDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                        return (verified.isEqual(startDate) || verified.isAfter(startDate)) &&
+                                (verified.isEqual(endDate) || verified.isBefore(endDate));
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        int pageSize = 40;
+        int totalPages = (int) Math.ceil((double) approvedVerifications.size() / pageSize);
+
+        List<Verification> paginatedList;
+        if (showAll) {
+            paginatedList = approvedVerifications;
+        } else {
+            int start = page * pageSize;
+            int end = Math.min(start + pageSize, approvedVerifications.size());
+            paginatedList = approvedVerifications.subList(start, end);
+        }
+
+        model.addAttribute("verifications", paginatedList);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", showAll ? 1 : totalPages);
+        model.addAttribute("showAll", showAll);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
 
         Admin admin = getSignedInAdmin();
         model.addAttribute("admin", admin);
 
-        String id = String.valueOf(admin.getAdminId());
-
-        logService.saveLog(id, "Viewed Approved Verifications",
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Approved Verifications",
                 "Admin " + admin.getName() + " viewed the list of approved verifications.");
 
         return "admin/approved_verifications";
@@ -3339,16 +3914,50 @@ public ModelAndView cancellationRequests(Model model) {
 
     // Display Rejected Verifications
     @GetMapping("/rejected-verifications")
-    public String showRejectedVerifications(Model model) {
+    public String showRejectedVerifications(
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "false") boolean showAll,
+            Model model) {
+
         List<Verification> rejectedVerifications = verificationService.getRejectedVerifications();
-        model.addAttribute("verifications", rejectedVerifications);
+
+        rejectedVerifications.sort((v1, v2) -> v2.getVerifiedDate().compareTo(v1.getVerifiedDate()));
+
+        if (startDate != null && endDate != null) {
+            rejectedVerifications = rejectedVerifications.stream()
+                    .filter(v -> {
+                        LocalDate verified = v.getVerifiedDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                        return (verified.isEqual(startDate) || verified.isAfter(startDate)) &&
+                                (verified.isEqual(endDate) || verified.isBefore(endDate));
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        int pageSize = 40;
+        int totalPages = (int) Math.ceil((double) rejectedVerifications.size() / pageSize);
+
+        List<Verification> paginatedList;
+        if (showAll) {
+            paginatedList = rejectedVerifications;
+        } else {
+            int start = page * pageSize;
+            int end = Math.min(start + pageSize, rejectedVerifications.size());
+            paginatedList = rejectedVerifications.subList(start, end);
+        }
+
+        model.addAttribute("verifications", paginatedList);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", showAll ? 1 : totalPages);
+        model.addAttribute("showAll", showAll);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
 
         Admin admin = getSignedInAdmin();
         model.addAttribute("admin", admin);
 
-        String id = String.valueOf(admin.getAdminId());
-
-        logService.saveLog(id, "Viewed Rejected Verifications",
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Rejected Verifications",
                 "Admin " + admin.getName() + " viewed the list of rejected verifications.");
 
         return "admin/rejected_verifications";
@@ -3371,10 +3980,10 @@ public ModelAndView cancellationRequests(Model model) {
                 logService.saveLog(id, "Uploaded Attendance Data",
                         "Admin " + admin.getName() + " uploaded a new attendance file.");
             }
-            redirectAttributes.addFlashAttribute("successMessage", "Attendance data uploaded successfully.");
+            redirectAttributes.addFlashAttribute("success", "Attendance data uploaded successfully.");
         } catch (Exception e) {
             e.printStackTrace();
-            redirectAttributes.addFlashAttribute("errorMessage", "Failed to upload attendance data.");
+            redirectAttributes.addFlashAttribute("error", "Failed to upload attendance data.");
         }
 
         return "redirect:/bisag/admin/attendance";
@@ -3406,9 +4015,30 @@ public ModelAndView cancellationRequests(Model model) {
         return "admin/attendance";
     }
 
+    @PostMapping("/deleteAttendanceByMonth")
+    public String deleteAttendanceByMonth(@RequestParam("month") String monthInput, RedirectAttributes redirectAttributes) {
+        try {
+            // Parse input like "2025-03"
+            YearMonth yearMonth = YearMonth.parse(monthInput);
+            int year = yearMonth.getYear();
+            int monthValue = yearMonth.getMonthValue(); // 1 = January, ..., 12 = December
+
+            String monthName = yearMonth.getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH); // "March"
+            attendanceRepo.deleteByMonthAndYear(monthName, year);
+
+            redirectAttributes.addFlashAttribute("success", "Attendance records for " + monthName + " " + year + " deleted successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to delete attendance: " + e.getMessage());
+        }
+        return "redirect:/bisag/admin/attendance";
+    }
+
     // --------------------------------------Display all relieving records---------------------------------------------
     @GetMapping("/ask_records")
-    public String showVerificationFilterPage() {
+    public String showVerificationFilterPage(Model model) {
+        Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
         return "admin/ask_records";
     }
 
@@ -3436,7 +4066,7 @@ public String viewCancelRelievingRecords(Model model) {
     // Display the form for adding a relieving record
     @GetMapping("/relieving_records")
     public String viewRelievingRecords(Model model) {
-        List<Intern> interns = internService.getAllInterns();
+        List<Intern> interns = internService.getInternsNotInRecords();
         List<College> college = fieldService.getColleges();
 
         Optional<RRecord> record = recordService.getRecordById(1L);
@@ -3483,6 +4113,7 @@ public String viewCancelRelievingRecords(Model model) {
             @RequestParam String weeklyReport,
             @RequestParam String attendance,
             @RequestParam String finalReport,
+            @RequestParam String sendAccount,
             @RequestParam(required = false) String submissionTime,
             RedirectAttributes redirectAttributes) {
 
@@ -3526,6 +4157,7 @@ public String viewCancelRelievingRecords(Model model) {
             record.setWeeklyReport(weeklyReport);
             record.setAttendance(attendance);
             record.setFinalReport(finalReport);
+            record.setSendAccount(sendAccount);
             record.setSubmissionTimestamp(timestamp);
 
             recordService.saveRecord(record);
@@ -3539,14 +4171,55 @@ public String viewCancelRelievingRecords(Model model) {
             }
 
             redirectAttributes.addFlashAttribute("successMessage", "Relieving record for Intern ID " + internId + " submitted successfully!");
-            return "redirect:/bisag/admin/relieving_records_list";
+            return "redirect:/bisag/admin/relieving_records";
 
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "An error occurred while submitting the relieving record. Please try again.");
-            return "redirect:/bisag/admin/relieving_records_list";
+            return "redirect:/bisag/admin/relieving_records";
         }
     }
+    @PostMapping("/update_relieving_record")
+    @ResponseBody
+    public ResponseEntity<String> updateRelievingRecordInline(@RequestBody RRecord updatedRecord) {
+        try {
+            Optional<RRecord> existing = recordService.getById(updatedRecord.getId());
+            if (existing.isPresent()) {
+                RRecord record = existing.get();
 
+                // Update all fields
+                record.setFirstName(updatedRecord.getFirstName());
+                record.setPassword(updatedRecord.getPassword());
+                record.setMedia(updatedRecord.getMedia());
+                record.setStatus(updatedRecord.getStatus());
+                record.setProject(updatedRecord.getProject());
+                record.setBooks(updatedRecord.getBooks());
+                record.setSubscription(updatedRecord.getSubscription());
+                record.setAccessRights(updatedRecord.getAccessRights());
+                record.setPendrives(updatedRecord.getPendrives());
+                record.setUnusedCd(updatedRecord.getUnusedCd());
+                record.setBackupProject(updatedRecord.getBackupProject());
+                record.setSystem(updatedRecord.getSystem());
+                record.setIdentityCards(updatedRecord.getIdentityCards());
+                record.setStipend(updatedRecord.getStipend());
+                record.setInformation(updatedRecord.getInformation());
+                record.setEndInteriew(updatedRecord.getEndInteriew());
+                record.setWeeklyReport(updatedRecord.getWeeklyReport());
+                record.setFinalReport(updatedRecord.getFinalReport());
+                record.setAttendance(updatedRecord.getAttendance());
+                record.setOthers(updatedRecord.getOthers());
+
+                record.setSubmissionTimestamp(LocalDateTime.now());
+
+                recordService.saveRecord(record);
+
+                return ResponseEntity.ok("Updated");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Record not found");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred");
+        }
+    }
     @GetMapping("/submit_relieving_record_cancelled")
     public String showCancelledRelievingRecordForm(Model model) {
         List<Intern> cancelledInterns = internService.getCancelledInterns();
@@ -3580,6 +4253,7 @@ public String viewCancelRelievingRecords(Model model) {
             @RequestParam String endInterview,
             @RequestParam String weeklyReport,
             @RequestParam String attendance,
+            @RequestParam String sendAccount,
             RedirectAttributes redirectAttributes) {
 
         try {
@@ -3617,6 +4291,8 @@ public String viewCancelRelievingRecords(Model model) {
             record.setEndInteriew(endInterview);
             record.setWeeklyReport(weeklyReport);
             record.setAttendance(attendance);
+            record.setSendAccount(sendAccount);
+            record.setSubmissionTimestamp(LocalDateTime.now());
 
             recordService.saveRecord(record);
             Admin admin = getSignedInAdmin();
@@ -3634,35 +4310,89 @@ public String viewCancelRelievingRecords(Model model) {
             return "redirect:/bisag/admin/relieving_records_list";
         }
     }
-    @GetMapping("/relieving_records_list")
-    public String getAllRelievingRecords(Model model, RedirectAttributes redirectAttributes) {
-        try {
-            List<RRecord> records = recordService.getAllRecords();
-            model.addAttribute("records", records);
-
-            Admin admin = getSignedInAdmin();
-            model.addAttribute("admin", admin);
-
-            if (admin != null) {
-                String id = String.valueOf(admin.getAdminId());
-
-                logService.saveLog(id, "Viewed Relieving Records",
-                        "Admin " + admin.getName() + " accessed the relieving records list.");
-            }
-
-            if (!records.isEmpty()) {
-                redirectAttributes.addFlashAttribute("successMessage", "Relieving records loaded successfully!");
-            } else {
-                redirectAttributes.addFlashAttribute("errorMessage", "No relieving records found.");
-            }
-
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error loading relieving records. Please try again.");
+//    @GetMapping("/relieving_records_list")
+//    public String getAllRelievingRecords(@RequestParam(defaultValue = "0") int page,
+//                                         @RequestParam(defaultValue = "40") int size,
+//                                         @RequestParam(defaultValue = "false") boolean showAll,
+//                                         Model model,
+//                                         RedirectAttributes redirectAttributes) {
+//        try {
+//            List<RRecord> records;
+//            if (showAll) {
+//                records = recordService.getAllRecords(); // fetch all if toggle is on
+//            } else {
+//                records = recordService.getPaginatedRecords(page, size); // fetch paginated records
+//            }
+//
+//            model.addAttribute("records", records);
+//            model.addAttribute("currentPage", page);
+//            model.addAttribute("pageSize", size);
+//            model.addAttribute("showAll", showAll);
+//            model.addAttribute("totalCount", recordService.getTotalRecordsCount());
+//
+//            Admin admin = getSignedInAdmin();
+//            model.addAttribute("admin", admin);
+//
+//            if (admin != null) {
+//                logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Relieving Records",
+//                        "Admin " + admin.getName() + " accessed the relieving records list.");
+//            }
+//
+//            if (!records.isEmpty()) {
+//                redirectAttributes.addFlashAttribute("successMessage", "Relieving records loaded successfully!");
+//            } else {
+//                redirectAttributes.addFlashAttribute("errorMessage", "No relieving records found.");
+//            }
+//        } catch (Exception e) {
+//            redirectAttributes.addFlashAttribute("errorMessage", "Error loading relieving records. Please try again.");
+//        }
+//
+//        return "admin/relieving_records_list";
+//    }
+@GetMapping("/relieving_records_list")
+public String getAllRelievingRecords(@RequestParam(defaultValue = "0") int page,
+                                     @RequestParam(defaultValue = "40") int size,
+                                     @RequestParam(defaultValue = "false") boolean showAll,
+                                     Model model,
+                                     RedirectAttributes redirectAttributes) {
+    try {
+        List<RRecord> records;
+        if (showAll) {
+            // Fetch all records sorted by ID in descending order
+            records = recordService.getAllRecordsSortedByIdDesc(); // New method to sort by ID in descending order
+        } else {
+            // Fetch paginated records sorted by ID in descending order
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("id")));
+            Page<RRecord> recordPage = recordRepo.findAll(pageable);
+            records = recordPage.getContent();
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", recordPage.getTotalPages());
+            model.addAttribute("totalCount", recordService.getTotalRecordsCount());
         }
 
-        return "admin/relieving_records_list";
+        model.addAttribute("records", records);
+        model.addAttribute("pageSize", size);
+        model.addAttribute("showAll", showAll);
+
+        Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Relieving Records",
+                    "Admin " + admin.getName() + " accessed the relieving records list.");
+        }
+
+        if (!records.isEmpty()) {
+            redirectAttributes.addFlashAttribute("successMessage", "Relieving records loaded successfully!");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "No relieving records found.");
+        }
+    } catch (Exception e) {
+        redirectAttributes.addFlashAttribute("errorMessage", "Error loading relieving records. Please try again.");
     }
 
+    return "admin/relieving_records_list";
+}
     //Show records ID wise-------------------
     @GetMapping("/relieving_records_detail/{id}")
     public String getRecordsDetails(@PathVariable("id") String id, Model model) {
@@ -3738,7 +4468,30 @@ public String viewCancelRelievingRecords(Model model) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
+    @GetMapping("/getInternNamee/{internId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> fetchInternDetailsByIdd(@PathVariable String internId) {
+        Optional<Intern> internOptional = internService.findById(internId);
 
+        if (internOptional.isPresent()) {
+            Intern intern = internOptional.get();
+            Map<String, String> response = new HashMap<>();
+
+            response.put("internName", intern.getFirstName() != null ? intern.getFirstName() : "N/A");
+
+            if (intern.getGroup() != null && intern.getGroup().getGuide() != null) {
+                Guide guide = intern.getGroup().getGuide();
+                response.put("guideId", String.valueOf(guide.getGuideId()));
+                response.put("guideName", guide.getName() != null ? guide.getName() : "N/A");
+            } else {
+                response.put("guideId", "N/A");
+                response.put("guideName", "N/A");
+            }
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+    }
     @GetMapping("/getAllGuides")
     @ResponseBody
     public ResponseEntity<List<Map<String, String>>> getAllGuides() {
@@ -3761,22 +4514,58 @@ public String viewCancelRelievingRecords(Model model) {
         List<Intern> interns = internService.getInternsByGroupId(groupId);
         return ResponseEntity.ok(interns);
     }
-
+    private Date convertToDate(LocalDate localDate) {
+        return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
     //-------------------------------Leave application module-----------------------------------
-    // Fetch pending leave applications for admin view
     @GetMapping("/pending_leaves")
-    public String viewPendingLeaves(Model model, HttpSession session) {
-        List<LeaveApplication> pendingLeaves = leaveApplicationRepo.findByStatus("Pending");
-        String role = (String) session.getAttribute("role");
-        model = countNotifications(model);
-        Admin admin = getSignedInAdmin();
-        model.addAttribute("admin", admin);
+    public String viewPendingLeaves(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Model model) {
 
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Pending Leave Applications",
-                "Admin " + admin.getName() + " viewed pending leave applications.");
+        Admin admin = getSignedInAdmin();
+
+        List<LeaveApplication> pendingLeaves = leaveApplicationRepo.findByStatus("Pending");
+
+        if (startDate != null && endDate != null) {
+            pendingLeaves = pendingLeaves.stream()
+                    .filter(leave -> {
+                        LocalDate fromDate = leave.getFromDate(); // Already a LocalDate
+                        return (fromDate != null) &&
+                                (fromDate.isEqual(startDate) || fromDate.isAfter(startDate)) &&
+                                (fromDate.isEqual(endDate) || fromDate.isBefore(endDate));
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        // Intern and Guide Name Mapping
+        Map<String, String> internNames = new HashMap<>();
+        Map<String, String> guideNames = new HashMap<>();
+        for (LeaveApplication leave : pendingLeaves) {
+            Intern intern = internService.getInternById(leave.getInternId());
+            if (intern != null) {
+                internNames.put(leave.getInternId(), intern.getFirstName());
+                if (intern.getGroup() != null && intern.getGroup().getGuide() != null) {
+                    guideNames.put(leave.getInternId(), intern.getGroup().getGuide().getName());
+                } else {
+                    guideNames.put(leave.getInternId(), "N/A");
+                }
+            } else {
+                internNames.put(leave.getInternId(), "Unknown");
+                guideNames.put(leave.getInternId(), "N/A");
+            }
+        }
 
         model.addAttribute("pendingLeaves", pendingLeaves);
-        model.addAttribute("role", role);
+        model.addAttribute("internNames", internNames);
+        model.addAttribute("guideNames", guideNames);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("admin", admin);
+
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Pending Leaves",
+                "Admin " + admin.getName() + " viewed the list of pending leave applications.");
 
         return "admin/pending_leaves";
     }
@@ -3838,16 +4627,56 @@ public String viewCancelRelievingRecords(Model model) {
 
     // View Leave History (Approved & Rejected)
     @GetMapping("/leave_history")
-    public String viewLeaveHistory(Model model) {
+    public String viewLeaveHistory(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "false") boolean showAll,
+            Model model) {
+
         List<LeaveApplication> leaveHistory = leaveApplicationRepo.findByStatusIn(Arrays.asList("Approved", "Rejected"));
-        model.addAttribute("leaveHistory", leaveHistory);
+
+        // Filter by date range if dates are provided
+        if (startDate != null && endDate != null) {
+            leaveHistory = leaveHistory.stream()
+                    .filter(leave -> {
+                        LocalDate fromDate = leave.getFromDate(); // already LocalDate
+                        return fromDate != null &&
+                                (fromDate.isEqual(startDate) || fromDate.isAfter(startDate)) &&
+                                (fromDate.isEqual(endDate) || fromDate.isBefore(endDate));
+                    })
+                    .collect(Collectors.toList());
+        }
+        leaveHistory.sort((leave1, leave2) -> Long.compare(leave2.getId(), leave1.getId()));
+
+        int pageSize = 50;
+        int totalLeaves = leaveHistory.size();
+        int totalPages = (int) Math.ceil((double) totalLeaves / pageSize);
+
+        List<LeaveApplication> paginatedLeaves = leaveHistory;
+        if (!showAll) {
+            int fromIndex = page * pageSize;
+            int toIndex = Math.min(fromIndex + pageSize, totalLeaves);
+            paginatedLeaves = leaveHistory.subList(fromIndex, toIndex);
+        }
+
+        model.addAttribute("leaveHistory", paginatedLeaves);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("showAll", showAll);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+
+        // Intern ID to Name Map
+        List<Intern> interns = internService.getAllInterns();
+        Map<String, String> internIdToNameMap = interns.stream()
+                .collect(Collectors.toMap(Intern::getInternId, Intern::getFirstName));
+        model.addAttribute("internIdToNameMap", internIdToNameMap);
 
         Admin admin = getSignedInAdmin();
         model.addAttribute("admin", admin);
-
         if (admin != null) {
-            String adminId = String.valueOf(admin.getAdminId());
-            logService.saveLog(adminId, "Viewed Leave History",
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Leave History",
                     "Admin " + admin.getName() + " viewed the leave history.");
         }
 
@@ -3873,35 +4702,73 @@ public String viewCancelRelievingRecords(Model model) {
         return "admin/leave_details";
     }
 
-    @GetMapping("/half_leave/{id}")
-    public String getHalfLeaveDetails(@PathVariable("id") String id, Model model) {
-        Optional<LeaveApplication> leaveOptional = leaveApplicationService.getLeaveById(Long.parseLong(id));
+//    @GetMapping("/half_leave/{id}")
+//    public String getHalfLeaveDetails(@PathVariable("id") String id, Model model) {
+//        Optional<LeaveApplication> leaveOptional = leaveApplicationService.getLeaveById(Long.parseLong(id));
+//
+//        if (leaveOptional.isPresent()) {
+//            LeaveApplication leave = leaveOptional.get();
+//            Optional<Intern> internOptional = Optional.ofNullable(internService.getInternById(leave.getInternId()));
+//
+//            if (internOptional.isPresent()) {
+//                Intern intern = internOptional.get();
+//                model.addAttribute("leave", leave);
+//                model.addAttribute("groupId", intern.getGroup() != null ? intern.getGroup().getGroupId() : "N/A");
+//                model.addAttribute("internName", intern.getFirstName());
+//            } else {
+//                model.addAttribute("groupId", "N/A");
+//                model.addAttribute("internName", "N/A");
+//            }
+//
+//            Admin admin = getSignedInAdmin();
+//            model.addAttribute("admin", admin);
+//            model.addAttribute("adminName", admin.getName());
+//            logService.saveLog(String.valueOf(admin.getAdminId()), "View Half Day Leave",
+//                    "Admin " + admin.getName() + " viewed the details of half day leave with ID: " + id);
+//            return "admin/half_leave";
+//        } else {
+//            return "error/404";
+//        }
+//    }
+    @GetMapping("/half_leave")
+    public String getTodayHalfDayLeaves(Model model) {
+        LocalDate today = LocalDate.now();
+        List<LeaveApplication> allLeaves = leaveApplicationService.getAllLeaves();
 
-        if (leaveOptional.isPresent()) {
-            LeaveApplication leave = leaveOptional.get();
-            Optional<Intern> internOptional = Optional.ofNullable(internService.getInternById(leave.getInternId()));
+        List<Map<String, Object>> leaveDetails = new ArrayList<>();
 
-            if (internOptional.isPresent()) {
-                Intern intern = internOptional.get();
-                model.addAttribute("leave", leave);
-                model.addAttribute("groupId", intern.getGroup() != null ? intern.getGroup().getGroupId() : "N/A");
-                model.addAttribute("internName", intern.getFirstName());
-            } else {
-                model.addAttribute("groupId", "N/A");
-                model.addAttribute("internName", "N/A");
+        for (LeaveApplication leave : allLeaves) {
+            if ("Half Day".equalsIgnoreCase(leave.getLeaveType())
+                    && today.equals(leave.getFromDate())) {
+
+                Intern intern = internService.getInternById(leave.getInternId());
+                Map<String, Object> map = new HashMap<>();
+                map.put("leaveId", leave.getId());
+                map.put("internId", leave.getInternId());
+                map.put("fromDate", leave.getFromDate());
+                map.put("subject", leave.getSubject());
+                map.put("internName", intern != null ? intern.getFirstName() : "N/A");
+                map.put("groupId", intern != null && intern.getGroup() != null ? intern.getGroup().getGroupId() : "N/A");
+
+                leaveDetails.add(map);
             }
-
-            Admin admin = getSignedInAdmin();
-            model.addAttribute("admin", admin);
-            model.addAttribute("adminName", admin.getName());
-            logService.saveLog(String.valueOf(admin.getAdminId()), "View Half Day Leave",
-                    "Admin " + admin.getName() + " viewed the details of half day leave with ID: " + id);
-            return "admin/half_leave";
-        } else {
-            return "error/404";
         }
+
+        model.addAttribute("leaveDetails", leaveDetails);
+
+        Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+        model.addAttribute("adminName", admin.getName());
+
+        logService.saveLog(String.valueOf(admin.getAdminId()), "View Today's Half Day Leaves",
+                "Admin " + admin.getName() + " viewed all today's half-day leave applications.");
+
+        return "admin/half_leave";  // This should point to your Thymeleaf HTML template.
     }
     // ========================= Undertaking Form Management ==========================
+
+    @Value("${app.storage.base-dir5}")
+    private String undertakingDir;
 
     // View Undertaking Forms Page
     @GetMapping("/undertaking")
@@ -3932,50 +4799,127 @@ public String viewCancelRelievingRecords(Model model) {
         return "admin/undertaking_form";
     }
 
-    // Corrected POST method to add undertaking form
     @PostMapping("/add_undertaking")
-    public String addUndertaking(@RequestParam String rules, RedirectAttributes redirectAttributes) {
+    public String addUndertaking(@RequestParam("file") MultipartFile file,
+                                 RedirectAttributes redirectAttributes) {
         try {
-            Undertaking undertaking = new Undertaking();
-            undertaking.setContent(rules);
-            undertaking.setCreatedAt(LocalDateTime.now());
+            if (file.isEmpty()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "No file selected.");
+                return "redirect:/bisag/admin/undertaking";
+            }
+
+            // Create directory if it doesn't exist
+            File dir = new File(undertakingDir);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            Path filePath = Paths.get(undertakingDir + fileName);
+
+            Files.write(filePath, file.getBytes());
+
+            String internId = "25BISAG0001"; // Or dynamically fetch this if needed
+
+            Optional<Undertaking> existing = undertakingRepo.findByInternId(internId);
+            Undertaking undertaking;
+
+            if (existing.isPresent()) {
+                undertaking = existing.get();
+                undertaking.setFilePath(fileName);
+                undertaking.setCreatedAt(LocalDateTime.now());
+            } else {
+                undertaking = new Undertaking();
+                undertaking.setIntern(internId);
+                undertaking.setFilePath(fileName);
+                undertaking.setCreatedAt(LocalDateTime.now());
+            }
+
             undertakingRepo.save(undertaking);
 
+            // Log the action
             Admin admin = getSignedInAdmin();
             if (admin != null) {
                 String adminId = String.valueOf(admin.getAdminId());
                 logService.saveLog(adminId, "Added Undertaking Form",
-                        "Admin " + admin.getName() + " added a new undertaking form.");
+                        "Admin " + admin.getName() + " uploaded a new undertaking PDF.");
             }
 
-            redirectAttributes.addFlashAttribute("successMessage", "Undertaking form added successfully!");
+            redirectAttributes.addFlashAttribute("successMessage", "Undertaking PDF uploaded successfully!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error adding undertaking form. Please try again.");
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("errorMessage", "Error uploading undertaking. Please try again.");
         }
 
-        return "redirect:/bisag/admin/undertaking"; 
-    }
-
-    // Corrected method for updating the undertaking form
-    @PostMapping("/update_undertaking/{id}")
-    public String updateUndertaking(@PathVariable Long id, @RequestParam String content) {
-        Undertaking undertaking = undertakingRepo.findById(id).orElseThrow(() -> new RuntimeException("Undertaking not found"));
-        undertaking.setContent(content);
-        undertakingRepo.save(undertaking);
         return "redirect:/bisag/admin/undertaking";
     }
 
-    // Fetch the latest Undertaking Form content for Interns
-    @GetMapping("/undertaking-content")
-    @ResponseBody
-    public String getUndertakingContent() {
-        String latestContent = undertakingRepo.findLatestUndertakingContent();
+//    @PostMapping("/add_undertaking")
+//    public String addUndertaking(@RequestParam("file") MultipartFile file,
+//                                 RedirectAttributes redirectAttributes) {
+//        try {
+//            if (file.isEmpty()) {
+//                redirectAttributes.addFlashAttribute("errorMessage", "No file selected.");
+//                return "redirect:/bisag/admin/undertaking";
+//            }
+//
+//            // Set a local folder where PDFs will be saved
+//            String uploadDir = "uploads/undertakings/";
+//
+//            // Create directory if it doesn't exist
+//            File dir = new File(uploadDir);
+//            if (!dir.exists()) {
+//                dir.mkdirs();
+//            }
+//
+//            // Generate a unique filename using timestamp
+//            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+//            Path filePath = Paths.get(uploadDir + fileName);
+//
+//            // Save the file to disk
+//            Files.write(filePath, file.getBytes());
+//
+//            // Save path or filename in DB
+//            Undertaking undertaking = new Undertaking();
+//            undertaking.setFilePath(fileName); // Assuming you have this field in the entity
+//            undertaking.setCreatedAt(LocalDateTime.now());
+//            undertakingRepo.save(undertaking);
+//
+//            // Log the action
+//            Admin admin = getSignedInAdmin();
+//            if (admin != null) {
+//                String adminId = String.valueOf(admin.getAdminId());
+//                logService.saveLog(adminId, "Added Undertaking Form",
+//                        "Admin " + admin.getName() + " uploaded a new undertaking PDF.");
+//            }
+//
+//            redirectAttributes.addFlashAttribute("successMessage", "Undertaking PDF uploaded successfully!");
+//        } catch (Exception e) {
+//            e.printStackTrace(); // Show actual error in console
+//            redirectAttributes.addFlashAttribute("errorMessage", "Error uploading undertaking. Please try again.");
+//        }
+//
+//        return "redirect:/bisag/admin/undertaking";
+//    }
+    // Corrected method for updating the undertaking form
+//    @PostMapping("/update_undertaking/{id}")
+//    public String updateUndertaking(@PathVariable Long id, @RequestParam String content) {
+//        Undertaking undertaking = undertakingRepo.findById(id).orElseThrow(() -> new RuntimeException("Undertaking not found"));
+//        undertaking.setContent(content);
+//        undertakingRepo.save(undertaking);
+//        return "redirect:/bisag/admin/undertaking";
+//    }
 
-        if (latestContent == null || latestContent.isEmpty()) {
-            return "No undertaking content available.";
-        }
-        return latestContent;
-    }
+    // Fetch the latest Undertaking Form content for Interns
+//    @GetMapping("/undertaking-content")
+//    @ResponseBody
+//    public String getUndertakingContent() {
+//        String latestContent = undertakingRepo.findLatestUndertakingContent();
+//
+//        if (latestContent == null || latestContent.isEmpty()) {
+//            return "No undertaking content available.";
+//        }
+//        return latestContent;
+//    }
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_Thesis Storage Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
@@ -4033,8 +4977,29 @@ public String viewCancelRelievingRecords(Model model) {
     }
     // Fetch List of Uploaded Theses
     @GetMapping("/thesis-storage")
-    public String viewThesisStorage(Model model) {
-        List<ThesisStorage> thesisList = thesisStorageRepo.findAll();
+    public String viewThesisStorage(
+            Model model,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(required = false) Boolean all
+    ) {
+        List<ThesisStorage> thesisList;
+        boolean showAll = Boolean.TRUE.equals(all);
+        Sort sortByUploadDateDesc = Sort.by(Sort.Direction.DESC, "uploadDate");
+
+        if (showAll) {
+            thesisList = thesisStorageRepo.findAll(sortByUploadDateDesc);
+            model.addAttribute("showAll", true);
+        } else {
+            Pageable pageable = PageRequest.of(page, size, sortByUploadDateDesc);
+            Page<ThesisStorage> thesisPage = thesisStorageRepo.findAll(pageable);
+            thesisList = thesisPage.getContent();
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", thesisPage.getTotalPages());
+            model.addAttribute("pageSize", size);
+            model.addAttribute("showAll", false);
+        }
+
         model.addAttribute("theses", thesisList);
 
         Admin admin = getSignedInAdmin();
@@ -4045,6 +5010,7 @@ public String viewCancelRelievingRecords(Model model) {
             logService.saveLog(adminId, "Viewed Thesis Storage",
                     "Admin " + admin.getName() + " viewed the list of uploaded theses.");
         }
+
         return "admin/thesis_storage";
     }
 
@@ -4066,6 +5032,42 @@ public String viewCancelRelievingRecords(Model model) {
     }
 
     // Download/View Thesis PDF
+    @GetMapping("/view-thesis")
+    public String viewTheses(@RequestParam(required = false) String startDate,
+                             @RequestParam(required = false) String endDate,
+                             @RequestParam(defaultValue = "0") int page,
+                             @RequestParam(defaultValue = "false") boolean showAll,
+                             Model model) {
+        List<ThesisStorage> theses;
+
+        if (startDate != null && endDate != null) {
+            LocalDateTime start = LocalDate.parse(startDate).atTime(12, 0);
+            LocalDateTime end = LocalDate.parse(endDate).atTime(12, 0);
+
+            theses = thesisStorageService.findByUploadDateBetween(start, end);
+        } else {
+            theses = thesisStorageRepo.findAll();
+        }
+
+        // Add defaults for pagination-related variables to avoid Thymeleaf errors
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", 1);
+        model.addAttribute("pageSize", theses.size());
+        model.addAttribute("showAll", showAll);
+        model.addAttribute("theses", theses);
+
+        Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+
+        if (admin != null) {
+            String adminId = String.valueOf(admin.getAdminId());
+            logService.saveLog(adminId, "Viewed Thesis Storage",
+                    "Admin " + admin.getName() + " viewed the list of uploaded theses.");
+        }
+
+        return "admin/thesis_storage";
+    }
+
     @GetMapping("/view-thesis/{id}")
     public ResponseEntity<Resource> viewThesis(@PathVariable Long id) {
         ThesisStorage thesis = thesisStorageRepo.findById(id).orElse(null);
@@ -4149,12 +5151,77 @@ public String viewCancelRelievingRecords(Model model) {
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Messaging Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+    @GetMapping("/query_to_guide")
+    public ModelAndView queryToGuide(Model model) {
+        ModelAndView mv = new ModelAndView("/admin/query_to_guide");
+
+        List<Admin> admins = adminService.getAdmin();
+        List<Guide> guides = guideService.getGuide();
+        List<Intern> interns = internService.getInterns();
+        List<GroupEntity> groups = groupService.getAllocatedGroups();
+        Admin admin = getSignedInAdmin();
+        model = countNotifications(model);
+
+        Map<String, Long> unreadCounts = new HashMap<>();
+
+        for (Guide guide : guides) {
+            String guideId = String.valueOf(guide.getGuideId());
+            long count = messageService.countUnreadMessagesForReceiver(guideId, String.valueOf(admin.getAdminId()));
+            if (count > 0) {
+                unreadCounts.put(guideId, count);
+            }
+        }
+
+        for (Intern intern : interns) {
+            String internId = String.valueOf(intern.getInternId());
+            long count = messageService.countUnreadMessagesForReceiver(internId, String.valueOf(admin.getAdminId()));
+            if (count > 0) {
+                unreadCounts.put(internId, count);
+            }
+        }
+        List<Guide> guidesWithUnread = new ArrayList<>();
+        List<Guide> guidesWithoutUnread = new ArrayList<>();
+
+        for (Guide guide : guides) {
+            String guideIdStr = String.valueOf(guide.getGuideId());
+            if (unreadCounts.containsKey(guideIdStr)) {
+                guidesWithUnread.add(guide);
+            } else {
+                guidesWithoutUnread.add(guide);
+            }
+        }
+
+        List<Intern> internsWithUnread = new ArrayList<>();
+        List<Intern> internsWithoutUnread = new ArrayList<>();
+
+        for (Intern intern : interns) {
+            if (unreadCounts.containsKey(intern.getInternId())) {
+                internsWithUnread.add(intern);
+            } else {
+                internsWithoutUnread.add(intern);
+            }
+        }
+        List<Guide> sortedGuides = new ArrayList<>();
+        sortedGuides.addAll(guidesWithUnread);
+        sortedGuides.addAll(guidesWithoutUnread);
+
+        List<Intern> sortedInterns = new ArrayList<>();
+        sortedInterns.addAll(internsWithUnread);
+        sortedInterns.addAll(internsWithoutUnread);
+
+        model.addAttribute("guides", sortedGuides);
+        model.addAttribute("interns", sortedInterns);
+        mv.addObject("groups", groups);
+        mv.addObject("admins", admins);
+        mv.addObject("admin", adminName(session));
+        mv.addObject("unreadCounts", unreadCounts);
+        return mv;
+    }
     // Load chat page
     @GetMapping("/chat")
     public String loadMessengerPage(Model model) {
         Admin admin = getSignedInAdmin();
         model.addAttribute("admin", admin);
-
 
         if (admin == null) {
             System.out.println("Admin not found or session expired.");
@@ -4170,7 +5237,7 @@ public String viewCancelRelievingRecords(Model model) {
         model.addAttribute("interns", interns);
         model.addAttribute("groups", groups);
         String adminId = String.valueOf(admin.getAdminId());
-        logService.saveLog(adminId, "Accessed Chat Page",
+        logService.saveLog(adminId, "Accessed Chat",
                 "Admin " + admin.getName() + " accessed the chat page.");
 
         return "admin/query_to_guide";
@@ -4179,13 +5246,72 @@ public String viewCancelRelievingRecords(Model model) {
     @PostMapping("/chat/send")
     public ResponseEntity<Message> sendMessageAsAdmin(
             @RequestParam String receiverId,
-            @RequestParam String messageText) {
+            @RequestParam String messageText,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
+
         Admin admin = getSignedInAdmin();
         String senderId = String.valueOf(admin.getAdminId());
-        Message message = messageService.sendMessage(senderId, receiverId, messageText);
+
+        String filePath = null;
+        String originalFileName = null;
+
+        if (file != null && !file.isEmpty()) {
+            try {
+                String uploadDir = "/Users/pateldeep/Desktop/Coding/Springboot_Intern_Management_System-master-main/E:/User/IMS/Springboot_Intern_Management_System/src/main/resources/static/files/chat";
+                File dir = new File(uploadDir);
+                if (!dir.exists()) dir.mkdirs();
+
+                originalFileName = file.getOriginalFilename();
+                String newFileName = System.currentTimeMillis() + "_" + originalFileName;
+                Path path = Paths.get(uploadDir, newFileName);
+                file.transferTo(path.toFile());
+
+                filePath = newFileName; // Store only filename, not full path
+            } catch (IOException e) {
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        }
+
+        Message message = messageService.sendMessage(senderId, receiverId, messageText, filePath, originalFileName);
+
         logService.saveLog(senderId, "Sent a Message",
                 "Admin " + admin.getName() + " sent a message to User ID: " + receiverId);
+
         return ResponseEntity.ok(message);
+    }
+    @GetMapping("/chat/download")
+    public ResponseEntity<Resource> downloadFile(@RequestParam("file") String fileName) throws IOException {
+        Path file = Paths.get("/Users/pateldeep/Desktop/Coding/Springboot_Intern_Management_System-master-main/E:/User/IMS/Springboot_Intern_Management_System/src/main/resources/static/files/chat", fileName);
+        if (!Files.exists(file)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Resource resource = new UrlResource(file.toUri());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFileName().toString() + "\"")
+                .body(resource);
+    }
+    private final Path fileStorageLocation = Paths.get("E:/User/IMS/Springboot_Intern_Management_System/src/main/resources/static/files/chat")
+            .toAbsolutePath().normalize();
+    @GetMapping("/chat/view")
+    public ResponseEntity<Resource> viewFile(@RequestParam String filePath) {
+        try {
+            Path file = fileStorageLocation.resolve(filePath).normalize();
+            if (!Files.exists(file) || !file.toString().startsWith(fileStorageLocation.toString())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            Resource resource = new UrlResource(file.toUri());
+            String contentType = Files.probeContentType(file);
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(resource);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     // Admin fetches chat history (both sent and received messages)
     @GetMapping("/chat/history")
@@ -4195,6 +5321,13 @@ public String viewCancelRelievingRecords(Model model) {
 
         List<Message> messages = messageService.getChatHistoryForBothUsers(senderId, receiverId);
 
+        for (Message message : messages) {
+            if (message.getReceiverId().equals(senderId) && !message.isRead()) {
+                message.setRead(true);
+                message.setReadTimestamp(LocalDateTime.now());
+                messageRepo.save(message);
+            }
+        }
         logService.saveLog(senderId, "Viewed Chat History",
                 "Admin " + admin.getName() + " viewed chat history with User ID: " + receiverId);
 
@@ -4205,15 +5338,36 @@ public String viewCancelRelievingRecords(Model model) {
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     // View Task Assignments Page
     @GetMapping("/tasks_assignments")
-    public String viewTaskAssignmentsPage(Model model) {
-        List<TaskAssignment> tasks = taskAssignmentService.getAllTasks();
-        List<Intern> interns = internService.getAllInterns();
+    public String viewTaskAssignmentsPage(@RequestParam(defaultValue = "false") boolean showAll,
+                                          @RequestParam(defaultValue = "0") int page,
+                                          @RequestParam(defaultValue = "25") int size,
+                                          Model model) {
+        List<TaskAssignment> tasks;
+        if (showAll) {
+            tasks = taskAssignmentService.getAllTasks();
+            model.addAttribute("showAll", true);
+        } else {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+            Page<TaskAssignment> taskPage = taskAssignmentService.getAllTasks(pageable);
+            tasks = taskPage.getContent();
+            model.addAttribute("totalPages", taskPage.getTotalPages());
+            model.addAttribute("currentPage", page);
+            model.addAttribute("showAll", false);
+        }
 
+        List<Intern> interns = internService.getInternsWithFutureCompletionDate();
         model.addAttribute("interns", interns);
         model.addAttribute("tasks", tasks);
 
         Admin admin = getSignedInAdmin();
         model.addAttribute("admin", admin);
+        Map<String, String> internIdToNameMap = interns.stream()
+                .collect(Collectors.toMap(Intern::getInternId, Intern::getFirstName));
+
+        List<TaskAssignment> filteredTasks = tasks.stream()
+                .filter(task -> internIdToNameMap.containsKey(task.getIntern()))
+                .collect(Collectors.toList());
+        model.addAttribute("internIdToNameMap", internIdToNameMap);
 
         logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Task Assignments",
                 "Admin " + admin.getName() + " accessed the Task Assignments page.");
@@ -4225,17 +5379,23 @@ public String viewCancelRelievingRecords(Model model) {
     @PostMapping("/tasks/assign")
     public String assignTask(
             @RequestParam("intern") String intern,
-            @RequestParam("assignedById") String assignedById,
+//            @RequestParam("assignedById") String assignedById,
             @RequestParam("assignedByRole") String assignedByRole,
             @RequestParam("taskDescription") String taskDescription,
             @RequestParam("startDate") String startDateStr,
             @RequestParam("endDate") String endDateStr,
             RedirectAttributes redirectAttributes) {
-
+            Admin admin = getSignedInAdmin();
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
             Date startDate = dateFormat.parse(startDateStr);
             Date endDate = dateFormat.parse(endDateStr);
+            Date today = new Date();
+            if (startDate.before(dateFormat.parse(dateFormat.format(today)))) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Start date cannot be in the past!");
+                return "redirect:/bisag/admin/tasks_assignments";
+            }
+
             if (endDate.before(startDate)) {
                 redirectAttributes.addFlashAttribute("errorMessage", "End date cannot be before start date!");
                 return "redirect:/bisag/admin/tasks_assignments";
@@ -4244,7 +5404,7 @@ public String viewCancelRelievingRecords(Model model) {
             if (optionalIntern.isPresent()) {
                 TaskAssignment task = new TaskAssignment();
                 task.setIntern(intern);
-                task.setAssignedById(assignedById);
+//                task.setAssignedById(assignedById);
                 task.setAssignedByRole(assignedByRole);
                 task.setTaskDescription(taskDescription);
                 task.setStartDate(startDate);
@@ -4252,8 +5412,8 @@ public String viewCancelRelievingRecords(Model model) {
                 task.setStatus("Pending");
                 task.setApproved(false);
                 taskAssignmentService.saveTask(task);
-                logService.saveLog(assignedById, "Assigned a Task",
-                        "User with ID " + assignedById + " assigned a task to Intern ID: " + intern);
+                logService.saveLog(String.valueOf(admin.getAdminId()), "Assigned a Task",
+                        "Admin " + admin.getName() + " assigned a task to Intern ID: " + intern);
 
                 redirectAttributes.addFlashAttribute("successMessage", "Task assigned successfully!");
             } else {
@@ -4374,9 +5534,43 @@ public String viewCancelRelievingRecords(Model model) {
 
     //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_Feedback Module-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
     @GetMapping("/feedback_form_list")
-    public String getAdminFeedbackList(Model model) {
-        List<Feedback> feedbacks = feedbackService.getFeedback();
+    public String getAdminFeedbackList(
+            Model model,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) Boolean all,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate
+    ) {
+        boolean showAll = Boolean.TRUE.equals(all);
+
+        List<Feedback> feedbacks;
+        if (showAll) {
+            feedbacks = feedbackService.getFeedback();
+            feedbacks.sort((f1, f2) -> Long.compare(f2.getId(), f1.getId()));
+            model.addAttribute("showAll", true);
+        } else {
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+            Page<Feedback> feedbackPage = feedbackService.getFeedbackPage(pageable);
+            feedbacks = feedbackPage.getContent();
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", feedbackPage.getTotalPages());
+            model.addAttribute("pageSize", size);
+            model.addAttribute("showAll", false);
+        }
+
+        // ✅ Filter by LocalDate range if both dates are provided
+        if (startDate != null && endDate != null) {
+            feedbacks = feedbacks.stream()
+                    .filter(f -> f.getFeedbackDate() != null &&
+                            (!f.getFeedbackDate().isBefore(startDate)) &&
+                            (!f.getFeedbackDate().isAfter(endDate)))
+                    .collect(Collectors.toList());
+        }
+
         model.addAttribute("feedbacks", feedbacks);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
 
         Admin admin = getSignedInAdmin();
         model.addAttribute("admin", admin);
@@ -4428,8 +5622,22 @@ public String viewCancelRelievingRecords(Model model) {
         model.addAttribute("admin", admin);
 
         logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Assign Project Definition Form", "Admin " + admin.getName() + " accessed the Assign Project Definition Form page.");
+
         List<GroupEntity> groups = groupRepo.findAll();
         model.addAttribute("groups", groups);
+
+        Map<String, List<String>> groupInternMap = new HashMap<>();
+        for (GroupEntity group : groups) {
+            List<Intern> interns = internService.getInternsByGroupId(group.getGroupId());
+            List<String> names = interns.stream()
+                    .map(Intern::getFirstName)
+                    .collect(Collectors.toList());
+
+            groupInternMap.put(group.getGroupId(), names);
+        }
+
+        model.addAttribute("groupInternMap", groupInternMap);
+
         return "admin/update_project_def";
     }
 
@@ -4437,29 +5645,40 @@ public String viewCancelRelievingRecords(Model model) {
     public String assignProjectDefinition(@RequestParam String groupId,
                                           @RequestParam String projectDefinition,
                                           @RequestParam String description,
-                                          Model model) {
-        Admin admin = getSignedInAdmin();
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Assigned Project Definition", "Admin " + admin.getName() + " assigned project definition to Group ID: " + groupId);
-        GroupEntity group = groupRepo.getByGroupId(groupId);
-        if (group == null) {
-            model.addAttribute("error", "❌ Group not found.");
-            return "admin/update_project_def";
+                                          RedirectAttributes redirectAttributes) {
+        try {
+            Admin admin = getSignedInAdmin();
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Assigned Project Definition",
+                    "Admin " + admin.getName() + " assigned project definition to Group ID: " + groupId);
+
+            GroupEntity group = groupRepo.getByGroupId(groupId);
+            if (group == null) {
+                redirectAttributes.addFlashAttribute("errorMessage", "❌ Group not found.");
+                return "redirect:/bisag/admin/update_project_def";
+            }
+
+            group.setProjectDefinition(projectDefinition);
+            group.setDescription(description);
+            group.setProjectDefinitionStatus("gpending");
+            groupRepo.save(group);
+
+            List<Guide> guides = guideRepo.findByGroupId(group.getGroupId());
+            if (guides == null || guides.isEmpty()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "❌ No guides found for the group.");
+                return "redirect:/bisag/admin/update_project_def";
+            }
+
+            for (Guide guide : guides) {
+                guide.setDefinitionStatus("Pending");
+                guideRepo.save(guide);
+            }
+
+            redirectAttributes.addFlashAttribute("successMessage", "✅ Project Definition Assigned and Sent for Approval.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "❌ Error occurred: " + e.getMessage());
         }
-        group.setProjectDefinition(projectDefinition);
-        group.setDescription(description);
-        group.setProjectDefinitionStatus("gpending");
-        groupRepo.save(group);
-        List<Guide> guides = guideRepo.findByGroupId(group.getGroupId());
-        if (guides == null || guides.isEmpty()) {
-            model.addAttribute("error", "No guides found for the group.");
-            return "admin/update_project_def";
-        }
-        for (Guide guide : guides) {
-            guide.setDefinitionStatus("Pending");
-            guideRepo.save(guide);
-        }
-        model.addAttribute("success", "Project Definition Assigned and Sent for Approval.");
-        return "admin/update_project_def";
+
+        return "redirect:/bisag/admin/update_project_def";
     }
 
     @GetMapping("/update_def_ans")
@@ -4509,7 +5728,8 @@ public String viewCancelRelievingRecords(Model model) {
 
     @GetMapping("/generate_credentials")
     public String showGenerateCredentialsForm(Model model) {
-        List<Intern> internList = internService.getAllInterns();
+//        List<Intern> internList = internService.getAllInterns();
+        List<Intern> internList = internService.getInternsWithFutureCompletionDate(); // filtered list
         List<MyUser> userList = userService.findAllInterns();
 
         Admin admin = getSignedInAdmin();
@@ -4524,7 +5744,8 @@ public String viewCancelRelievingRecords(Model model) {
 
     @PostMapping("/update_credentials")
     public String updateCredentials(@RequestParam("internId") String internId,
-                                    @RequestParam("internEmail") String internEmail) {
+                                    @RequestParam("internEmail") String internEmail,
+                                    RedirectAttributes redirectAttributes) {
 
         Optional<Intern> internOptional = internService.findById(internId);
         if (internOptional.isPresent()) {
@@ -4557,23 +5778,51 @@ public String viewCancelRelievingRecords(Model model) {
             logService.saveLog(internId, "Updated Credentials",
                     "Admin updated Intern login credentials for "
                             + intern.getFirstName());
+
+            redirectAttributes.addFlashAttribute("success", "Credentials generated successfully for " + intern.getFirstName() + ".");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Intern not found for ID: " + internId);
         }
 
-        return "redirect:/bisag/admin/intern_application/new_interns";
+        return "redirect:/bisag/admin/generate_credentials";
     }
     //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_Confirmation Module-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
     @GetMapping("/group_selection")
-    public String showGroupSelectionPage(Model model) {
-        List<String> groupIds = groupService.getAllGroupIds();
+    public String showGroupSelectionPage(
+            Model model,
+            @ModelAttribute("message") String message,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) Boolean all
+    ) {
+        List<String> groupIds = groupService.getGroupIdsWithActiveInterns();
         model.addAttribute("groupIds", groupIds);
 
-        // Fetch group details with confirmation letter status and file path
-        List<GroupEntity> generatedConfirmationLetters = groupRepo.findAll();
-        model.addAttribute("generatedConfirmationLetters", generatedConfirmationLetters);
+        boolean showAll = Boolean.TRUE.equals(all);
+        model.addAttribute("showAll", showAll);
+
+        if (showAll) {
+            List<GroupEntity> allGroups = groupRepo.findAll();
+            allGroups.sort((g1, g2) -> g2.getGroupId().compareTo(g1.getGroupId())); // Reverse order by groupId
+            model.addAttribute("generatedConfirmationLetters", allGroups);
+        } else {
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "groupId"));
+            Page<GroupEntity> groupPage = groupRepo.findAll(pageable);
+            model.addAttribute("generatedConfirmationLetters", groupPage.getContent());
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", groupPage.getTotalPages());
+            model.addAttribute("pageSize", size);
+        }
+
+        if (message != null && !message.isEmpty()) {
+            model.addAttribute("message", message);
+        }
 
         Admin admin = getSignedInAdmin();
         model.addAttribute("admin", admin);
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Groups", "Admin " + admin.getName() + " accessed the Groups for confirmation page.");
+
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Groups",
+                "Admin " + admin.getName() + " accessed the Groups for confirmation page.");
 
         return "admin/group_selection";
     }
@@ -4588,21 +5837,17 @@ public String viewCancelRelievingRecords(Model model) {
         }
 
         try {
-            // Define the base directory where group folders are stored
             String baseDir = "/Users/pateldeep/Desktop/Coding/Springboot_Intern_Management_System-master-main/E:/User/IMS/Springboot_Intern_Management_System/src/main/resources/static/files/Group Docs";
             Path groupFolderPath = Paths.get(baseDir, groupId);
 
-            // Ensure the group folder exists
             if (!Files.exists(groupFolderPath)) {
                 redirectAttributes.addFlashAttribute("message", "Group folder not found for Group ID: " + groupId);
                 return "redirect:/bisag/admin/group_selection";
             }
 
-            // Save the file in the correct group's folder
             Path filePath = groupFolderPath.resolve("confirmation_letter.pdf");
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Update group confirmationLetter and path in the database
             GroupEntity group = groupRepo.findByGroupId(groupId);
             if (group != null) {
                 group.setConfirmationLetter("yes");
@@ -4610,6 +5855,12 @@ public String viewCancelRelievingRecords(Model model) {
                 groupRepo.save(group);
             }
 
+            Admin admin = (Admin) session.getAttribute("admin");
+            if (admin != null) {
+                logService.saveLog(String.valueOf(admin.getAdminId()),
+                        "Uploaded Confirmation Letter",
+                        "Admin " + admin.getName() + " uploaded a confirmation letter for Group ID: " + groupId);
+            }
             redirectAttributes.addFlashAttribute("message", "Confirmation letter uploaded successfully for Group ID: " + groupId);
 
         } catch (IOException e) {
@@ -4629,12 +5880,19 @@ public String viewCancelRelievingRecords(Model model) {
         if (!Files.exists(filePath)) {
             return ResponseEntity.notFound().build();
         }
+        Admin admin = (Admin) session.getAttribute("admin");
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()),
+                    "Viewed Confirmation Letter",
+                    "Admin " + admin.getName() + " viewed the confirmation letter for Group ID: " + groupId);
+        }
         Resource fileResource = new UrlResource(filePath.toUri());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileResource.getFilename() + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(fileResource);
     }
+
     @GetMapping("/confirmation_letter")
     public String showConfirmationLetter(@RequestParam("groupId") String groupId, Model model) {
         List<Intern> interns = internService.findInternsByGroupId(groupId);
@@ -4648,13 +5906,19 @@ public String viewCancelRelievingRecords(Model model) {
             groupRepo.save(group);
         }
 
+        group.setConfirmationTimestamp(LocalDateTime.now());
+
         Admin admin = getSignedInAdmin();
         model.addAttribute("admin", admin);
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Generate Confirmation Page", "Admin " + admin.getName() + " Generated Confirmation Letter for Group ID: " + groupId + ".");
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Generate Confirmation Page",
+                "Admin " + admin.getName() + " Generated Confirmation Letter for Group ID: " + groupId + ".");
 
-        return "admin/confirmation";
+        if (interns.size() == 1) {
+            return "admin/confirmation2";
+        } else {
+            return "admin/confirmation";
+        }
     }
-
     //Update status column automatically in the total interns page
     @PostMapping("/update-status")
     public ResponseEntity<?> updateInternStatus(@RequestBody Map<String, String> payload) {
@@ -4669,5 +5933,450 @@ public String viewCancelRelievingRecords(Model model) {
             return ResponseEntity.ok("Status and timestamp updated");
         }
         return ResponseEntity.badRequest().body("Intern not found");
+    }
+
+    //Final Report View
+    @GetMapping("/final_reports/{groupId}/{fileName}")
+    public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @PathVariable String fileName) throws Exception {
+        String storageDir = baseDir2 + groupId + "/";
+        File file = new File(storageDir + fileName);
+
+        if (!file.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+        Admin admin = (Admin) session.getAttribute("admin");
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()),
+                    "Viewed Final Report",
+                    "Admin " + admin.getName() + " viewed final report '" + fileName + "' for Group ID: " + groupId);
+        }
+
+        Resource resource = new FileSystemResource(file);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(resource);
+    }
+
+    @PostMapping("/markGroupReportsRead")
+    public String markGroupReportsAsRead(@RequestParam("groupId") String groupId) {
+        weeklyReportService.markReportsAsReadByGroup(groupId);
+        return "redirect:/bisag/admin/admin_weekly_report";
+    }
+
+    //Display Group Members Page
+    @GetMapping("/group/{groupId}/members")
+    public String viewGroupMembers(@PathVariable("groupId") String groupId, Model model) {
+        List<Intern> groupMembers = internService.getInternsByGroupId(groupId);
+        model.addAttribute("groupId", groupId);
+        model.addAttribute("groupMembers", groupMembers);
+        Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Group Members",
+                    "Admin " + admin.getName() + " viewed details for Group ID: " + groupId);
+        }
+        return "admin/group_members";
+    }
+    //Activity Logs
+    @GetMapping("/your-logs-endpoint")
+    public String getLogs(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Model model
+    ) {
+        List<Log> logs;
+        if (startDate != null && endDate != null) {
+            logs = logService.getLogsBetween(startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
+        } else {
+            logs = logService.getAllLogs();
+        }
+
+        model.addAttribute("logs", logs);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+
+        // ✅ Add defaults for template to avoid nulls
+        model.addAttribute("showAll", false);
+        model.addAttribute("currentPage", 0);
+        model.addAttribute("isLastPage", true); // or false depending on your paging logic
+
+        Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Filtered Logs",
+                "Admin " + admin.getName() + " filtered logs from " + startDate + " to " + endDate);
+
+        return "admin/activity_logs";
+    }
+    @PostMapping("/delete-visible-logs")
+    public String deleteVisibleLogs(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate, Model model
+    ) {
+        if (startDate != null && endDate != null) {
+            logService.deleteLogsBetween(startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
+        } else {
+            logService.deleteAllLogs();
+        }
+        Admin admin = getSignedInAdmin();
+        model.addAttribute("admin", admin);
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Deleted Logs",
+                "Admin " + admin.getName() + " deleted logs from " +startDate + " to " +endDate);
+        return "redirect:/bisag/admin/activity_logs";
+    }
+
+    //Delete Thesis
+    @PostMapping("/delete-thesis/{id}")
+    public String deleteThesis(@PathVariable Long id, RedirectAttributes redirectAttributes, Principal principal) {
+        thesisStorageService.deleteById(id);
+        redirectAttributes.addFlashAttribute("message", "Thesis deleted successfully!");
+
+        Admin admin = adminService.getAdminByUsername(principal.getName());
+        if (admin != null) {
+            logService.saveLog(
+                    String.valueOf(admin.getAdminId()),
+                    "Deleted Thesis",
+                    "Admin " + admin.getName() + " deleted thesis with ID: " + id
+            );
+        }
+
+        return "redirect:/bisag/admin/thesis-storage";
+    }
+
+    //View Working groups weekly report
+    @GetMapping("admin_current_working_groups_weekly_report")
+    public ModelAndView currentWorkingGroupsWeeklyReport(@RequestParam(defaultValue = "false") boolean showAll) {
+        ModelAndView mv = new ModelAndView("/admin/current_weekly_report");
+
+        List<GroupEntity> groups = new ArrayList<>(groupService.getAllocatedGroups());
+        Date currentDate = new Date();
+        List<GroupEntity> workingGroups = groups.stream()
+                .filter(group -> {
+                    List<Intern> interns = internService.getInternsByGroupId(group.getId());
+                    if (!interns.isEmpty()) {
+                        Intern intern = interns.get(0);
+                        if (intern.getCompletionDate() != null) {
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(intern.getCompletionDate());
+                            cal.add(Calendar.DAY_OF_MONTH, 10);
+                            return cal.getTime().after(currentDate);
+                        }
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
+
+        workingGroups.sort(Comparator.comparing(GroupEntity::getGroupId));
+
+        List<Long> workingGroupIds = workingGroups.stream()
+                .map(GroupEntity::getId)
+                .collect(Collectors.toList());
+
+        List<WeeklyReport> reports = weeklyReportService.getReportsByGroupIds(workingGroupIds);
+
+        Map<String, Long> unreadReportCounts = new HashMap<>();
+        long totalUnreadReports = 0;
+
+        for (GroupEntity group : workingGroups) {
+            long unreadCount = reports.stream()
+                    .filter(report -> report.getGroup().getGroupId().equals(group.getGroupId()) && report.getIsRead() == 0)
+                    .count();
+            unreadReportCounts.put(group.getGroupId(), unreadCount);
+            totalUnreadReports += unreadCount;
+        }
+
+        mv.addObject("totalGroupsCount", workingGroups.size());
+        mv.addObject("groups", workingGroups);
+        mv.addObject("reports", reports);
+        mv.addObject("unreadReportCounts", unreadReportCounts);
+        mv.addObject("totalUnreadReports", totalUnreadReports);
+        mv.addObject("admin", adminName(session));
+        String username = (String) session.getAttribute("username");
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(String.valueOf(admin.getAdminId()), "Accessed Current Working Groups Weekly Reports",
+                    "Admin " + admin.getName() + " accessed the current working groups' weekly reports page.");
+        }
+        return mv;
+    }
+
+    @GetMapping("/intern_icard/{internId}")
+    public ModelAndView viewInternICard(@PathVariable String internId,
+                                        RedirectAttributes redirectAttributes,
+                                        Principal principal) {
+        Intern intern = internService.getInternById(internId);
+        if (intern == null) {
+            redirectAttributes.addFlashAttribute("error", "Intern not found.");
+            return new ModelAndView("redirect:/bisag/admin/intern_docs/" + internId);
+        }
+
+        if (!intern.isIcardApproved()) {
+            redirectAttributes.addFlashAttribute("error", "I-Card has not been approved by the intern yet.");
+            return new ModelAndView("redirect:/bisag/admin/intern_docs/" + internId);
+        }
+        String username = principal.getName();
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(
+                    String.valueOf(admin.getAdminId()),
+                    "Viewed Intern I-Card",
+                    "Admin " + admin.getName() + " viewed the I-Card of intern with ID " + internId + "."
+            );
+        }
+
+        ModelAndView mv = new ModelAndView("admin/intern_icard");
+        mv.addObject("intern", intern);
+        return mv;
+    }
+    @GetMapping("/photo/{internId}")
+    public ResponseEntity<byte[]> getPhoto(@PathVariable String internId) {
+        Intern intern = internService.getInternById(internId);
+        byte[] imageBytes = intern.getPassportSizeImage();
+        if (imageBytes == null || imageBytes.length == 0) {
+            InputStream in = getClass().getResourceAsStream("/static/images/default-avatar.jpg");
+            try {
+                imageBytes = IOUtils.toByteArray(in);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
+    }
+    @GetMapping("/digital-sign/{internId}")
+    public ResponseEntity<byte[]> getDigitalSignature(@PathVariable String internId) throws IOException {
+        Intern intern = internService.getInternById(internId);
+        if (intern == null || intern.getSign() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        byte[] imageData = intern.getSign();
+        try (FileOutputStream fos = new FileOutputStream("debug_signature.jpg")) {
+            fos.write(imageData);
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        return new ResponseEntity<>(imageData, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/security_agreement/{internId}")
+    public ModelAndView viewSecurityAgreement(@PathVariable String internId, RedirectAttributes redirectAttributes, Principal principal) {
+        Intern intern = internService.getInternById(internId);
+        Admin admin = getSignedInAdmin();
+        if (intern == null) {
+            redirectAttributes.addFlashAttribute("error", "Intern not found.");
+            return new ModelAndView("redirect:/bisag/admin/intern_docs/" + internId);
+        }
+
+        if (!Boolean.TRUE.equals(intern.isSecurityApproved())) {
+            redirectAttributes.addFlashAttribute("error", "Security agreement not submitted yet.");
+            return new ModelAndView("redirect:/bisag/admin/intern_docs/" + internId);
+        }
+        String username = principal.getName();
+        Admin logAdmin = adminService.getAdminByUsername(username);
+        if (logAdmin != null) {
+            logService.saveLog(
+                    String.valueOf(logAdmin.getAdminId()),
+                    "Viewed Intern Information Security",
+                    "Admin " + logAdmin.getName() + " viewed the information security agreement of intern with ID " + internId + "."
+            );
+        }
+
+        ModelAndView mv = new ModelAndView("admin/security_agreement");
+        mv.addObject("intern", intern);
+        mv.addObject("admin", admin);
+        return mv;
+    }
+
+    @GetMapping("/intern_sign/{internId}")
+    public ResponseEntity<byte[]> getInternSignature(@PathVariable String internId) {
+        byte[] image = internService.getSignatureByInternId(internId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        return new ResponseEntity<>(image, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/document_status")
+    public String showDocumentStatus(Model model, Principal principal) {
+        List<Intern> interns = internService.getInternsSortedByInternIdDesc();
+        model.addAttribute("interns", interns);
+        String username = principal.getName();
+        Admin admin = adminService.getAdminByUsername(username);
+        if (admin != null) {
+            logService.saveLog(
+                    String.valueOf(admin.getAdminId()),
+                    "Accessed Intern Document List",
+                    "Admin " + admin.getName() + " viewed the list of document statuses for all interns."
+            );
+        }
+        model = countNotifications(model);
+        model.addAttribute("admin", admin);
+        return "admin/document_status_list";
+    }
+
+    @Value("${app.storage.base-dir4}")
+    private String appStorageBaseDir4;
+
+    @PostMapping("/upload_admin_sign/{id}")
+    public String uploadAdminSignature(@RequestParam("signatureFile") MultipartFile signatureFile,
+                                       @PathVariable("id") long id,
+                                       RedirectAttributes redirectAttributes) {
+        Optional<Admin> optionalAdmin = adminService.getAdmin(id);
+
+        if (optionalAdmin.isPresent()) {
+            Admin admin = optionalAdmin.get();
+
+            if (signatureFile != null && !signatureFile.isEmpty()) {
+                try {
+                    String originalFilename = signatureFile.getOriginalFilename();
+                    String extension = "";
+
+                    if (originalFilename != null && originalFilename.contains(".")) {
+                        extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                    }
+                    String emailFolder = admin.getEmailId().replaceAll("[^a-zA-Z0-9@.]", "_");
+                    String fullDirPath = appStorageBaseDir4 + File.separator + emailFolder;
+                    Path dirPath = Paths.get(fullDirPath);
+                    Files.createDirectories(dirPath);
+                    String fileName = admin.getName().replaceAll("\\s+", "_") + "_Sign" + extension;
+                    Path filePath = dirPath.resolve(fileName);
+                    Files.write(filePath, signatureFile.getBytes());
+                    String relativePath = "/files/Admin Docs/" + emailFolder + "/" + fileName;
+                    admin.setDigitalSignaturePath(relativePath);
+                    adminService.updateAdmin(admin, Optional.of(admin));
+
+                    redirectAttributes.addFlashAttribute("success", "Signature uploaded successfully!");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    redirectAttributes.addFlashAttribute("error", "Error uploading signature!");
+                }
+            } else {
+                redirectAttributes.addFlashAttribute("error", "No file selected!");
+            }
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Admin not found!");
+        }
+
+        return "redirect:/bisag/admin/admin_dashboard";
+    }
+
+    @GetMapping("/admin_sign/{adminId}")
+    public ResponseEntity<byte[]> getAdminSignature(@PathVariable Long adminId) {
+        Optional<Admin> optionalAdmin = adminService.getAdmin(adminId);
+
+        if (optionalAdmin.isPresent()) {
+            Admin admin = optionalAdmin.get();
+            String relativePath = admin.getDigitalSignaturePath();  // e.g., "/files/Admin Docs/email/Admin_Sign.png"
+
+            if (relativePath != null && !relativePath.isEmpty()) {
+                try {
+                    // Convert relative path to absolute file path
+                    String absolutePath = appStorageBaseDir4 + File.separator +
+                            admin.getEmailId().replaceAll("[^a-zA-Z0-9@.]", "_") + File.separator +
+                            new File(relativePath).getName(); // extract filename
+
+                    Path imagePath = Paths.get(absolutePath);
+                    byte[] imageBytes = Files.readAllBytes(imagePath);
+                    String contentType = Files.probeContentType(imagePath);
+                    if (contentType == null) {
+                        contentType = MediaType.IMAGE_PNG_VALUE;
+                    }
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.parseMediaType(contentType));
+
+                    return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
+            }
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/security_form/{internId}")
+    public ModelAndView viewSecurityForm(@PathVariable String internId, RedirectAttributes redirectAttributes, Principal principal) {
+        Intern intern = internService.getInternById(internId);
+        Admin admin = adminService.getAdminByUsername(principal.getName());
+
+        if (intern == null) {
+            redirectAttributes.addFlashAttribute("error", "Intern not found.");
+            return new ModelAndView("redirect:/bisag/admin/intern_docs/" + internId);
+        }
+
+        if (!Boolean.TRUE.equals(intern.isSecurityFormApproved())) {
+            redirectAttributes.addFlashAttribute("error", "Security Form not submitted yet.");
+            return new ModelAndView("redirect:/bisag/admin/intern_docs/" + internId);
+        }
+        if (admin != null) {
+            logService.saveLog(
+                    String.valueOf(admin.getAdminId()),
+                    "Viewed Intern Security Form",
+                    "Admin " + admin.getName() + " viewed the security form for intern ID: " + internId
+            );
+        }
+
+        ModelAndView mv = new ModelAndView("admin/security_form");
+        mv.addObject("intern", intern);
+        mv.addObject("admin", admin);
+        return mv;
+    }
+
+    @GetMapping("/intern_registration/{internId}")
+    public ModelAndView viewInternRegistration(@PathVariable String internId, RedirectAttributes redirectAttributes) {
+        Intern intern = internService.getInternById(internId);
+        Admin admin = getSignedInAdmin();
+
+        if (intern == null) {
+            redirectAttributes.addFlashAttribute("error", "Intern not found.");
+            return new ModelAndView("redirect:/bisag/admin/intern_docs/" + internId);
+        }
+
+        if (intern.getProfileUpdated() != 1) {
+            redirectAttributes.addFlashAttribute("error", "Registration form is not submitted by the intern.");
+            return new ModelAndView("redirect:/bisag/admin/intern_docs/" + internId);
+        }
+
+        if (admin != null) {
+            logService.saveLog(
+                    String.valueOf(admin.getAdminId()),
+                    "Accessed Intern Registration Form",
+                    "Admin " + admin.getName() + " accessed registration form for intern " + intern.getFirstName()
+            );
+        }
+
+        ModelAndView mv = new ModelAndView("admin/intern_registration");
+        mv.addObject("intern", intern);
+        mv.addObject("admin", admin);
+        return mv;
+    }
+
+    @GetMapping("/cancellation-file/{internId}")
+    public ResponseEntity<Resource> getCancellationFile(@PathVariable String internId) {
+        Intern intern = internService.getInternById(internId);
+        if (intern == null || intern.getCancellationFilePath() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            Path path = Paths.get(intern.getCancellationFilePath());
+            Resource resource = new UrlResource(path.toUri());
+
+            if (!resource.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=\"" + path.getFileName().toString() + "\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

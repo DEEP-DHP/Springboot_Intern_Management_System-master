@@ -96,7 +96,7 @@ public class HRController {
         hrService.changePassword(hr, newPassword);
 
         logService.saveLog(String.valueOf(hr.getHRId()), "Password Changed Successfully",
-                "Admin " + hr.getName() + " successfully changed their password.");
+                "HR " + hr.getName() + " successfully changed their password.");
 
         return "redirect:/logout";
     }
@@ -155,6 +155,14 @@ public class HRController {
             record.setIdentityCards(newStatus);
             recordRepo.save(record);
             return ResponseEntity.ok("Updated Successfully");
+        }
+        HR hr = getSignedInHR();
+
+        if (hr != null) {
+            String idd = String.valueOf(hr.getHRId());
+
+            logService.saveLog(idd, "Updated Relieving Records",
+                    "HR " + hr.getName() + " updated the relieving records.");
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Record not found");
     }

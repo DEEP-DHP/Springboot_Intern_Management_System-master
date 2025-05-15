@@ -5,8 +5,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -19,19 +22,21 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import jakarta.servlet.http.HttpSession;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/bisag/guide")
@@ -69,6 +74,14 @@ public class GuideController {
             private FieldService fieldService;
     @Autowired
             private InternRepo internRepo;
+    @Autowired
+            private LeaveApplicationService leaveApplicationService;
+    @Autowired
+    private MessageRepo messageRepo;
+    @Autowired
+            private RecordService recordService;
+    @Autowired
+    private ThesisStorageService thesisStorageService;
     Intern internFromUploadFileMethod;
     int CurrentWeekNo;
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -92,6 +105,23 @@ public class GuideController {
     public String getUsername() {
         String username = (String) session.getAttribute("username");
         return username;
+    }
+    @ModelAttribute
+    public void addPendingRequestCounts(Model model) {
+        Guide guide = getSignedInGuide();  // Get the currently signed-in guide
+        Long guideId = guide.getGuideId();
+        long pendingInterviewApplications = internService.countPendingInterviewApplications();
+        long pendingLeaveCount = leaveApplicationService.countPendingLeaveRequestsForGuide(guide.getGuideId());  // Count pending leave requests for the signed-in guide
+        long countGPendingGroups = groupService.countPendingGroupsByGuideId(guideId);
+        long gPendingFinalReportCount = groupService.countGPendingFinalReportsByGuide(guide);
+
+
+        Map<String, Long> notificationCounts = new HashMap<>();
+        notificationCounts.put("pendingInterviewApplications", pendingInterviewApplications);
+        notificationCounts.put("pendingLeaveCount", pendingLeaveCount);
+        notificationCounts.put("countGPendingGroups", countGPendingGroups);
+        notificationCounts.put("gPendingFinalReportCount", gPendingFinalReportCount);
+        model.addAttribute("notificationCounts", notificationCounts);
     }
 
     @GetMapping("/guide_dashboard")
@@ -214,11 +244,26 @@ public class GuideController {
         Guide guide = getSignedInGuide();
         String guideId = String.valueOf(guide.getGuideId());
 
-        logService.saveLog(guideId, "Viewed Pending Group Approvals", "Guide: " + guide.getName() + " accessed the pending group approvals page.");
+        logService.saveLog(guideId, "Viewed Pending Group Approvals",
+                "Guide: " + guide.getName() + " accessed the pending group approvals page.");
 
         List<GroupEntity> groups = groupService.getGPendingGroups(guide);
+
+        // Prepare intern name map for groupId
+        Map<String, String> groupToInternNameMap = new HashMap<>();
+        for (GroupEntity group : groups) {
+            List<Intern> interns = internService.findByGroup(group);
+            if (!interns.isEmpty()) {
+                String names = interns.stream()
+                        .map(Intern::getFirstName)
+                        .collect(Collectors.joining(", "));
+                groupToInternNameMap.put(group.getGroupId(), names); // Use String groupId
+            }
+        }
+
         mv.addObject("groups", groups);
         mv.addObject("guide", guide);
+        mv.addObject("groupToInternNameMap", groupToInternNameMap); // Send map to view
         return mv;
     }
 
@@ -258,20 +303,53 @@ public class GuideController {
         return mv;
     }
 
+//    @GetMapping("/weekly_report")
+//    public ModelAndView weeklyReport() {
+//        ModelAndView mv = new ModelAndView("/guide/weekly_report");
+//
+//        Guide guide = getSignedInGuide();
+//        String guideId = String.valueOf(guide.getGuideId());
+//
+//        logService.saveLog(guideId, "Viewed Weekly Reports", "Guide: " + guide.getName() + " accessed the weekly reports page.");
+//
+//        List<GroupEntity> groups = guideService.getInternGroups(guide);
+//        List<WeeklyReport> reports = weeklyReportService.getReportsByGuideId(guide.getGuideId());
+//        mv.addObject("groups", groups);
+//        mv.addObject("reports", reports);
+//        mv.addObject("guide", getSignedInGuide());
+//        return mv;
+//    }
     @GetMapping("/weekly_report")
-    public ModelAndView weeklyReport() {
+    public ModelAndView weeklyReport(Model model) {
         ModelAndView mv = new ModelAndView("/guide/weekly_report");
 
-        Guide guide = getSignedInGuide();
-        String guideId = String.valueOf(guide.getGuideId());
-
-        logService.saveLog(guideId, "Viewed Weekly Reports", "Guide: " + guide.getName() + " accessed the weekly reports page.");
-
-        List<GroupEntity> groups = guideService.getInternGroups(guide);
+        String username = (String) session.getAttribute("username");
+        Guide guide = guideService.getGuideByUsername(username);
+            List<GroupEntity> groups = guideService.getInternGroups(guide);
         List<WeeklyReport> reports = weeklyReportService.getReportsByGuideId(guide.getGuideId());
+        Map<String, Long> unreadReportCounts = new HashMap<>();
+        long totalUnreadReports = 0;
+
+        for (GroupEntity group : groups) {
+            long unreadCount = reports.stream()
+                    .filter(report -> report.getGroup().getGroupId().equals(group.getGroupId()) && report.getGisRead() == 0)
+                    .count();
+            unreadReportCounts.put(group.getGroupId(), unreadCount);
+            totalUnreadReports += unreadCount;
+        }
+        groups.sort(Comparator.comparing(GroupEntity::getGroupId));
+//        model = countNotifications(model);
         mv.addObject("groups", groups);
+        mv.addObject("guide", guide);
         mv.addObject("reports", reports);
-        mv.addObject("guide", getSignedInGuide());
+        mv.addObject("unreadReportCounts", unreadReportCounts);
+        mv.addObject("totalUnreadReports", totalUnreadReports);
+
+        if (guide != null) {
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Accessed Weekly Reports",
+                    "Guide " + guide.getName() + " accessed the weekly reports page.");
+        }
+
         return mv;
     }
 
@@ -325,7 +403,7 @@ public class GuideController {
             logService.saveLog(String.valueOf(guide.getGuideId()), "Weekly Report Late Submitted",
                     "Guide " + guide.getName() + " submitted a late weekly report for Group ID: " + groupId + ", Week No: " + weekNo);
         }
-
+        report.setGisRead(0);
         weeklyReportService.addReport(report);
         return "redirect:/bisag/guide/weekly_report";
     }
@@ -340,27 +418,79 @@ public class GuideController {
         logService.saveLog(guideId, "Viewed Pending Final Reports", "Guide: " + guide.getName() + " accessed the pending final reports list.");
 
         List<GroupEntity> groups = groupService.getGPendingFinalReports(guide);
+        List<GroupEntity> groupss = groupService.getApprovedFinalReportsByGuide(guide);
+        List<Intern> interns = internService.getAllInterns(); // or a filtered list if needed
+        groups.sort(Comparator.comparing(GroupEntity::getGroupId).reversed());
+
+        mv.addObject("interns", interns);
         mv.addObject("groups", groups);
+        mv.addObject("groupss", groupss);
         mv.addObject("guide", getSignedInGuide());
 
         return mv;
     }
 
+//    @PostMapping("/guide_pending_final_reports/ans")
+//    public String guidePendingFinalReports(@RequestParam("gpendingAns") String gpendingAns,
+//                                           @RequestParam("groupId") String groupId) {
+//
+//        GroupEntity group = groupService.getGroup(groupId);
+//        Guide guide = getSignedInGuide();
+//        group.setFinalReportStatusUpdatedAt(LocalDateTime.now());
+//
+//        if (gpendingAns.equals("approve")) {
+//            group.setFinalReportStatus("gapproved");
+//            logService.saveLog(String.valueOf(guide.getGuideId()), "Final Report Approved",
+//                    "Guide " + guide.getName() + " approved the final report for Group ID: " + groupId);
+//        } else {
+//            group.setFinalReportStatus("pending");
+//            logService.saveLog(String.valueOf(guide.getGuideId()), "Final Report Approval Pending",
+//                    "Guide " + guide.getName() + " marked the final report as pending for Group ID: " + groupId);
+//        }
+//
+//        groupRepo.save(group);
+//        return "redirect:/bisag/guide/guide_pending_final_reports";
+//    }
+    private String getFileExtension(String filename) {
+        if (filename != null && filename.contains(".")) {
+            return filename.substring(filename.lastIndexOf("."));
+        }
+        return "";
+    }
+
     @PostMapping("/guide_pending_final_reports/ans")
     public String guidePendingFinalReports(@RequestParam("gpendingAns") String gpendingAns,
-                                           @RequestParam("groupId") String groupId) {
+                                           @RequestParam("groupId") String groupId,
+                                           @RequestParam(value = "rejectionFile", required = false) MultipartFile rejectionFile) {
 
         GroupEntity group = groupService.getGroup(groupId);
         Guide guide = getSignedInGuide();
+        group.setFinalReportStatusUpdatedAt(LocalDateTime.now());
 
         if (gpendingAns.equals("approve")) {
-            group.setFinalReportStatus("approved");
+            group.setFinalReportStatus("gapproved");
             logService.saveLog(String.valueOf(guide.getGuideId()), "Final Report Approved",
                     "Guide " + guide.getName() + " approved the final report for Group ID: " + groupId);
         } else {
-            group.setFinalReportStatus("pending");
-            logService.saveLog(String.valueOf(guide.getGuideId()), "Final Report Approval Pending",
-                    "Guide " + guide.getName() + " marked the final report as pending for Group ID: " + groupId);
+            group.setFinalReportStatus("changes");
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Final Report Rejected",
+                    "Guide " + guide.getName() + " rejected the final report for Group ID: " + groupId);
+
+            if (rejectionFile != null && !rejectionFile.isEmpty()) {
+                try {
+                    String baseDir = "E:/User/IMS/Springboot_Intern_Management_System/src/main/resources/static/files/Group Docs/";
+                    String storageDir = baseDir + group.getGroupId() + "/";
+                    File directory = new File(storageDir);
+                    if (!directory.exists()) {
+                        directory.mkdirs();
+                    }
+                    String fileName = "Changes" + getFileExtension(rejectionFile.getOriginalFilename());
+                    Path filePath = Paths.get(storageDir + fileName);
+                    Files.write(filePath, rejectionFile.getBytes());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         groupRepo.save(group);
@@ -394,16 +524,11 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
     File file = new File(storageDir + fileName);
 
     if (!file.exists()) {
-        // Return a 404 response if the file does not exist
         return ResponseEntity.notFound().build();
     }
-
-    // Create a Resource object for the file
     Resource resource = new FileSystemResource(file);
-
-    // Return the file as a resource with the appropriate content type (PDF)
     return ResponseEntity.ok()
-            .contentType(MediaType.APPLICATION_PDF)  // PDF MIME type
+            .contentType(MediaType.APPLICATION_PDF)
             .body(resource);
 }
     @GetMapping("/getInternEmail/{groupId}")
@@ -416,21 +541,6 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Intern not found");
         }
-    }
-    @GetMapping("/query_to_admin")
-    public ModelAndView queryToAdmin() {
-        ModelAndView mv = new ModelAndView("/guide/query_to_admin");
-        List<Admin> admins = adminService.getAdmin();
-        List<Intern> interns = internService.getInterns();
-        List<Guide> guides = guideService.getGuide();
-        Guide guide = getSignedInGuide();
-        List<GroupEntity> groups = guideService.getInternGroups(guide);
-        mv.addObject("admins", admins);
-        mv.addObject("interns", interns);
-        mv.addObject("guides", guides);
-        mv.addObject("groups", groups);
-        mv.addObject("guide", getSignedInGuide());
-        return mv;
     }
 
     @GetMapping("/change_passwordd")
@@ -492,8 +602,25 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
     public String viewPendingLeaves(Model model) {
         Guide guide = getSignedInGuide();
 
-        List<LeaveApplication> pendingLeaves = leaveApplicationRepo.findByStatus("Pending");
-        model.addAttribute("pendingLeaves", pendingLeaves);
+        List<LeaveApplication> allPendingLeaves = leaveApplicationRepo.findByStatus("Pending");
+        List<LeaveApplication> pendingLeavesForGuide = new ArrayList<>();
+        Map<String, String> internNames = new HashMap<>();
+
+        for (LeaveApplication leave : allPendingLeaves) {
+            Intern intern = internService.getInternById(leave.getInternId());
+
+            if (intern != null && intern.getGroup() != null &&
+                    intern.getGroup().getGuide() != null &&
+                    intern.getGroup().getGuide().getGuideId() == guide.getGuideId()) {
+
+                pendingLeavesForGuide.add(leave);
+                internNames.put(leave.getInternId(), intern.getFirstName());
+            }
+        }
+
+        model.addAttribute("pendingLeaves", pendingLeavesForGuide);
+        model.addAttribute("internNames", internNames);
+        model.addAttribute("guide", guide);
 
         logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed Pending Leaves",
                 "Guide " + guide.getName() + " viewed the list of pending leave applications.");
@@ -558,54 +685,186 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
             logService.saveLog(guideId, "Viewed Leave Details",
                     "Guide " + guide.getName() + " viewed details of leave application ID: " + id);
         }
-
+        model.addAttribute("guide", guide);
         return "guide/leave_details";
     }
 
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Messaging Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
-        // Guide sends a message
-    @PostMapping("/chat/send")
-    public ResponseEntity<Message> sendMessageAsGuide(
-            @RequestParam String senderId,
-            @RequestParam String receiverId,
-            @RequestParam String messageText) {
+    @GetMapping("/query_to_admin")
+    public ModelAndView queryToAdmin() {
+        ModelAndView mv = new ModelAndView("/guide/query_to_admin");
 
-        Optional<Guide> guide = guideService.findById(Long.valueOf(senderId));
-        if (guide.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+        Guide guide = getSignedInGuide();
+        String guideId = String.valueOf(guide.getGuideId());
+
+        List<Admin> admins = adminService.getAdmin();
+        List<Intern> interns = internService.getInterns();
+        List<Guide> guides = guideService.getGuide();
+        List<GroupEntity> groups = guideService.getInternGroups(guide);
+
+        // Unread messages map
+        Map<String, Long> unreadCounts = new HashMap<>();
+
+        // Count unread messages from Admins
+        for (Admin admin : admins) {
+            String senderId = String.valueOf(admin.getAdminId());
+            long count = messageService.countUnreadMessagesForReceiver(senderId, guideId);
+            if (count > 0) {
+                unreadCounts.put(senderId, count);
+            }
         }
 
-        Message message = messageService.sendMessage(String.valueOf(guide.get().getGuideId()), receiverId, messageText);
+        // Count unread messages from Interns
+        for (Intern intern : interns) {
+            String senderId = intern.getInternId();
+            long count = messageService.countUnreadMessagesForReceiver(senderId, guideId);
+            if (count > 0) {
+                unreadCounts.put(senderId, count);
+            }
+        }
 
-        Guide senderGuide = guide.get();
-        logService.saveLog(senderId, "Sent Message",
-                "Guide " + senderGuide.getName() + " sent a message to Intern ID: " + receiverId + ". Message: " + messageText);
+        mv.addObject("admins", admins);
+        mv.addObject("interns", interns);
+        mv.addObject("guides", guides);
+        mv.addObject("groups", groups);
+        mv.addObject("guide", guide);
+        mv.addObject("unreadCounts", unreadCounts);
+        return mv;
+    }
+        // Guide sends a message
+//    @PostMapping("/chat/send")
+//    public ResponseEntity<Message> sendMessageAsGuide(
+//            @RequestParam String senderId,
+//            @RequestParam String receiverId,
+//            @RequestParam String messageText) {
+//
+//        Optional<Guide> guide = guideService.findById(Long.valueOf(senderId));
+//        if (guide.isEmpty()) {
+//            return ResponseEntity.badRequest().build();
+//        }
+//
+//        Message message = messageService.sendMessage(String.valueOf(guide.get().getGuideId()), receiverId, messageText);
+//
+//        Guide senderGuide = guide.get();
+//        logService.saveLog(senderId, "Sent Message",
+//                "Guide " + senderGuide.getName() + " sent a message to Intern ID: " + receiverId + ". Message: " + messageText);
+//
+//        return ResponseEntity.ok(message);
+//    }
+//
+//    @GetMapping("/chat/history")
+//    public ResponseEntity<List<Message>> getChatHistoryAsGuide(
+//            @RequestParam Long senderId,
+//            @RequestParam String receiverId) {
+//
+//        Optional<Guide> guide = guideService.findById(senderId);
+//        if (guide.isEmpty()) {
+//            return ResponseEntity.badRequest().build();
+//        }
+//
+//        String guideId = String.valueOf(guide.get().getGuideId());
+//
+//        List<Message> messages = messageService.getChatHistory(guideId, receiverId);
+//        messages.addAll(messageService.getChatHistory(receiverId, guideId));
+//
+//        messages.sort(Comparator.comparing(Message::getTimestamp));
+//
+//        Guide senderGuide = guide.get();
+//        logService.saveLog(guideId, "Viewed Chat History",
+//                "Guide " + senderGuide.getName() + " viewed chat history with ID: " + receiverId);
+//
+//        return ResponseEntity.ok(messages);
+//    }
+        @PostMapping("/chat/send")
+        public ResponseEntity<Message> sendMessageAsAdmin(
+                @RequestParam String receiverId,
+                @RequestParam String messageText,
+                @RequestParam(value = "file", required = false) MultipartFile file) {
 
-        return ResponseEntity.ok(message);
+            Guide guide = getSignedInGuide();
+            String senderId = String.valueOf(guide.getGuideId());
+
+            String filePath = null;
+            String originalFileName = null;
+
+            if (file != null && !file.isEmpty()) {
+                try {
+                    String uploadDir = "/Users/pateldeep/Desktop/Coding/Springboot_Intern_Management_System-master-main/E:/User/IMS/Springboot_Intern_Management_System/src/main/resources/static/files/chat";
+                    File dir = new File(uploadDir);
+                    if (!dir.exists()) dir.mkdirs();
+
+                    originalFileName = file.getOriginalFilename();
+                    String newFileName = System.currentTimeMillis() + "_" + originalFileName;
+                    Path path = Paths.get(uploadDir, newFileName);
+                    file.transferTo(path.toFile());
+
+                    filePath = newFileName; // Store only filename, not full path
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
+            }
+
+            Message message = messageService.sendMessage(senderId, receiverId, messageText, filePath, originalFileName);
+
+            logService.saveLog(senderId, "Sent a Message",
+                    "Guide " + guide.getName() + " sent a message to User ID: " + receiverId);
+
+            return ResponseEntity.ok(message);
+        }
+    @GetMapping("/chat/download")
+    public ResponseEntity<Resource> downloadFile(@RequestParam("file") String fileName) throws IOException {
+        Path file = Paths.get("/Users/pateldeep/Desktop/Coding/Springboot_Intern_Management_System-master-main/E:/User/IMS/Springboot_Intern_Management_System/src/main/resources/static/files/chat", fileName);
+        if (!Files.exists(file)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Resource resource = new UrlResource(file.toUri());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFileName().toString() + "\"")
+                .body(resource);
     }
 
-    @GetMapping("/chat/history")
-    public ResponseEntity<List<Message>> getChatHistoryAsGuide(
-            @RequestParam Long senderId,
-            @RequestParam String receiverId) {
-
-        Optional<Guide> guide = guideService.findById(senderId);
-        if (guide.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+    private final Path fileStorageLocation = Paths.get("/Users/pateldeep/Desktop/Coding/Springboot_Intern_Management_System-master-main/E:/User/IMS/Springboot_Intern_Management_System/src/main/resources/static/files/chat")
+            .toAbsolutePath().normalize();
+    @GetMapping("/chat/view")
+    public ResponseEntity<Resource> viewFile(@RequestParam String filePath) {
+        try {
+            Path file = fileStorageLocation.resolve(filePath).normalize();
+            if (!Files.exists(file) || !file.toString().startsWith(fileStorageLocation.toString())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            Resource resource = new UrlResource(file.toUri());
+            String contentType = Files.probeContentType(file);
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(resource);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+    // Admin fetches chat history (both sent and received messages)
+    @GetMapping("/chat/history")
+    public ResponseEntity<List<Message>> getChatHistoryAsGuide(@RequestParam String receiverId) {
+        Guide guide = getSignedInGuide();
+        String senderId = String.valueOf(guide.getGuideId());
 
-        String guideId = String.valueOf(guide.get().getGuideId());
+        List<Message> messages = messageService.getChatHistoryForBothUsers(senderId, receiverId);
 
-        List<Message> messages = messageService.getChatHistory(guideId, receiverId);
-        messages.addAll(messageService.getChatHistory(receiverId, guideId));
-
-        messages.sort(Comparator.comparing(Message::getTimestamp));
-
-        Guide senderGuide = guide.get();
-        logService.saveLog(guideId, "Viewed Chat History",
-                "Guide " + senderGuide.getName() + " viewed chat history with ID: " + receiverId);
+        for (Message message : messages) {
+            if (message.getReceiverId().equals(senderId) && !message.isRead()) {
+                message.setRead(true);
+                message.setReadTimestamp(LocalDateTime.now());
+                messageRepo.save(message);
+            }
+        }
+        logService.saveLog(senderId, "Viewed Chat History",
+                "Guide " + guide.getName() + " viewed chat history with User ID: " + receiverId);
 
         return ResponseEntity.ok(messages);
     }
@@ -615,60 +874,78 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     @GetMapping("/tasks_assignments")
     public String viewTaskAssignmentsPage(Model model) {
-
-        List<TaskAssignment> tasks = taskAssignmentService.getAllTasks();
-        List<Intern> interns = internService.getAllInterns();
-
-        model.addAttribute("interns", interns);
-        model.addAttribute("tasks", tasks);
-
         Guide guide = getSignedInGuide();
+        List<TaskAssignment> tasks = taskAssignmentService.getAllTasks();
+        List<Intern> interns = internService.getInternsByGuideId(guide.getGuideId());
+        Map<String, String> internIdToNameMap = interns.stream()
+                .collect(Collectors.toMap(Intern::getInternId, Intern::getFirstName));
+
+        List<TaskAssignment> filteredTasks = tasks.stream()
+                .filter(task -> internIdToNameMap.containsKey(task.getIntern()))
+                .collect(Collectors.toList());
+        model.addAttribute("interns", interns);
+        model.addAttribute("tasks", filteredTasks);
+        model.addAttribute("internIdToNameMap", internIdToNameMap);
         if (guide != null) {
             String guideId = String.valueOf(guide.getGuideId());
             logService.saveLog(guideId, "Viewed Task Assignments",
                     "Guide " + guide.getName() + " viewed the task assignments page.");
         }
-
+        model.addAttribute("guide", guide);
         return "guide/task_assignments";
     }
-
     // Assign a New Task
     @PostMapping("/tasks/assign")
     public String assignTask(
             @RequestParam("intern") String intern,
-            @RequestParam("assignedById") String assignedById,
+//            @RequestParam("assignedById") String assignedById,
             @RequestParam("assignedByRole") String assignedByRole,
             @RequestParam("taskDescription") String taskDescription,
             @RequestParam("startDate") String startDateStr,
-            @RequestParam("endDate") String endDateStr) {
-
+            @RequestParam("endDate") String endDateStr,
+            RedirectAttributes redirectAttributes) {
+        Guide guide = getSignedInGuide();
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-
             Date startDate = dateFormat.parse(startDateStr);
             Date endDate = dateFormat.parse(endDateStr);
 
+            Date today = new Date();
+            if (startDate.before(dateFormat.parse(dateFormat.format(today)))) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Start date cannot be in the past!");
+                return "redirect:/bisag/guide/tasks_assignments";
+            }
+
+            if (endDate.before(startDate)) {
+                redirectAttributes.addFlashAttribute("errorMessage", "End date cannot be before start date!");
+                return "redirect:/bisag/guide/tasks_assignments";
+            }
             Optional<Intern> optionalIntern = internService.getIntern(intern);
             if (optionalIntern.isPresent()) {
                 TaskAssignment task = new TaskAssignment();
                 task.setIntern(intern);
-                task.setAssignedById(assignedById);
-                task.setAssignedByRole(assignedByRole);
+//                task.setAssignedById(assignedById);
+                task.setAssignedByRole(guide.getName());
                 task.setTaskDescription(taskDescription);
                 task.setStartDate(startDate);
                 task.setEndDate(endDate);
                 task.setStatus("Pending");
                 task.setApproved(false);
-
                 taskAssignmentService.saveTask(task);
+                logService.saveLog(String.valueOf(guide.getGuideId()), "Assigned a Task",
+                        "Guide " + guide.getName() + " assigned a task to Intern ID: " + intern);
 
-                logService.saveLog(assignedById, "Assigned Task",
-                        assignedByRole + " assigned a new task to Intern ID: " + intern);
+                redirectAttributes.addFlashAttribute("successMessage", "Task assigned successfully!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Invalid Intern ID! Please select a valid intern.");
             }
         } catch (ParseException e) {
-            // Handle exception silently
+            redirectAttributes.addFlashAttribute("errorMessage", "Invalid date format! Please enter a valid date.");
+            return "redirect:/bisag/guide/tasks_assignments";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "An unexpected error occurred. Please try again.");
+            return "redirect:/bisag/guide/tasks_assignments";
         }
-
         return "redirect:/bisag/guide/tasks_assignments";
     }
 
@@ -685,7 +962,7 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
             logService.saveLog(guideId, "Viewed Task Details",
                     "Guide " + guide.getName() + " viewed details of Task Assignment ID: " + id);
         }
-
+        model.addAttribute("guide", guide);
         return "guide/task_details";
     }
 
@@ -731,7 +1008,7 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
         try {
 
             String fileName = taskOpt.get().getProofAttachment();
-            Path filePath = Paths.get("uploads/task_proofs/", fileName);
+            Path filePath = Paths.get("main/resources/static/files/Task_Proofs/", fileName);
             Resource resource = new UrlResource(filePath.toUri());
 
             if (!resource.exists()) {
@@ -798,10 +1075,10 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
         }
 
         String username = (String) session.getAttribute("username");
-        Admin admin = adminService.getAdminByUsername(username);
-        if (admin != null) {
-            logService.saveLog(String.valueOf(admin.getAdminId()), "Updated Final Status",
-                    "Admin with ID: " + admin.getAdminId() + " updated final status of intern with ID: " + id + " to " + finalStatus);
+        Guide guide = guideService.getGuideByUsername(username);
+        if (guide != null) {
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Updated Final Status",
+                    "Guide with ID: " + guide.getGuideId() + " updated final status of intern with ID: " + id + " to " + finalStatus);
         }
 
         return "redirect:/bisag/guide/intern_application/approved_interns";
@@ -821,6 +1098,7 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
             List<InternApplication> intern = internApplicationService.getApprovedInternsByGuideId(guideId);
 
             mv.addObject("intern", intern);
+            mv.addObject("guide", guide);
             session.setAttribute("id", guideId);
 
             logService.saveLog(String.valueOf(guideId),
@@ -843,16 +1121,17 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
         Optional<InternApplication> intern = internService.getInternApplication(id);
         List<Guide> guides = guideService.getGuide();
 
-        Guide signedInGuide = getSignedInGuide();
-        if (signedInGuide != null) {
-            logService.saveLog(String.valueOf(signedInGuide.getGuideId()), "View Intern Application Details",
-                    "Guide " + signedInGuide.getName() + " viewed the details of Intern Application with ID: " + id);
+        Guide guide = getSignedInGuide();
+        if (guide != null) {
+            logService.saveLog(String.valueOf(guide.getGuideId()), "View Intern Application Details",
+                    "Guide " + guide.getName() + " viewed the details of Intern Application with ID: " + id);
         } else {
             System.out.println("Error: Signed-in guide not found for logging!");
         }
 
         mv.addObject("intern", intern);
         model.addAttribute("guides", guides);
+        mv.addObject("guide", guide);
 
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
@@ -935,6 +1214,7 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
         Guide guide = getSignedInGuide();
         List<GroupEntity> groups = guideService.getInternGroups(guide);
         model.addAttribute("groups", groups);
+        model.addAttribute("guide", guide);
 
         if (guide != null) {
             logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed Assign Project Definition Form",
@@ -1007,20 +1287,58 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
         }
     }
 
+//    @GetMapping("/viewPdf/{internId}/{weekNo}")
+//    public ResponseEntity<byte[]> viewPdf(@PathVariable String internId, @PathVariable int weekNo) {
+//        Guide guide = getSignedInGuide();
+//        if (guide != null) {
+//            logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed PDF",
+//                    "Guide " + guide.getName() + " viewed Weekly Report PDF for Intern ID: " + internId + ", Week No: " + weekNo);
+//        }
+//        WeeklyReport report = weeklyReportService.getReportByInternIdAndWeekNo(internId, weekNo);
+//        byte[] pdfContent = report.getSubmittedPdf();
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setContentType(MediaType.APPLICATION_PDF);
+//        return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+//    }
+
     @GetMapping("/viewPdf/{internId}/{weekNo}")
     public ResponseEntity<byte[]> viewPdf(@PathVariable String internId, @PathVariable int weekNo) {
-        Guide guide = getSignedInGuide();
-        if (guide != null) {
-            logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed PDF",
-                    "Guide " + guide.getName() + " viewed Weekly Report PDF for Intern ID: " + internId + ", Week No: " + weekNo);
-        }
-        WeeklyReport report = weeklyReportService.getReportByInternIdAndWeekNo(internId, weekNo);
-        byte[] pdfContent = report.getSubmittedPdf();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
-    }
+        String groupId = internRepo.findGroupIdByInternId(internId);
 
+        if (groupId == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        WeeklyReport report = weeklyReportService.getReportByInternIdAndWeekNo(internId, weekNo);
+        Guide guide = getSignedInGuide();
+
+        if (report != null) {
+            report.setGisRead(1);
+            weeklyReportService.addReport(report);
+        }
+
+        logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed PDF",
+                "Guide " + guide.getName() + " viewed Weekly Report PDF for Intern ID: " + internId + ", Week No: " + weekNo);
+
+        String baseDir = baseDir2;
+        String filePath = baseDir + groupId + "/Weekly Reports/" + groupId + "_Week" + weekNo + ".pdf";
+
+        File file = new File(filePath);
+        if (!file.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            byte[] pdfContent = Files.readAllBytes(file.toPath());
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setCacheControl(CacheControl.noCache().mustRevalidate());
+
+            return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
     @GetMapping("/viewProjectDefinition/{groupId}")
     public ResponseEntity<byte[]> viewProjectDefinition(@PathVariable String groupId) {
         Guide guide = getSignedInGuide();
@@ -1037,5 +1355,180 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+    }
+    @GetMapping("/getInternName/{internId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> fetchInternDetailsById(@PathVariable String internId) {
+        Optional<Intern> internOptional = internService.findById(internId);
+        if (internOptional.isPresent()) {
+            Intern intern = internOptional.get();
+            Map<String, String> response = new HashMap<>();
+            String internName = (intern.getFirstName() != null) ? intern.getFirstName() : "N/A";
+            response.put("internName", internName);
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+    }
+    @PostMapping("/markGroupReportsRead")
+    public String markGroupReportsAsReadByGuide(@RequestParam("groupId") String groupId) {
+        weeklyReportService.markReportsAsReadByGuide(groupId);
+        Guide guide = getSignedInGuide();
+        if (guide != null) {
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed All Weekly Reports",
+                    "Guide " + guide.getName() + " viewed all weekly reports for Group ID: " + groupId);
+        }
+        return "redirect:/bisag/guide/weekly_report"; // or your actual guide weekly report page
+    }
+    @GetMapping("/group/{groupId}/members")
+    public String viewGroupMembers(@PathVariable("groupId") String groupId, Model model) {
+        List<Intern> groupMembers = internService.getInternsByGroupId(groupId);
+        model.addAttribute("groupId", groupId);
+        model.addAttribute("groupMembers", groupMembers);
+        Guide guide = getSignedInGuide();
+        model.addAttribute("guide", guide);
+        if (guide != null) {
+            logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed Group Members",
+                    "Guide " + guide.getName() + " viewed details for Group ID: " + groupId);
+        }
+        return "guide/group_members";
+    }
+//    @GetMapping("/interns")
+//    public String viewAssignedInterns(Model model) {
+//        Guide signedInGuide = getSignedInGuide(); // This should return the Guide object for the logged-in guide
+//        if (signedInGuide == null) {
+//            return "redirect:/bisag/login"; // Handle not-logged-in scenario appropriately
+//        }
+//
+//        Long guideId = signedInGuide.getGuideId();
+//        List<Intern> interns = internService.getInternsByGuideId(guideId);
+//        model.addAttribute("interns", interns);
+//        return "guide/intern_list"; // Thymeleaf template name for displaying the intern list
+//    }
+    @GetMapping("/interns")
+    public ModelAndView newInternsForGuide(
+            HttpSession session,
+            Model model,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size,
+            @RequestParam(required = false) Boolean all
+    ) {
+        ModelAndView mv = new ModelAndView();
+
+        Guide guide = getSignedInGuide();
+        if (guide == null) {
+            mv.setViewName("redirect:/bisag/login");
+            return mv;
+        }
+
+        List<Intern> internList;
+        if (Boolean.TRUE.equals(all)) {
+            internList = internService.getInternsByGuideId(guide.getGuideId());
+            mv.addObject("showAll", true);
+        } else {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Intern> internPage = internService.getInternsByGuideIdPaginated(guide.getGuideId(), pageable);
+            internList = internPage.getContent();
+            mv.addObject("currentPage", page);
+            mv.addObject("totalPages", internPage.getTotalPages());
+            mv.addObject("pageSize", size);
+            mv.addObject("showAll", false);
+        }
+
+        mv.addObject("intern", internList);
+        mv.addObject("guide", guide.getName());
+
+        List<RRecord> records = recordService.getAllRecords();
+        model.addAttribute("records", records);
+        List<College> college = fieldService.getColleges();
+        List<Domain> domain = fieldService.getDomains();
+        List<Degree> degree = fieldService.getDegrees();
+        List<GroupEntity> groupEntities = groupService.getGroups();
+        List<String> projectDefinitions = internService.getDistinctProjectDefinitions();
+        List<String> genders = internService.getDistinctGenders();
+
+        mv.addObject("colleges", college);
+        mv.addObject("domains", domain);
+        mv.addObject("degrees", degree);
+        mv.addObject("groups", groupEntities);
+        mv.addObject("project_definition_name", projectDefinitions);
+        mv.addObject("genders", genders);
+        mv.addObject("guide", guide);
+        // Final Report Statuses
+        List<String> internIds = internList.stream()
+                .map(Intern::getInternId)
+                .collect(Collectors.toList());
+
+        Map<String, String> finalReportStatuses = recordService.findFinalReportsForInternIds(internIds);
+        model.addAttribute("finalReportStatuses", finalReportStatuses);
+
+//        Map<String, String> reportTimestamps = new HashMap<>();
+//        for (Intern i : internList) {
+//            RRecord record = recordService.findLatestRecordByInternId(i.getInternId());
+//            if (record != null && record.getSubmissionTimestamp() != null) {
+//                reportTimestamps.put(i.getInternId(),
+//                        record.getSubmissionTimestamp().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")));
+//            } else {
+//                reportTimestamps.put(i.getInternId(), "N/A");
+//            }
+//        }
+//        model.addAttribute("reportTimestamps", reportTimestamps);
+
+        // Save Log
+        logService.saveLog(String.valueOf(guide.getGuideId()), "Viewed Guide New Interns",
+                "Guide " + guide.getName() + " accessed their assigned interns page.");
+
+        mv.setViewName("guide/intern_list");
+        return mv;
+    }
+
+    @GetMapping("/view-thesis/{id}")
+    public ResponseEntity<Resource> viewThesisAsGuide(@PathVariable Long id, Principal principal) throws IOException {
+        Optional<ThesisStorage> optionalThesisStorage = thesisStorageService.getThesisById(id);
+
+        if (optionalThesisStorage.isEmpty()) {
+            logService.saveLog("N/A", "Attempted to View Thesis", "Thesis with ID " + id + " not found.");
+            return ResponseEntity.notFound().build();
+        }
+
+        ThesisStorage thesisStorage = optionalThesisStorage.get();
+        String emailOrUsername = principal.getName();
+
+        Guide guide = guideService.getGuideByUsername(emailOrUsername);
+        if (guide == null) {
+            logService.saveLog("N/A", "Unauthorized Thesis Access Attempt",
+                    "User " + emailOrUsername + " tried to access Thesis ID: " + id + " but is not a recognized guide.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        String internId = thesisStorage.getAllowedInternId();
+        if (!internService.isInternAssignedToGuide(internId, guide.getGuideId())) {
+            logService.saveLog("GuideID: " + guide.getGuideId(), "Unauthorized Thesis Access Attempt",
+                    "Guide " + guide.getName() + " attempted to access Thesis ID: " + id + " not assigned to them.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        if (thesisStorage.getFilePath() == null || thesisStorage.getFilePath().isEmpty()) {
+            logService.saveLog("GuideID: " + guide.getGuideId(), "Thesis File Missing",
+                    "Guide " + guide.getName() + " tried to view Thesis ID: " + id + " but the file path is missing.");
+            return ResponseEntity.notFound().build();
+        }
+
+        Path filePath = Paths.get(thesisStorage.getFilePath());
+        Resource resource = new UrlResource(filePath.toUri());
+
+        if (!resource.exists() || !resource.isReadable()) {
+            logService.saveLog("GuideID: " + guide.getGuideId(), "Failed to View Thesis",
+                    "Guide " + guide.getName() + " tried to view Thesis ID: " + id + " but file is not readable.");
+            return ResponseEntity.notFound().build();
+        }
+
+        logService.saveLog("GuideID: " + guide.getGuideId(), "Viewed Thesis",
+                "Guide " + guide.getName() + " successfully viewed Thesis ID: " + id + ".");
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filePath.getFileName() + "\"")
+                .body(resource);
     }
 }
