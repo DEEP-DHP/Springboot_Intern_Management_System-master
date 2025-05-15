@@ -167,8 +167,13 @@
 				</tr>
 				<tr>
 					<th>Degree</th>
-					<td><input type="text" name="degree"
-							   th:value="${intern.get().degree}" class="no-border"></td>
+					<td><select class="form-select" id="degree"
+								name="degree">
+						<option th:each="degree : ${degrees}"
+								th:text="${degree.name}" th:value="${degree.name}"
+								th:selected="${degree.name == intern.get().degree}"></option>
+
+					</select></td>
 				</tr>
 				<tr>
 					<th>Percentage</th>
@@ -239,11 +244,11 @@
 					<td><iframe th:src="@{/bisag/admin/intern/documents/projectDefinitionForm/{id}(id=${intern.get().internId})}" width="300" height="200"></iframe></td>
 				</tr>
 				<tr>
-					<th>Extra Form</th>
+					<th>Additional Document</th>
 					<td><iframe th:src="@{/bisag/admin/intern/documents/extraForm/{id}(id=${intern.get().internId})}" width="300" height="200"></iframe></td>
 				</tr>
 				<tr>
-					<th>Extra Form 2</th>
+					<th>Additional Document 2</th>
 					<td><iframe th:src="@{/bisag/admin/intern/documents/extraForm2/{id}(id=${intern.get().internId})}" width="300" height="200"></iframe></td>
 				</tr>
 				<tr>

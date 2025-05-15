@@ -57,30 +57,18 @@
         .no-border {
             border: none;
         }
-
-
-
-
-
-
     </style>
 </head>
 <body>
-<!-- Include the header fragment -->
 <div th:replace="fragments/headerFragment :: header"></div>
-
-<!-- Include the aside fragment -->
 <div th:replace="fragments/asideFragment :: aside"></div>
-
 <main id="main" class="main">
     <div class="pagetitle">
         <h1>Intern Application Documents</h1>
     </div>
-
     <div th:if="${error}">
         <p th:text="${error}"></p>
     </div>
-
     <table id="documentsTable" class="table table-bordered">
         <tr>
             <th>ID</th>
@@ -89,6 +77,22 @@
         <tr>
             <th>Full Name</th>
             <td th:text="${intern.firstName}"></td>
+        </tr>
+        <tr>
+            <th>I-Card Form</th>
+            <td><a th:href="@{/bisag/admin/intern_icard/{id}(id=${intern.internId})}" class="btn btn-primary btn-sm">View I-Card</a></td>
+        </tr>
+        <tr>
+            <th>Information Security Agreement</th>
+            <td><a th:href="@{'/bisag/admin/security_agreement/' + ${intern.internId}}" class="btn btn-primary">View Security Agreement</a></td>
+        </tr>
+        <tr>
+            <th>Security Form</th>
+            <td><a th:href="@{'/bisag/admin/security_form/' + ${intern.internId}}" class="btn btn-primary">View Security Form</a></td>
+        </tr>
+        <tr>
+            <th>Registration Form</th>
+            <td><a th:href="@{'/bisag/admin/intern_registration/' + ${intern.internId}}" class="btn btn-primary">View Registration Form</a></td>
         </tr>
         <tr>
             <th><p class="text-5xl font-bold underline">Passport Size Image</p></th>
@@ -195,7 +199,7 @@
             </td>
         </tr>
         <tr>
-            <th><p class="text-5xl font-bold underline">Extra Form</p></th>
+            <th><p class="text-5xl font-bold underline">Additional Document</p></th>
             <td>
                 <iframe th:src="@{/bisag/admin/intern/documents/extraForm/{id}(id=${id})}" width="300" height="500"></iframe>
 
@@ -208,7 +212,7 @@
             </td>
         </tr>
         <tr>
-            <th><p class="text-5xl font-bold underline">Extra Form 2</p></th>
+            <th><p class="text-5xl font-bold underline">Additional Document 2</p></th>
             <td>
                 <iframe th:src="@{/bisag/admin/intern/documents/extraForm2/{id}(id=${id})}" width="300" height="500"></iframe>
 

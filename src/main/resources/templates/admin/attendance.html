@@ -22,6 +22,75 @@
         .form-group { margin-bottom: 20px; }
         .card-body { padding: 30px; }
         .table-responsive { margin-top: 20px; }
+
+        .delete-attendance-container label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+
+        .delete-attendance-container select,
+        .delete-attendance-container button {
+            padding: 10px;
+            margin-top: 10px;
+            width: 100%;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .delete-attendance-container select {
+            background-color: #ffffff;
+        }
+
+        .delete-attendance-container button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .delete-attendance-container button:hover {
+            background-color: #0056b3;
+        }
+
+        form label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+
+        form select,
+        form button {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+
+        form select {
+            border: 1px solid #ccc;
+            width: auto;
+        }
+
+        form button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        form button:hover {
+            background-color: #0056b3;
+        }
+
+        .d-flex {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
     </style>
 </head>
 
@@ -59,7 +128,6 @@
                             </div>
                         </form>
 
-                        <!-- Filters -->
                         <div class="row mt-4">
                             <div class="col-md-4">
                                 <select class="form-control" id="monthFilter">
@@ -83,11 +151,22 @@
                             </div>
                         </div>
 
-                        <!-- Download Buttons -->
                         <div class="text-center mt-4">
                             <button class="btn btn-success" id="downloadPDF">Download as PDF</button>
                             <button class="btn btn-info" id="downloadExcel">Download as Excel</button>
                         </div>
+                        <form id="deleteAttendanceForm" th:action="@{/bisag/admin/deleteAttendanceByMonth}" method="post">
+                            <label for="month">Select Month to Delete:</label>
+                            <div class="d-flex align-items-center">
+                                <select id="month" name="month" required class="form-control me-2" style="max-width: 300px;">
+                                    <!-- Options will be filled dynamically -->
+                                </select>
+
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete all attendance records for this month?')">
+                                    Delete Attendance
+                                </button>
+                            </div>
+                        </form>
 
                         <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
                             <span th:text="${success}"></span>
@@ -117,8 +196,8 @@
                                 <tbody id="attendanceBody">
                                 <tr th:each="attendance : ${attendances}">
                                     <td th:text="${attendance.internId}"></td>
-                                    <td th:text="${attendance.month}"></td>
-                                    <td th:text="${attendance.year}"></td>
+                                    <td class="attendance-month" th:text="${attendance.month}"></td>
+                                    <td class="attendance-year" th:text="${attendance.year}"></td>
                                     <td th:text="${attendance.totalWorkingDays}"></td>
                                     <td th:text="${attendance.totalPresentDays}"></td>
                                     <td th:text="${attendance.totalAbsentDays}"></td>
@@ -164,6 +243,40 @@
             row.style.display = match ? "" : "none";
         });
     }
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const monthCells = document.querySelectorAll("td.attendance-month");
+        const yearCells = document.querySelectorAll("td.attendance-year");
+        const dropdown = document.getElementById("month");
+        const seen = new Set();
+
+        for (let i = 0; i < monthCells.length; i++) {
+            const month = monthCells[i].textContent.trim();
+            const year = yearCells[i].textContent.trim();
+            if (!month || !year) continue;
+
+            // Convert to yyyy-MM format
+            const monthNum = new Date(`${month} 1, ${year}`).getMonth() + 1;
+            const value = `${year}-${monthNum.toString().padStart(2, '0')}`;
+            const label = `${month} ${year}`;
+
+            if (!seen.has(value)) {
+                seen.add(value);
+                const option = document.createElement("option");
+                option.value = value;
+                option.textContent = label;
+                dropdown.appendChild(option);
+            }
+        }
+
+        if (dropdown.options.length === 0) {
+            const option = document.createElement("option");
+            option.textContent = "No months found";
+            option.disabled = true;
+            dropdown.appendChild(option);
+        }
+    });
 </script>
 </body>
 </html>

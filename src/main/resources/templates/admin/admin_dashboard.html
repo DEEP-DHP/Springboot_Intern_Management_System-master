@@ -53,13 +53,11 @@
                     <div class="col-xxl-3 col-md-4">
                         <a th:href="@{/bisag/admin/intern_application}">
                             <div class="card info-card sales-card glowing-card">
-
                                 <div class="card-body">
-
                                     <div class="d-flex align-items-center">
                                         <div
                                                 class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                            <i class="bi bi-people"></i>
+                                            <i class="bi bi-journal-check"></i>
                                         </div>
                                         <div class="ps-3">
                                             <h6>
@@ -83,7 +81,7 @@
                                     <div class="d-flex align-items-center">
                                         <div
                                                 class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                            <i class="bi bi-people"></i>
+                                            <i class="bi bi-calendar-check"></i>
                                         </div>
                                         <div class="ps-3">
                                             <h6>
@@ -108,13 +106,13 @@
                                     <div class="d-flex align-items-center">
                                         <div
                                                 class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                            <i class="bi bi-people"></i>
+                                            <i class="bi bi-person-badge"></i>
                                         </div>
                                         <div class="ps-3">
                                             <h6>
                                                 <span th:text="${countInterns}"></span>
                                             </h6>
-                                            <span class="text-success small pt-1 fw-bold">Current
+                                            <span class="text-success small pt-1 fw-bold">Total
 													Interns</span>
                                         </div>
                                     </div>
@@ -154,7 +152,7 @@
                                     <div class="card-body">
                                         <div class="d-flex align-items-center">
                                             <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                                <i class="bi bi-people"></i>
+                                                <i class="bi bi-diagram-3"></i>
                                             </div>
                                             <div class="ps-3">
                                                 <h6><span th:text="${pendingGroupCreationCount}"></span></h6>
@@ -172,7 +170,7 @@
                                     <div class="card-body">
                                         <div class="d-flex align-items-center">
                                             <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                                <i class="bi bi-people"></i>
+                                                <i class="bi bi-x-circle"></i>
                                             </div>
                                             <div class="ps-3">
                                                 <h6><span th:text="${requestedCancellationsCount}"></span></h6>
@@ -190,7 +188,7 @@
                                     <div class="card-body">
                                         <div class="d-flex align-items-center">
                                             <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                                <i class="bi bi-people"></i>
+                                                <i class="bi bi-clipboard"></i>
                                             </div>
                                             <div class="ps-3">
                                                 <h6><span th:text="${adminPendingProjectDefinitionCount}"></span></h6>
@@ -208,11 +206,90 @@
                                     <div class="card-body">
                                         <div class="d-flex align-items-center">
                                             <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                                <i class="bi bi-people"></i>
+                                                <i class="bi bi-people-fill"></i>
                                             </div>
                                             <div class="ps-3">
                                                 <h6><span th:text="${countGroup}"></span></h6>
-                                                <span class="text-success small pt-1 fw-bold">Total Groups</span>
+                                                <span class="text-success small pt-1 fw-bold">Current Groups</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-xxl-3 col-md-4">
+                            <a th:href="@{/bisag/admin/intern_application/new_interns}">
+                                <div class="card info-card sales-card glowing-card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center" style="background-color: #0d6efd;">
+                                                <i class="bi bi-person-workspace" style="color: greenyellow; font-size: 1.5rem;"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6>
+                                                    <span th:text="${workingInternsCount}">0</span>
+                                                </h6>
+                                                <span class="text-primary small pt-1 fw-bold">Working Interns</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-xxl-3 col-md-4">
+                            <a th:href="@{/bisag/admin/intern_application/new_interns}">
+                                <div class="card info-card sales-card glowing-card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-file-earmark-text"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6>
+                                                    <span th:text="${reportPendingInternsCount}"></span>
+                                                </h6>
+                                                <span class="text-warning small pt-1 fw-bold">Report Pending Interns</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-xxl-3 col-md-4">
+                            <a th:href="@{/bisag/admin/intern_application/new_interns}">
+                                <div class="card info-card sales-card glowing-card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-x-circle"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6>
+                                                    <span th:text="${cancelledInternsCount}"></span>
+                                                </h6>
+                                                <span class="text-danger small pt-1 fw-bold">Cancelled Interns</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-xxl-3 col-md-4">
+                            <a th:href="@{/bisag/admin/intern_application/new_interns}">
+                                <div class="card info-card sales-card glowing-card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center" style="background-color: #28a745;">
+                                                <i class="bi bi-check-circle" style="color: white;"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <h6>
+                                                    <span th:text="${completedInternsCount}"></span>
+                                                </h6>
+                                                <span class="text-success small pt-1 fw-bold">Completed Interns</span>
                                             </div>
                                         </div>
                                     </div>
@@ -267,6 +344,11 @@
                                                     Password
                                                 </button>
                                             </li>
+                                            <li class="nav-item">
+                                                <button class="nav-link" data-bs-toggle="tab"
+                                                        data-bs-target="#profile-sign">Upload Sign
+                                                </button>
+                                            </li>
 
                                         </ul>
                                         <div class="tab-content pt-2">
@@ -311,7 +393,7 @@
                                                  id="profile-edit">
                                                 <form
                                                         th:action="@{'/bisag/admin/update_admin/' + ${admin.adminId}}"
-                                                        th:object="${admin}" method="post">
+                                                        th:object="${admin}" method="post" enctype="multipart/form-data">
                                                     <input type="hidden" th:field="*{adminId}">
                                                     <div class="row mb-3">
                                                         <label for="name"
@@ -347,6 +429,15 @@
                                                         <div class="col-md-8 col-lg-9">
                                                             <input name="contactNo" type="tel" class="form-control"
                                                                    id="contactNo" th:value="${admin.contactNo}">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="row mb-3">
+                                                        <label for="digitalSignature" class="col-md-4 col-lg-3 col-form-label">
+                                                            Upload Digital Signature
+                                                        </label>
+                                                        <div class="col-md-8 col-lg-9">
+                                                            <input name="digitalSignatureFile" type="file" class="form-control" id="digitalSignature">
                                                         </div>
                                                     </div>
 
@@ -446,6 +537,24 @@
                                                 </form>
                                             </div>
 
+                                            <div class="tab-pane fade profile-sign pt-3" id="profile-sign">
+                                                <form th:action="@{'/bisag/admin/upload_admin_sign/' + ${admin.adminId}}"
+                                                      method="post" enctype="multipart/form-data">
+
+                                                    <div class="row mb-3">
+                                                        <label for="signatureFile" class="col-md-4 col-lg-3 col-form-label">
+                                                            Upload Digital Signature
+                                                        </label>
+                                                        <div class="col-md-8 col-lg-9">
+                                                            <input name="signatureFile" type="file" class="form-control" id="signatureFile" required>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="text-center">
+                                                        <button type="submit" class="btn btn-primary">Upload Signature</button>
+                                                    </div>
+                                                </form>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

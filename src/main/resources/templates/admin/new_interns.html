@@ -207,6 +207,7 @@
 					<div th:if="${alertError}" class="alert alert-danger" role="alert">
 						<span th:text="${alertError}"></span>
 					</div>
+
 					<div class="card-body table-wrapper">
 						<div class="filter-container">
 							<div class="filter-group">
@@ -443,6 +444,7 @@
 									<th><i class="fa-solid fa-sort mx-2"></i>Updated At</th>
 									<!--								<th><i class="fa-solid fa-sort mx-2"></i>Cancellation Status</th>-->
 									<th><i class="fa-solid fa-sort mx-2"></i>Current Status</th>
+									<th><i class="fa-solid fa-sort mx-2"></i>Final Report</th>
 									<th><i class="fa-solid fa-sort mx-2"></i>Report TimeStamp</th>
 									<th><i class="fa-solid fa-sort mx-2"></i>Cancel Time</th>
 
@@ -501,7 +503,7 @@
 									<td th:text="${intern.collegeGuideHodName}"></td>
 									<td th:text="${intern.degree}"></td>
 									<td th:text="${intern.aggregatePercentage}"></td>
-									<td th:text="${intern.projectDefinitionName}"></td>
+									<td th:text="${intern.projectDefinitionName} ?: 'Not Defined'"></td>
 									<td th:text="${#dates.format(intern.joiningDate, 'dd-MM-yyyy')}"></td>
 									<td th:text="${#dates.format(intern.completionDate, 'dd-MM-yyyy')}"></td>
 									<td th:text="${intern.usedResource}"></td>
@@ -517,6 +519,13 @@
                (finalReportStatuses[intern.internId] == 'Yes' ? 'Completed' : 'Report Pending') :
                intern.status)) :
              intern.status}">
+									</td>
+									<td>
+										<span th:if="${intern.cancellationStatus == 'Cancelled'}"><b>N/A</b></span>
+										<span th:if="${intern.cancellationStatus != 'Cancelled'}">
+        <span th:if="${intern.group != null and intern.group.finalReportStatus == 'approved'}"><b>Submitted</b></span>
+        <span th:if="${intern.group == null or intern.group.finalReportStatus != 'approved'}">Pending</span>
+    </span>
 									</td>
 									<td th:text="${reportTimestamps[intern.internId]}"></td>
 									<td th:text="${intern.cancelTime != null ? #dates.format(T(java.util.Date).from(intern.cancelTime.atZone(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy HH:mm:ss') : 'N/A'}"></td>

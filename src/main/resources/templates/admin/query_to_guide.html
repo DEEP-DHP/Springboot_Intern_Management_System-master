@@ -12,7 +12,6 @@
 		.chat-container { display: flex; flex-direction: column; height: 400px; border: 1px solid; border-radius: 10px; overflow: hidden; }
 		.message-section { display: flex; flex-direction: column; height: 100%; overflow-y: auto; padding: 10px; }
 
-		/* Sender messages (logged-in admin) - Aligned Right */
 		.sender {
 			background-color: #007bff;
 			color: #fff;
@@ -24,7 +23,6 @@
 			word-wrap: break-word;
 		}
 
-		/* Receiver messages - Aligned Left */
 		.receiver {
 			background-color: #e0e0e0;
 			color: #000;
@@ -39,14 +37,25 @@
 			color: red;
 			font-weight: bold;
 		}
-		#messageForm { display: flex; padding: 10px; background: #f8f9fa; border-top: 1px solid #ccc; }
-		#messageInput { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-right: 10px; }
-		#sendMessage { padding: 10px 15px; background-color: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+		#messageForm { display: flex; padding: 10px; background: #f8f9fa; border-top: 1px solid #ccc; flex-wrap: wrap; gap: 10px; }
+		#messageInput, #receiverId, #fileInput {
+			padding: 10px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+		}
+		#messageInput { flex: 1; margin-right: 10px; }
+		#sendMessage {
+			padding: 10px 15px;
+			background-color: #2196F3;
+			color: white;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+		}
 	</style>
 </head>
 <body>
 
-<!-- Include header and sidebar -->
 <div th:replace="fragments/headerFragment :: header"></div>
 <div th:replace="fragments/asideFragment :: aside"></div>
 
@@ -67,43 +76,43 @@
 				<div id="messageContainer" class="message-section">
 					<!-- Messages will be dynamically inserted here -->
 				</div>
-				<div id="messageForm">
+
+				<form id="messageForm" enctype="multipart/form-data">
 					<select id="receiverId" name="receiverId" class="form-select" required>
 						<option value="">Select Receiver</option>
+
 						<option th:each="admin : ${admins}" th:value="${admin.adminId}" th:text="${admin.name}"></option>
-						<!-- Guides -->
+
 						<option th:each="guide : ${guides}"
 								th:value="${guide.guideId}"
 								th:text="${unreadCounts[guide.guideId] != null ? '🔴 ' + guide.name : guide.name}">
 						</option>
 
-						<!-- Interns -->
 						<option th:each="intern : ${interns}"
 								th:value="${intern.internId}"
 								th:text="${unreadCounts[intern.internId] != null ? '🔴 ' + intern.firstName : intern.firstName}">
 						</option>
-						<!--						<option th:each="group : ${groups}" th:value="${group.groupId}" th:text="${group.groupId}"></option>-->
 					</select>
 
-					<input id="messageInput" type="text" placeholder="Type your message..." required>
-					<button id="sendMessage"><i class="fa fa-paper-plane"></i></button>
-				</div>
+					<input id="messageInput" name="messageText" type="text" placeholder="Type your message..." required>
+					<input type="file" id="fileInput" name="file">
+					<button type="submit" id="sendMessage"><i class="fa fa-paper-plane"></i></button>
+				</form>
 			</div>
 		</div>
 	</div>
 
-	<!-- Include footer -->
 	<div th:replace="fragments/footerFragment :: footer"></div>
 </main>
 
 <script>
 	document.addEventListener("DOMContentLoaded", function () {
 		const messageContainer = document.getElementById("messageContainer");
-		const messageInput = document.getElementById("messageInput");
-		const sendMessageBtn = document.getElementById("sendMessage");
+		const messageForm = document.getElementById("messageForm");
 		const receiverId = document.getElementById("receiverId");
+		const messageInput = document.getElementById("messageInput");
+		const fileInput = document.getElementById("fileInput");
 
-		// Fetch the logged-in admin's ID dynamically
 		const senderId = "[[${loggedInAdmin != null ? loggedInAdmin.adminId : ''}]]";
 
 		function loadMessages() {
@@ -117,47 +126,51 @@
 
 						messages.forEach(message => {
 							const messageDiv = document.createElement("div");
+							messageDiv.classList.add(message.senderId === senderId ? "sender" : "receiver");
 
-							// Check if message is sent by the logged-in admin
-							if (message.senderId === senderId) {
-								messageDiv.classList.add("sender");
-							} else {
-								messageDiv.classList.add("receiver");
+							let content = `<p>${message.messageText || ''}</p>`;
+							if (message.filePath && message.originalFileName) {
+								content += `<p><a href="/bisag/admin/chat/view?filePath=${message.filePath}" target="_blank">${message.originalFileName}</a></p>`;
 							}
 
-							messageDiv.innerHTML = `<p>${message.messageText}</p>`;
+							messageDiv.innerHTML = content;
 							messageContainer.appendChild(messageDiv);
 						});
 
-						// Auto-scroll to the latest message
 						messageContainer.scrollTop = messageContainer.scrollHeight;
 					})
 					.catch(error => console.error("Error loading messages:", error));
 		}
 
-		// Send message function
-		sendMessageBtn.addEventListener("click", function () {
-			const messageText = messageInput.value.trim();
+		messageForm.addEventListener("submit", function (event) {
+			event.preventDefault();
+
 			const receiver = receiverId.value;
-			if (!messageText || !receiver) return;
+			const messageText = messageInput.value.trim();
+			const file = fileInput.files[0];
+
+			if (!receiver || (!messageText && !file)) return;
+
+			const formData = new FormData();
+			formData.append("receiverId", receiver);
+			formData.append("messageText", messageText);
+			if (file) {
+				formData.append("file", file);
+			}
 
 			fetch("/bisag/admin/chat/send", {
 				method: "POST",
-				headers: { "Content-Type": "application/x-www-form-urlencoded" },
-				body: new URLSearchParams({ receiverId: receiver, messageText })
+				body: formData
 			}).then(response => {
 				if (response.ok) {
 					loadMessages();
+					messageInput.value = "";
+					fileInput.value = "";
 				}
 			});
-
-			messageInput.value = "";
 		});
 
-		// Auto-refresh chat every 3 seconds
-		setInterval(loadMessages, 3000);
-
-		// Load messages when receiver is selected
+		setInterval(loadMessages, 30000);
 		receiverId.addEventListener("change", loadMessages);
 	});
 </script>

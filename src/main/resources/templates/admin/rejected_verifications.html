@@ -22,7 +22,33 @@
       </ol>
     </nav>
   </div>
-
+  <input type="text" class="mb-4" id="searchInput" placeholder="Search...">
+  <form method="get" th:action="@{/bisag/admin/rejected-verifications}" class="mb-3 d-flex align-items-end gap-2">
+    <div>
+      <label for="startDate">Start Date:</label>
+      <input type="date" id="startDate" name="startDate" class="form-control"
+             th:value="${startDate}">
+    </div>
+    <div>
+      <label for="endDate">End Date:</label>
+      <input type="date" id="endDate" name="endDate" class="form-control"
+             th:value="${endDate}">
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <button type="submit" class="btn btn-primary form-control">Filter</button>
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <a th:href="@{/bisag/admin/rejected-verifications}" class="btn btn-secondary form-control">Reset</a>
+    </div>
+    <div class="col-md-3 d-flex align-items-end justify-content-end">
+      <div class="form-check mt-2">
+        <input class="form-check-input" type="checkbox" name="showAll" th:checked="${showAll}" onchange="this.form.submit()">
+        <label class="form-check-label">Show All</label>
+      </div>
+    </div>
+  </form>
   <section class="section">
     <div class="card">
       <div class="card-body">
@@ -32,7 +58,6 @@
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
 
-        <!-- Error Message -->
         <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
           <span th:text="${error}"></span>
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -62,6 +87,29 @@
           </tr>
           </tbody>
         </table>
+        <div th:if="${!showAll}" class="d-flex justify-content-between align-items-center">
+          <div>
+            <p>Page <span th:text="${currentPage + 1}"></span> of <span th:text="${totalPages}"></span></p>
+          </div>
+          <div>
+            <ul class="pagination mb-0">
+              <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/bisag/admin/rejected-verifications(page=${currentPage - 1}, startDate=${startDate}, endDate=${endDate}, showAll=${showAll})}">Previous</a>
+              </li>
+              <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                  th:classappend="${i == currentPage} ? 'active'">
+                <a class="page-link"
+                   th:href="@{/bisag/admin/rejected-verifications(page=${i}, startDate=${startDate}, endDate=${endDate}, showAll=${showAll})}"
+                   th:text="${i + 1}"></a>
+              </li>
+              <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/bisag/admin/rejected-verifications(page=${currentPage + 1}, startDate=${startDate}, endDate=${endDate}, showAll=${showAll})}">Next</a>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -144,6 +192,31 @@
     const filename = `Rejected Verifications.pdf`;
     doc.save(filename);
   }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var searchInput = document.getElementById('searchInput');
+    var tableRows = document.querySelectorAll('.table tbody tr');
+
+    searchInput.addEventListener('input', function(event) {
+      var searchText = event.target.value.toLowerCase().trim();
+
+      tableRows.forEach(function(row) {
+        var isVisible = false;
+        row.querySelectorAll('td').forEach(function(cell) {
+          var cellText = cell.textContent.toLowerCase();
+          if (cellText.includes(searchText)) {
+            isVisible = true;
+          }
+        });
+
+        if (isVisible) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  });
 </script>
 </body>
 </html>

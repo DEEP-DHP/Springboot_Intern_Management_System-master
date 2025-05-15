@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Information Security Agreement</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+        crossorigin="anonymous">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      line-height: 1.6;
+    }
+
+    .intern-name {
+      text-align: left;
+      font-weight: bold;
+      font-size: 20px;
+      margin-bottom: 30px;
+    }
+
+    .designation {
+      text-align: left;
+      font-weight: bold;
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+
+    .agreement-section {
+      margin-bottom: 25px;
+    }
+
+    .section-title {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 10px;
+      text-align: left;
+    }
+
+    .indented {
+      text-indent: 50px;
+    }
+
+    .last-line-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-top: 40px;
+    }
+
+    .last-line {
+      font-weight: bold;
+    }
+
+    .approved-section {
+      text-align: right;
+    }
+
+    .signature-line {
+      border-bottom: 1px solid #000;
+      width: 150px;
+      height: 30px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="text-center mb-4">
+    <h3><b>Information Security Agreement for Critical Activities</b></h3>
+    <h5><b>Part-I</b></h5>
+  </div>
+  <div class="intern-name">
+    Name of Employee/Participant: <span th:text="${intern.firstName}"></span>
+  </div>
+  <div class="designation">
+    Designation: <span th:text="Intern"></span>
+  </div>
+
+  <div class="agreement-section">
+    <p>
+    You are being allocated the duty of <b><u>Intern</u></b> at BISAG-N Gandhinagar with effect from <b><u><span th:text="${#dates.format(intern.joiningDate, 'dd-MM-yyyy')}"></span></u></b>. This is very critical activity and need special care while handling confidential data. BISAG-N is an ISO 9001, ISO27001 (Quality & Information Security) and CMMI Level-5 compliant organization and you are therefore required to protect the information. As a matter of compliance to above requirement please read/understand & agree to the following terms & condition:
+    </p>
+  </div>
+
+  <div class="agreement-section">
+    <div class="section-title">Definitions:</div>
+    <p class="indented">
+     For the sake of this Declaration of Secrecy, "Information" means any and all the information disclosed to you verbally, electronically, visually or in a written or other tangible form which is either identified or should be reasonably understood by you to be Sensitive, confidential or proprietary.
+    </p>
+  </div>
+
+  <div class="agreement-section">
+    <p>
+      Information includes, but is not limited to any aspect relating to anyone's personal and/or professional situation, and/or operational- or project matters, including but not limited to contracts, drawings, maps, correspondence, computer programs, third party confidential information, user list, information on ownership and project secrets such as software, formulas, data, inventions, technical installation techniques, project plans, strategies forecasts, processing methods, project, exam papers and developments analysis and/or calculations.
+    </p>
+  </div>
+
+  <div class="agreement-section">
+    <div class="section-title">Terms & Conditions:</div>
+    <p class="indented">
+     This declaration of confidentiality applies to any information or situation revealed to you concerning BISAG-N Projects/Information, BISAG-N's employees, government agencies, suppliers and associates.
+    </p>
+  </div>
+
+  <div class="agreement-section">
+    <p class="indented">Subject to your work description as well as instructions given by your superior(s), you agree not to disclose, deliver, make known to anyone, or in any way make unauthorized use of, any information made known to you through your work or in any way i connection with BISAG-N.</p>
+    <p class="indented">You will take all reasonable precautions to protect against unauthorized use of information. You undertake to abide by this declaration of secrecy prior, during and after your engagement in above critical activities at BISAG-N.</p>
+    <p class="indented">This declaration of confidentiality shall be governed by and constructed in accordance with the laws of India/Gujarat. You hereby declare that you are aware that it is illegal to make unauthorized use of organization secrets as well as personnel records and information contained herein.</p>
+  </div>
+
+  <div class="text-center mb-4">
+  <h5><b>Part-II</b></h5>
+  </div>
+
+  <div class="agreement-section">
+    <div class="section-title">Declaration:</div>
+    <ol>
+      <li>I hereby undertake to comply with the above information security secrecy requirements for this critical activity according to law and BISAG-N's policy.</li>
+      <li>I will be careful to ensure that my act of negligence do not jeopardize the security issues related to confidentiality, integrity and availability of information for this critical activity.</li>
+      <li>I will understand my role and responsibilities related to information security and ensure I play my role effectively to protect information.</li>
+      <li>I will be responsible to ensure to promptly report any information security weaknesses which come to my notice.</li>
+      <li>Except as may be required by law, I will treat all information as "strictly confidential" and will not disclose to any third party without prior written consent of BISAG-N authorities, any information which comes into my possession.</li>
+      <li>I have understood that I may be subjected to disciplinary process if any deviation of information security compromise is attributed to my/my acts/my behaviors intentionally or unintentionally.</li>
+    </ol>
+  </div>
+
+  <div class="approved-section">
+    <div>Approved By:</div>
+    <div>
+      <img th:src="@{'/bisag/admin/admin_sign/' + ${admin.adminId}}"
+           alt="Signature"
+           style="max-height: 80px;" />
+      <div th:if="${admin.digitalSignaturePath == null}" style="font-style: italic; color: gray;">
+        No signature uploaded
+      </div>
+    </div>
+  </div>
+  <b><u>Date: <span th:text="${#dates.format(intern.joiningDate, 'dd-MM-yyyy')}"></span></u></b><br>
+  <div class="d-flex align-items-center mt-4">
+    <b class="me-3">Signature of Employee/Participant:</b>
+    <img th:src="@{'/bisag/admin/intern_sign/' + ${intern.internId}}"
+         alt="Signature"
+         style="height: 90px; border: 1px solid #ccc;" />
+  </div>
+  <b class="me-3">Form No: FR-GN-116 R02</b>
+</div>
+<button onclick="downloadPDF()" class="btn btn-success">Download PDF</button>
+
+<script>
+  async function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const icardElement = document.querySelector('.container');
+    html2canvas(icardElement, {
+      useCORS: true,
+      scale: 2
+    }).then(canvas => {
+      const imgData = canvas.toDataURL('image/jpeg');
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth - 40;
+      const scaleFactor = 1.25; // Increase visual size
+      const imgHeight = (canvas.height * imgWidth / canvas.width) * scaleFactor;
+      let position = 20;
+
+      if (imgHeight > pageHeight) {
+        let heightLeft = imgHeight;
+        while (heightLeft > 0) {
+          pdf.addImage(imgData, 'JPEG', 20, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+          if (heightLeft > 0) {
+            pdf.addPage();
+            position = 0;
+          }
+        }
+      } else {
+        pdf.addImage(imgData, 'JPEG', 20, position, imgWidth, imgHeight);
+      }
+
+      pdf.save('Intern Security Agreement.pdf');
+    });
+  }
+</script>
+</body>
+</html>

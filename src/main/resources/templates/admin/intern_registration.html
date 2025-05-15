@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Intern Registration Form</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        .registration-form {
+            font-size: 16px; /* Bigger text */
+            line-height: 1.6;
+            padding: 30px;
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .info-section {
+            margin-bottom: 15px;
+        }
+
+        .info-label {
+            font-weight: bold;
+        }
+
+        .header-text {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .signature-section {
+            margin-top: 30px;
+        }
+
+        .photo {
+            height: 100px;
+            width: 100px;
+            border: 1px solid #aaa;
+            object-fit: cover;
+        }
+
+        .label-value {
+            margin-left: 10px;
+            font-weight: normal;
+        }
+
+        .underline {
+            border-bottom: 1px solid black;
+            display: inline-block;
+            min-width: 150px;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-4 registration-form">
+    <div class="header-text">
+        <h2><b>Registration Form</b></h2>
+        <h4><b>Bhaskaracharya National Institute for Space Applications and Geo-informatics</b></h4>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">Registration No:</span> <span class="label-value" th:text="${intern.internId}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">Name:</span> <span class="label-value" th:text="${intern.firstName}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">Gender:</span> <span class="label-value" th:text="${intern.gender}"></span>
+    </div>
+    <div class="info-section">
+        <span class="info-label ms-5">Date of Birth:</span> <span class="label-value" th:text="${#dates.format(intern.dateOfBirth, 'dd-MM-yyyy')}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">Permanent Address:</span> <span class="label-value" th:text="${intern.permanentAddress}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">Contact No:</span> <span class="label-value" th:text="${intern.contactNo}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label ms-5">Email ID:</span> <span class="label-value" th:text="${intern.email}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">College Name:</span> <span class="label-value" th:text="${intern.collegeName}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">College Guide/HOD Name:</span> <span class="label-value" th:text="${intern.collegeGuideHodName}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">Degree:</span> <span class="label-value" th:text="${intern.degree}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label ms-5">Aggregate Percentage:</span> <span class="label-value" th:text="${intern.aggregatePercentage}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">Project Definition Name:</span> <span class="label-value" th:text="${intern.projectDefinitionName}"></span>
+
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">BISAG-N's Project Guide Name:</span>
+        <span class="label-value" th:text="${intern.group != null && intern.group.guide != null ? intern.group.guide.name : 'N/A'}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">Programming Language Name:</span> <span class="label-value" th:text="${intern.domain}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">Joining Date(DD-MM-YYYY):</span> <span class="label-value" th:text="${#dates.format(intern.joiningDate, 'dd-MM-yyyy')}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label ms-5">Completion Date(DD-MM-YYYY):</span> <span class="label-value" th:text="${#dates.format(intern.completionDate, 'dd-MM-yyyy')}"></span>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">Used Resource:</span> <span class="label-value" th:text="${intern.usedResource}"></span>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-start mt-5" style="width: 100%;">
+        <!-- Student Signature -->
+        <div class="signature-section">
+            <span class="info-label"><b>Student's Signature:</b></span><br>
+            <img th:src="@{'/bisag/admin/intern_sign/' + ${intern.internId}}"
+                 alt="Signature"
+                 class="mt-2"
+                 style="height: 90px; border: 1px solid #ccc;" />
+        </div>
+
+        <!-- Approved By Signature -->
+        <div class="approved-section text-end">
+            <span class="info-label"><b>Approved By:</b></span><br>
+            <img th:src="@{'/bisag/admin/admin_sign/' + ${admin.adminId}}"
+                 alt="Signature"
+                 class="mt-2"
+                 style="height: 90px; border: 1px solid #ccc;" />
+            <div th:if="${admin.digitalSignaturePath == null}" style="font-style: italic; color: gray;">
+                No signature uploaded
+            </div>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <span class="info-label">Form No: FR-ACA-113 R03</span>
+    </div>
+</div>
+<div class="text-end mb-3">
+    <button onclick="downloadPDF()" class="btn btn-primary">Download PDF</button>
+</div>
+<script>
+    async function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const content = document.querySelector('.registration-form');
+
+        const canvas = await html2canvas(content, {
+            scale: 1.5,
+            useCORS: true,
+            scrollY: -window.scrollY // ensures it captures full content above the fold
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.9); // JPEG smaller than PNG
+        const pdf = new jsPDF('p', 'mm', 'a4');
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+
+        const imgProps = pdf.getImageProperties(imgData);
+        const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+            position -= pdfHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+            heightLeft -= pdfHeight;
+        }
+
+        pdf.save('Intern_Registration_Form.pdf');
+    }
+</script>
+</body>
+</html>

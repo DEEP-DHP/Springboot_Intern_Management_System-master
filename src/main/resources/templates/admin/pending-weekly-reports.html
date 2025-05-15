@@ -24,6 +24,10 @@
   <section class="section">
     <input type="text" class="mb-4" id="searchInput"
            placeholder="Search...">
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+      <span th:text="${success}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
     <div class="card">
       <div class="card-body">
         <h5 class="card-title">List of Pending Weekly Reports</h5>
@@ -34,6 +38,7 @@
             <th>Group ID</th>
             <th>Week Number</th>
             <th>Status</th>
+            <th>Action</th>
           </tr>
           </thead>
           <tbody>
@@ -44,12 +49,43 @@
               <span class="text-danger fw-bold" th:if="${entry.value == 1}">Not Submitted Any Report</span>
               <span class="accessibility-issue--warn" th:unless="${entry.value == 1}">Overdue</span>
             </td>
+            <td>
+              <form th:action="@{/bisag/admin/weekly-reports/send-alert}" method="post">
+                <input type="hidden" name="groupId" th:value="${entry.key}" />
+                <input type="hidden" name="weekNumber" th:value="${entry.value}" />
+                <button type="submit" class="btn btn-warning btn-sm">Send Alert</button>
+              </form>
+            </td>
           </tr>
           <tr th:if="${pendingReports.isEmpty()}">
             <td colspan="3" class="text-center text-muted">No pending reports found.</td>
           </tr>
           </tbody>
         </table>
+        <!-- Pagination Controls -->
+        <div class="d-flex justify-content-center my-4">
+          <nav>
+            <ul class="pagination pagination-sm">
+              <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                <a class="page-link" th:href="@{/bisag/admin/weekly-reports/pending(page=${prevPage})}" aria-label="Previous">
+                  <span aria-hidden="true">&laquo; Prev</span>
+                </a>
+              </li>
+
+              <li class="page-item disabled">
+                <a class="page-link bg-light text-dark border-0" href="#">
+                  Page <span th:text="${currentPage + 1}"></span> of <span th:text="${totalPages}"></span>
+                </a>
+              </li>
+
+              <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                <a class="page-link" th:href="@{/bisag/admin/weekly-reports/pending(page=${nextPage})}" aria-label="Next">
+                  <span aria-hidden="true">Next &raquo;</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
       </div>
     </div>
   </section>

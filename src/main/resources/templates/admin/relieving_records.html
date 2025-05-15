@@ -30,13 +30,8 @@
     </style>
 </head>
 <body>
-
-<!-- Include the header fragment -->
-<div th:replace="fragments/headerFragment :: header"></div>
-
-<!-- Include the aside fragment -->
-<div th:replace="fragments/asideFragment :: aside"></div>
-
+<th:block th:replace="~{fragments/headerFragment :: header}"></th:block>
+<th:block th:replace="~{fragments/asideFragment :: aside}"></th:block>
 <main id="main" class="main">
 
     <div class="pagetitle">
@@ -290,6 +285,15 @@
                                                th:checked="${record != null and record.finalReport == 'Yes'}"> Yes
                                         <input type="radio" name="finalReport" value="No" required
                                                th:checked="${record != null and record.finalReport == 'No'}"> No
+                                    </div>
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label>Send To Accountant:</label>
+                                    <div class="radio-group">
+                                        <input type="radio" name="sendAccount" value="Yes" required
+                                               th:checked="${record != null and record.sendAccount == 'Yes'}"> Yes
+                                        <input type="radio" name="sendAccount" value="No" required
+                                               th:checked="${record != null and record.sendAccount == 'No'}"> No
                                     </div>
                                 </div>
                                 <div class="col-md-6 form-group">

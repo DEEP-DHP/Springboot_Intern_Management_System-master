@@ -104,6 +104,29 @@
       <div class="col-lg-12">
         <input type="text" class="mb-4" id="searchInput"
                placeholder="Search...">
+        <form th:action="@{/bisag/admin/pending_leaves}" method="get" class="row g-2 align-items-center mb-3">
+          <div class="col-auto">
+            <label for="startDate" class="col-form-label">From:</label>
+          </div>
+          <div class="col-auto">
+            <input type="date" id="startDate" name="startDate" th:value="${startDate}" class="form-control">
+          </div>
+
+          <div class="col-auto">
+            <label for="endDate" class="col-form-label">To:</label>
+          </div>
+          <div class="col-auto">
+            <input type="date" id="endDate" name="endDate" th:value="${endDate}" class="form-control">
+          </div>
+
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Filter</button>
+          </div>
+
+          <div class="col-auto">
+            <a th:href="@{/bisag/admin/pending_leaves}" class="btn btn-secondary">Reset</a>
+          </div>
+        </form>
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">List of Pending Leave Requests</h5>
@@ -117,9 +140,10 @@
                 <th>ID</th>
                 <th>Intern ID</th>
                 <th>Intern Name</th>
+                <th>Guide</th>
                 <th>From Date</th>
                 <th>To Date</th>
-                <th>Subject</th>
+                <th>Reason</th>
                 <th>Type</th>
                 <th>Status</th>
                 <th>Guide Approval</th>
@@ -136,6 +160,7 @@
                 </td>
                 <td th:text="${leave.internId}"></td>
                 <td th:text="${internNames[leave.internId]}"></td>
+                <td th:text="${guideNames[leave.internId]}"></td>
                 <td th:text="${#temporals.format(leave.fromDate, 'dd-MM-yyyy')}"></td>
                 <td th:text="${#temporals.format(leave.toDate, 'dd-MM-yyyy')}"></td>
                 <td th:text="${leave.subject}"></td>

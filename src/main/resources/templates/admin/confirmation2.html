@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Confirmation Letter</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 2.54cm;
+    }
+    body {
+      font-family: "Times New Roman", sans-serif;
+      line-height: 1.6;
+      font-size: 20px;
+    }
+    h1 {
+      text-align: center;
+      /*text-decoration: underline;*/
+      font-size: 3em;
+    }
+    .date {
+      text-align: right;
+      margin-bottom: 20px;
+    }
+    .subject {
+      /*font-weight: bold;*/
+      /*text-decoration: underline;*/
+      font-size: 1.5em;
+      text-align: left;
+    }
+    .content {
+      margin-bottom: 30px;
+      font-size: 1em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+      font-size: 1em;
+    }
+    th, td {
+      border: 1px solid black;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .signature {
+      margin-top: 230px;
+      font-size: 1em;
+    }
+    #downloadBtn {
+      margin-bottom: 20px;
+      padding: 10px 20px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    .sr-col {
+      width: 80px;
+      text-align: center;
+    }
+    .page-content {
+      padding: 2cm;
+      border: 1px solid transparent;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+<button id="downloadBtn">Download as PDF</button>
+<div class="page-content">
+  <h1>Bhaskaracharya National Institute for Space Applications & Geo-Informatics (BISAG-N)</h1>
+  <div class="date">
+    <b><u><p>Date: <span th:text="${#temporals.format(currentDate, 'dd-MM-yyyy')}"></span></p></u></b>
+  </div>
+  <p class="subject"><b>Subject:</b> Confirmation of an Internship at BISAG-N, Gandhinagar</p>
+  <div class="content">
+    <p>Dear <span th:text="${interns[0]?.firstName}"></span>,</p>
+    <p>We are pleased to confirm your internship at BISAG-N, Gandhinagar in Physical Mode Only, as per the organization's terms and conditions. Based on the No Objection Certificate (NOC) provided by your college <span th:text="${interns[0]?.collegeName}"></span>, your internship period is from
+      <b><u><span th:text="${#dates.format(interns[0]?.joiningDate, 'dd-MM-yyyy')}"></span></u></b> to
+      <b><u><span th:text="${#dates.format(interns[0]?.completionDate, 'dd-MM-yyyy')}"></span></u></b>.
+    </p>
+    <p>Your internship will be in the area of <b><span th:text="${interns[0]?.domain}"></span></b>, and we look forward to your active participation and valuable
+      contributions during this period.</p>
+  </div>
+  <p>Please ensure adherence to the organization’s policies and guidelines throughout your internship.</p>
+  <span>Best Regards</span>
+
+  <div class="signature">
+    <p>________________________</p>
+    <b><p>Training Cell</p>
+      <p>BISAG-N, Gandhinagar</p></b>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.0/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+  document.getElementById('downloadBtn').addEventListener('click', function () {
+    const downloadBtn = document.getElementById('downloadBtn');
+    downloadBtn.style.display = 'none'; // Hide the button
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+      h1 { font-size: 46px !important; }
+      p.subject { font-size: 40px !important; }
+      body *:not(h1):not(p.subject) { font-size: 40px !important; }
+      p { text-align: justify !important; }
+      body { margin: 0 !important; padding: 0 !important; }
+    `;
+    document.head.appendChild(style);
+
+    html2canvas(document.body, {
+      scale: 1,
+      useCORS: true
+    }).then(function (canvas) {
+      const pdf = new jspdf.jsPDF('portrait', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/jpeg', 0.6);
+
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 25.4; // 2.54 cm in mm
+      const imgWidth = pageWidth - 2 * margin;
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = margin;
+
+      pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+      heightLeft -= (pageHeight - 2 * margin);
+
+      while (heightLeft > 0) {
+        pdf.addPage();
+        position = margin - (imgHeight - heightLeft);
+        pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+        heightLeft -= (pageHeight - 2 * margin);
+      }
+
+      pdf.save('Confirmation Letter.pdf');
+      downloadBtn.style.display = 'block';
+      document.head.removeChild(style);
+    });
+  });
+</script>
+</body>
+</html>

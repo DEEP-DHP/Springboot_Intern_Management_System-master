@@ -99,6 +99,7 @@
 		<thead>
 		<tr>
 			<th>Group ID</th>
+			<th>Guide</th>
 			<th>Intern(s)</th>
 			<th>Domain</th>
 			<th>Reports</th>
@@ -106,10 +107,10 @@
 		</tr>
 		</thead>
 		<tbody>
-		<!-- ... Your existing HTML code ... -->
 
 		<tr th:each="group : ${groups}" th:if="${group.finalReportStatus == 'gapproved'}">
 			<td th:text="${group.groupId}"></td>
+			<td th:text="${group.guide != null ? group.guide.name : 'N/A'}"></td>
 			<td>
 				<span th:each="intern : ${interns}"
 					  th:if="${intern.group != null and intern.group.groupId == group.groupId}"
@@ -150,46 +151,67 @@
 	</table>
 
 	<h4 class="text-primary fw-bold mt-4 mb-3">Approved Final Reports</h4>
+	<input type="text" class="mb-4" id="searchInput" placeholder="Search...">
+
 	<div>
 		<a th:if="${!showAll}"
-		   class="btn btn-outline-primary btn-sm"
+		   class="btn btn-primary btn-sm"
 		   th:href="@{'/bisag/admin/admin_pending_final_reports'(showAll=true)}">
 			Show All
 		</a>
 
 		<a th:if="${showAll}"
-		   class="btn btn-outline-secondary btn-sm"
+		   class="btn btn-primary btn-sm"
 		   th:href="@{'/bisag/admin/admin_pending_final_reports'(showAll=false, page=0, size=${pageSize})}">
 			Show Paginated
 		</a>
 	</div>
+	<form th:action="@{/bisag/admin/admin_pending_final_reports}" method="get"
+		  class="d-flex align-items-center mb-3 flex-wrap">
+
+		<div class="form-group mb-0 mr-3 d-flex align-items-center">
+			<label for="startDate" class="mb-0 mr-2">Start Date:</label>
+			<input type="date" name="startDate" id="startDate" th:value="${startDate}" class="form-control"/>
+		</div>
+
+		<div class="form-group mb-0 mr-3 d-flex align-items-center">
+			<label for="endDate" class="mb-0 mr-2">End Date:</label>
+			<input type="date" name="endDate" id="endDate" th:value="${endDate}" class="form-control"/>
+		</div>
+
+		<button type="submit" class="btn btn-primary me-md-4">Filter</button>
+		<a th:href="@{/bisag/admin/admin_pending_final_reports(showAll=true)}" class="btn btn-secondary">Reset</a>
+
+	</form>
 	<table class="table dataTable">
 		<thead>
 		<tr>
 			<th>Group ID</th>
+			<th>Guide</th>
 			<th>Intern(s)</th>
 			<th>Guide Timestamp</th>
 			<th>Admin Timestamp</th>
+			<th>Report</th>
 		</tr>
 		</thead>
 		<tbody>
 		<tr th:each="group : ${approvedGroups}">
 			<td th:text="${group.groupId}"></td>
+			<td th:text="${group.guide != null ? group.guide.name : 'N/A'}"></td> <!-- Guide name -->
 			<td>
-				<span th:each="intern : ${interns}"
-					  th:if="${intern.group != null and intern.group.groupId == group.groupId}"
-					  th:text="${intern.firstName} + ' '" class="d-block"></span>
+			<span th:each="intern : ${interns}"
+		  th:if="${intern.group != null and intern.group.groupId == group.groupId}"
+		  th:text="${intern.firstName} + ' '"
+		  th:classappend="${intern.cancellationStatus == 'Cancelled'} ? 'text-danger d-block' : 'd-block'">
+			</span>
 			</td>
 			<td th:text="${#temporals.format(group.finalReportStatusUpdatedAt, 'dd-MM-yyyy HH:mm:ss')}"></td>
 			<td th:text="${#temporals.format(group.adminfinalReportStatusUpdatedAt, 'dd-MM-yyyy HH:mm:ss')}"></td>
+			<td><a th:href="@{'/bisag/admin/final_reports/' + ${group.groupId} + '/finalReport.pdf'}" target="_blank">Open Report</a></td>
 		</tr>
 		</tbody>
 	</table>
 	<div class="d-flex justify-content-between align-items-center mt-3">
-		<!-- Toggle Button -->
-
-
-		<!-- Pagination Controls -->
 		<div class="pagination-container" th:if="${!showAll and approvedTotalPages > 1}">
 			<nav>
 				<ul class="pagination justify-content-center mb-0">
@@ -247,6 +269,30 @@
 		}
 		return true;
 	}
+	document.addEventListener('DOMContentLoaded', function() {
+		var searchInput = document.getElementById('searchInput');
+		var tableRows = document.querySelectorAll('.table tbody tr');
+
+		searchInput.addEventListener('input', function(event) {
+			var searchText = event.target.value.toLowerCase().trim();
+
+			tableRows.forEach(function(row) {
+				var isVisible = false;
+				row.querySelectorAll('td').forEach(function(cell) {
+					var cellText = cell.textContent.toLowerCase();
+					if (cellText.includes(searchText)) {
+						isVisible = true;
+					}
+				});
+
+				if (isVisible) {
+					row.style.display = '';
+				} else {
+					row.style.display = 'none';
+				}
+			});
+		});
+	});
 </script>
 </body>
 </html>

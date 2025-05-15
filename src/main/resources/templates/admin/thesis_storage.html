@@ -98,10 +98,13 @@
                         <!-- End Upload Form -->
                         <!-- Thesis Table -->
                         <div class="table-responsive">
-                            <h5 class="card-title mt-4">Uploaded Theses</h5>
-                            <a th:href="@{/bisag/admin/thesis-storage(all=${!showAll})}" class="btn btn-secondary mb-3">
+                            <h5 class="card-title mt-4">Uploaded Thesis</h5>
+                            <a th:href="@{/bisag/admin/thesis-storage(all=${!#bools.isTrue(showAll)})}" class="btn btn-secondary mb-3">
                                 <span th:text="${showAll} ? 'Show Paginated' : 'Show All'"></span>
                             </a>
+                            <div>
+                                <p>Total Thesis: <span th:text="${theses.size()}"></span></p>
+                            </div>
                             <table class="table datatable table-bordered">
                                 <thead>
                                 <tr>
@@ -135,7 +138,7 @@
                                         </button>
                                         <button class="btn btn-danger btn-sm" th:id="'removeBtn_' + ${thesis.id}"
                                                 th:attr="onclick='removeInternId(' + ${thesis.id} + ')'" >
-                                            Remove
+                                            Remove Access
                                         </button>
                                         <form th:action="@{/bisag/admin/delete-thesis/{id}(id=${thesis.id})}" method="post"
                                               th:object="${thesis}" style="display:inline;"
@@ -146,18 +149,22 @@
                                 </tr>
                                 </tbody>
                             </table>
-                            <div th:if="${!showAll}">
+                            <div th:if="${!showAll} and ${currentPage != null} and ${totalPages != null} and ${pageSize != null}">
                                 <nav>
                                     <ul class="pagination justify-content-center">
                                         <li th:classappend="${currentPage == 0} ? 'disabled'">
-                                            <a class="page-link" th:href="@{/bisag/admin/thesis-storage(page=${currentPage - 1}, size=${pageSize})}">Previous</a>
+                                            <a class="page-link"
+                                               th:href="@{/bisag/admin/thesis-storage(page=${currentPage - 1}, size=${pageSize})}">Previous</a>
                                         </li>
                                         <li th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
                                             th:classappend="${i == currentPage} ? 'active'">
-                                            <a class="page-link" th:href="@{/bisag/admin/thesis-storage(page=${i}, size=${pageSize})}" th:text="${i + 1}"></a>
+                                            <a class="page-link"
+                                               th:href="@{/bisag/admin/thesis-storage(page=${i}, size=${pageSize})}"
+                                               th:text="${i + 1}"></a>
                                         </li>
                                         <li th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
-                                            <a class="page-link" th:href="@{/bisag/admin/thesis-storage(page=${currentPage + 1}, size=${pageSize})}">Next</a>
+                                            <a class="page-link"
+                                               th:href="@{/bisag/admin/thesis-storage(page=${currentPage + 1}, size=${pageSize})}">Next</a>
                                         </li>
                                     </ul>
                                 </nav>

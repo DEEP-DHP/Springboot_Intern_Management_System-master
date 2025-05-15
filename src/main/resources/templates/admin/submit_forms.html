@@ -19,17 +19,9 @@
 </head>
 
 <body>
-
-
-<!-- Include the header fragment -->
 <div th:replace="fragments/internHeaderFragment :: header"></div>
-
-<!-- Include the aside fragment -->
 <div th:replace="fragments/internAsideFragment :: aside"></div>
-
-
 <main id="main" class="main">
-
 	<div class="pagetitle">
 		<h1>Submit Forms</h1>
 		<nav>
@@ -39,8 +31,6 @@
 			</ol>
 		</nav>
 	</div>
-	<!-- End Page Title -->
-
 	<section class="section dashboard">
 		<div class="container mt-2">
 			<div class="card">
@@ -79,15 +69,7 @@
 			</div>
 		</div>
 	</section>
-
-
-	<!-- Include the footer fragment -->
 	<div th:replace="fragments/footerFragment :: footer"></div>
 </main>
-<!-- End #main -->
-
-
-
 </body>
-
 </html>

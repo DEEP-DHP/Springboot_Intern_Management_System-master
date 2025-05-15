@@ -125,8 +125,8 @@
               </div>
             </form>
             <form method="post" th:action="@{/bisag/admin/delete-visible-logs}" style="display: inline;">
-              <input type="hidden" name="startDate" th:value="${startDate}" />
-              <input type="hidden" name="endDate" th:value="${endDate}" />
+              <input type="hidden" name="startDate" th:value="${startDate != null ? startDate : ''}" />
+              <input type="hidden" name="endDate" th:value="${endDate != null ? endDate : ''}" />
               <button type="submit" class="btn btn-danger ms-2" onclick="return confirm('Are you sure you want to delete the logs?')">Delete Logs</button>
             </form>
             <button id="downloadCSV" class="btn btn-success ms-2">Download Excel</button>
@@ -136,10 +136,10 @@
             <!-- Toggle Button Form -->
             <form id="toggleForm" method="get" action="/bisag/admin/activity_logs">
               <input type="hidden" name="page" value="0" />
-              <input type="hidden" name="showAll" th:value="${!showAll}" id="showAllInput" />
+              <input type="hidden" name="showAll" th:value="${showAll != null ? !showAll : true}" id="showAllInput" />
 
               <button type="submit" class="btn btn-primary" id="toggleButton">
-                <span th:text="${showAll ? 'Show Paginated' : 'Show All Logs'}"></span>
+                <span th:text="${showAll != null and showAll ? 'Show Paginated' : 'Show All Logs'}"></span>
               </button>
             </form>
             <table class="table datatable table-bordered">

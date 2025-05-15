@@ -15,7 +15,8 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <style>
     body {
       display: block;
@@ -76,12 +77,30 @@
     <div class="row">
       <div class="col-lg-12">
         <input type="text" class="mb-4 form-control" id="searchInput" placeholder="Search...">
+        <form th:action="@{/bisag/admin/leave_history}" method="get" class="form-inline mb-3 d-flex flex-wrap align-items-center">
+          <div class="form-group me-2">
+            <label for="startDate" class="me-1">Start Date:</label>
+            <input type="date" name="startDate" id="startDate" th:value="${startDate}" class="form-control"/>
+          </div>
+          <div class="form-group me-2">
+            <label for="endDate" class="me-1">End Date:</label>
+            <input type="date" name="endDate" id="endDate" th:value="${endDate}" class="form-control"/>
+          </div>
+          <div class="form-group me-2">
+            <button type="submit" class="btn btn-primary me-2">Filter</button>
+            <a th:href="@{/bisag/admin/leave_history(showAll=true)}" class="btn btn-secondary">Show All</a>
+          </div>
+        </form>
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">List of Approved & Rejected Leave Applications</h5>
-            <a href="/bisag/admin/half_leave" class="btn btn-primary">
-              Half-Day Leaves
-            </a>
+            <div class="d-flex justify-content-start align-items-center gap-2 mb-3">
+              <a href="/bisag/admin/half_leave" class="btn btn-primary">
+                Half-Day Leaves
+              </a>
+              <button class="btn btn-danger" onclick="downloadPDF()">Download PDF</button>
+              <button class="btn btn-success" onclick="downloadCSV()">Download CSV</button>
+            </div>
             <table class="table table-bordered">
               <thead>
               <tr>
@@ -104,8 +123,8 @@
                 <td th:text="${leave.internId}"></td>
                 <td th:text="${internIdToNameMap[leave.internId]}"></td>
                 <td th:text="${leave.leaveType}"></td>
-                <td th:text="${leave.fromDate}"></td>
-                <td th:text="${leave.toDate}"></td>
+                <td th:text="${#temporals.format(leave.fromDate, 'dd-MM-yyyy')}"></td>
+                <td th:text="${#temporals.format(leave.toDate, 'dd-MM-yyyy')}"></td>
                 <td th:text="${leave.subject}"></td>
                 <td th:text="${leave.guideApproval} ? '✔️ Yes' : '❌ No'"></td>
                 <td th:text="${leave.adminApproval} ? '✔️ Yes' : '❌ No'"></td>
@@ -114,7 +133,22 @@
               </tr>
               </tbody>
             </table>
-
+            <div th:if="${!showAll}">
+              <nav>
+                <ul class="pagination">
+                  <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                    <a class="page-link" th:href="@{/bisag/admin/leave_history(page=${currentPage - 1}, startDate=${startDate}, endDate=${endDate})}">Previous</a>
+                  </li>
+                  <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                      th:classappend="${i == currentPage} ? 'active'">
+                    <a class="page-link" th:href="@{/bisag/admin/leave_history(page=${i}, startDate=${startDate}, endDate=${endDate})}" th:text="${i + 1}"></a>
+                  </li>
+                  <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                    <a class="page-link" th:href="@{/bisag/admin/leave_history(page=${currentPage + 1}, startDate=${startDate}, endDate=${endDate})}">Next</a>
+                  </li>
+                </ul>
+              </nav>
+            </div>
           </div>
         </div>
       </div>
@@ -177,6 +211,43 @@
     });
   });
 </script>
+<script>
+  function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
+    doc.autoTable({
+      html: '.table',
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185] },
+      margin: { top: 10 }
+    });
+
+    doc.save("Leave History.pdf");
+  }
+
+  function downloadCSV() {
+    const rows = document.querySelectorAll(".table tr");
+    let csv = [];
+
+    rows.forEach(row => {
+      let cols = row.querySelectorAll("td, th");
+      let rowData = [];
+      cols.forEach(col => rowData.push('"' + col.innerText.replace(/"/g, '""') + '"'));
+      csv.push(rowData.join(","));
+    });
+
+    const csvString = csv.join("\n");
+    const blob = new Blob([csvString], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Leave History.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+</script>
 </body>
 </html>

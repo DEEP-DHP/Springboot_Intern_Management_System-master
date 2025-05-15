@@ -25,7 +25,27 @@
             </ol>
         </nav>
     </div>
-
+    <input type="text" class="mb-4" id="searchInput" placeholder="Search...">
+    <form method="get" action="#" class="row mb-3">
+        <div class="col-md-3">
+            <label for="startDate" class="form-label">Start Date</label>
+            <input type="date" id="startDate" name="startDate" class="form-control" th:value="${startDate}">
+        </div>
+        <div class="col-md-3">
+            <label for="endDate" class="form-label">End Date</label>
+            <input type="date" id="endDate" name="endDate" class="form-control" th:value="${endDate}">
+        </div>
+        <div class="col-md-3 d-flex align-items-end gap-2">
+            <button type="submit" class="btn btn-primary mt-2">Filter</button>
+            <a href="/bisag/admin/approved-verifications" class="btn btn-secondary mt-2">Reset</a>
+        </div>
+        <div class="col-md-3 d-flex align-items-end justify-content-end">
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" name="showAll" th:checked="${showAll}" onchange="this.form.submit()">
+                <label class="form-check-label">Show All</label>
+            </div>
+        </div>
+    </form>
     <section class="section">
         <div class="card">
             <div class="card-body">
@@ -67,6 +87,26 @@
                     </tr>
                     </tbody>
                 </table>
+                <div th:if="${!showAll}" class="mt-3 text-center">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                            <a class="page-link"
+                               th:href="@{|/bisag/admin/approved-verifications?page=${currentPage - 1}&startDate=${startDate}&endDate=${endDate}|}">Previous</a>
+                        </li>
+
+                        <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                            th:classappend="${i == currentPage} ? 'active'">
+                            <a class="page-link"
+                               th:href="@{|/bisag/admin/approved-verifications?page=${i}&startDate=${startDate}&endDate=${endDate}|}"
+                               th:text="${i + 1}"></a>
+                        </li>
+
+                        <li class="page-item" th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'">
+                            <a class="page-link"
+                               th:href="@{|/bisag/admin/approved-verifications?page=${currentPage + 1}&startDate=${startDate}&endDate=${endDate}|}">Next</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </section>
@@ -169,6 +209,31 @@
         const filename = `Approved Verifications.pdf`;
         doc.save(filename);
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var searchInput = document.getElementById('searchInput');
+        var tableRows = document.querySelectorAll('.table tbody tr');
+
+        searchInput.addEventListener('input', function(event) {
+            var searchText = event.target.value.toLowerCase().trim();
+
+            tableRows.forEach(function(row) {
+                var isVisible = false;
+                row.querySelectorAll('td').forEach(function(cell) {
+                    var cellText = cell.textContent.toLowerCase();
+                    if (cellText.includes(searchText)) {
+                        isVisible = true;
+                    }
+                });
+
+                if (isVisible) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
 </script>
 
 </body>

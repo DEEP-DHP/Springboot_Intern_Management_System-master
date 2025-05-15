@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Intern I-Card</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+        crossorigin="anonymous">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-transform: uppercase;
+    }
+    .icard {
+      width: 100%;
+      padding: 30px 60px;
+      margin: 0 auto;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 18px;
+      position: relative;
+      background-color: transparent;
+      box-shadow: none;
+      border: none;
+    }
+
+    .photo {
+      position: absolute;
+      top: 90px;
+      right: 30px;
+      width: 140px;
+      height: 160px;
+      border: 1px solid #000;
+      background-color: white;
+    }
+
+    .photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .info {
+      padding-right: 180px;
+    }
+
+    .field-label {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .text-center h5 {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .text-center h6 {
+      font-size: 18px;
+      text-decoration: underline;
+      margin-bottom: 25px;
+    }
+
+    button.btn-success {
+      display: block;
+      margin: 20px auto;
+      font-size: 18px;
+      padding: 10px 25px;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+<div class="icard">
+  <div class="text-center mb-4">
+    <h5>Bhaskaracharya National Institute for Space Applications and Geo-Informatics</h5>
+    <h6><strong>I-Card Application Form</strong></h6>
+  </div>
+  <div class="info">
+    <p><span class="field-label">Full Name:</span> <span th:text="${intern.firstName}"></span></p>
+    <p><span class="field-label">Permanent Address:</span> <span th:text="${intern.permanentAddress}"></span></p>
+    <p><span class="field-label">Contact No:</span> <span th:text="${intern.contactNo}"></span></p>
+    <p><span class="field-label">College Name:</span> <span th:text="${intern.collegeName}"></span></p>
+    <p><span class="field-label">Joining Date (in BISAG-N):</span>    <span th:text="${#dates.format(intern.joiningDate, 'dd-MM-yyyy')}"></span></p>
+    <p><span class="field-label">Completion Date:</span>    <span th:text="${#dates.format(intern.completionDate, 'dd-MM-yyyy')}"></span></p>
+    <p><span class="field-label">Project Name:</span> <span th:text="${intern.projectDefinitionName}"></span></p>
+    <p><span class="field-label">Project Guide Name:</span> <span th:text="${intern.group.guide.name}"></span></p>
+  </div>
+  <div class="photo">
+    <img th:src="@{'/bisag/admin/photo/' + ${intern.internId}}" alt="Photo">
+  </div>
+  <div style="position: absolute; bottom: 30px; right: 30px; text-align: center;">
+    <div style="width: 140px; height: 60px; border: 1px solid #000; background-color: #fff;">
+      <img th:src="@{'/bisag/admin/digital-sign/' + ${intern.internId}}" alt="Signature" style="width: 100%; height: 100%; object-fit: contain;">
+    </div>
+    <div style="margin-top: 5px; font-weight: bold; font-size: 14px;" th:text="${intern.firstName}"></div>
+  </div>
+  <p><b>Form No: FR-ACA-104 R03</b></p>
+
+</div>
+
+<button onclick="downloadPDF()" class="btn btn-success">Download PDF</button>
+
+<script>
+  async function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+
+    const icardElement = document.querySelector('.icard');
+
+    await html2canvas(icardElement, {
+      useCORS: true,
+      scale: 2
+    }).then(canvas => {
+      const imgData = canvas.toDataURL('image/jpeg');
+      const pdf = new jsPDF('p', 'pt', 'a4');
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const imgWidth = pageWidth - 40;
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+
+      pdf.addImage(imgData, 'JPEG', 20, 20, imgWidth, imgHeight);
+      pdf.save('Intern I-Card.pdf');
+    });
+  }
+</script>
+</body>
+</html>

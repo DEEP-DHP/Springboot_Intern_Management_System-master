@@ -58,15 +58,17 @@
     </style>
 </head>
 <body>
-<!-- Include the header fragment -->
-<div th:replace="fragments/headerFragment :: header"></div>
-
-<!-- Include the aside fragment -->
-<div th:replace="fragments/asideFragment :: aside"></div>
-
+<th:block th:replace="~{fragments/headerFragment :: header}"></th:block>
+<th:block th:replace="~{fragments/asideFragment :: aside}"></th:block>
 <main id="main" class="main">
     <div class="pagetitle">
         <h1>Intern Application Details</h1>
+    </div>
+    <div th:if="${successMessage}" class="alert alert-success" role="alert">
+        <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <span th:text="${errorMessage}"></span>
     </div>
     <div th:if="${intern.isPresent()}">
         <form action="update" method="post" class="needs-validation"

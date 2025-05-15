@@ -86,15 +86,9 @@
 </head>
 
 <body>
-
-<!-- Include the header fragment -->
 <div th:replace="fragments/headerFragment :: header"></div>
-
-<!-- Include the aside fragment -->
 <div th:replace="fragments/asideFragment :: aside"></div>
-
 <main id="main" class="main">
-
 	<div class="pagetitle">
 		<h1>Cancellation Requests</h1>
 		<nav>
@@ -123,6 +117,7 @@
 								<th><i class="fa-solid fa-sort mx-2"></i>Email</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>Contact</th>
 								<th><i class="fa-solid fa-sort mx-2"></i>College</th>
+								<th><i class="fa-solid fa-sort mx-2"></i>File</th>
 								<th>Actions</th>
 							</tr>
 							</thead>
@@ -135,7 +130,15 @@
 								<td th:text="${intern.group.groupId}"></td>
 								<td th:text="${intern.email}"></td>
 								<td th:text="${intern.contactNo}"></td>
-								<td th:text="${intern.email}"></td>
+								<td th:text="${intern.collegeName}"></td>
+								<td>
+									<a th:if="${intern.cancellationFilePath != null}"
+									   th:href="@{'/bisag/admin/cancellation-file/' + ${intern.internId}}"
+									   target="_blank" class="btn btn-sm btn-outline-primary">
+										View File
+									</a>
+									<span th:if="${intern.cancellationFilePath == null}" class="text-muted">No File</span>
+								</td>
 								<td>
 									<form action="/bisag/admin/cancellation_requests/ans"
 										  method="post">

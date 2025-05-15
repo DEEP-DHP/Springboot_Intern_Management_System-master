@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+  <title>Document Status List</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+        crossorigin="anonymous">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+
+  <style>
+    body {
+      display: block;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    a {
+      text-decoration: none;
+      color: white;
+    }
+
+    table {
+      width: 60%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      margin-top: 40px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    button {
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .button-container {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .button-container form {
+      display: inline-block;
+    }
+
+    #detailsButton {
+      background-color: #2196F3;
+      color: white;
+    }
+
+    #updateButton {
+      background-color: #4caf50;
+      color: white;
+    }
+
+    #deleteButton {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .table th {
+      cursor: pointer;
+      background-image: url('default-icon.png'); /* Default icon image */
+      background-size: 16px 16px; /* Adjust the size of the icon */
+      background-repeat: no-repeat;
+      background-position: right center;
+      padding-right: 20px; /* Add some padding to accommodate the icon */
+    }
+  </style>
+</head>
+
+<body>
+<div th:replace="fragments/headerFragment :: header"></div>
+<div th:replace="fragments/asideFragment :: aside"></div>
+<main id="main" class="main">
+  <div class="pagetitle">
+    <h1>Intern Document Status</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">Interns</li>
+        <li class="breadcrumb-item active">Documents Status</li>
+      </ol>
+    </nav>
+  </div>
+  <!-- End Page Title -->
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+        <input type="text" class="mb-4" id="searchInput" placeholder="Search...">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Intern Documents</h5>
+            <div class="mb-3">
+              <button class="btn btn-primary" onclick="exportTableToCSV()">Download Excel</button>
+              <button class="btn btn-danger" onclick="exportTableToPDF()">Download PDF</button>
+            </div>
+            <table class="table table-bordered">
+              <thead>
+              <tr>
+                <th>Intern ID</th>
+                <th>Intern Name</th>
+                <th>Registration Form</th>
+                <th>I-Card Form</th>
+                <th>Information Security Agreement</th>
+                <th>Security Form</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:each="intern : ${interns}">
+                <td><a
+                        th:href="@{'/bisag/admin/intern/' + ${intern.internId}}"><span
+                        th:text="${intern.internId}"></span></a></td>
+                <td th:text="${intern.firstName}"></td>
+                <td>
+                  <a th:if="${intern.profileUpdated == 1}"
+                     th:href="@{'/bisag/admin/intern_registration/' + ${intern.internId}}"
+                     th:text="'Submitted'"
+                     style="color:blue; text-decoration:underline;">
+                  </a>
+                  <span th:unless="${intern.profileUpdated == 1}">Pending</span>
+                </td>
+                <td>
+                  <a th:if="${intern.icardApproved}"
+                     th:href="@{'/bisag/admin/intern_icard/' + ${intern.internId}}"
+                     th:text="'Submitted'"
+                     style="color:blue; text-decoration:underline;">
+                  </a>
+                  <span th:unless="${intern.icardApproved}">Pending</span>
+                </td>
+                <td>
+                  <a th:if="${intern.securityApproved}"
+                     th:href="@{'/bisag/admin/security_agreement/' + ${intern.internId}}"
+                     th:text="'Submitted'"
+                     style="color:blue; text-decoration:underline;">
+                  </a>
+                  <span th:unless="${intern.securityApproved}">Pending</span>
+                </td>                <td>
+                <span th:if="${intern.securityFormApproved}"
+                      th:href="@{'/bisag/admin/security_form/' + ${intern.internId}}"
+                      th:text="'Submitted'"
+                      style="color:blue; text-decoration:underline; cursor:pointer;"
+                      onclick="window.location.href=this.getAttribute('href')"></span>
+                                <span th:unless="${intern.securityFormApproved}">Pending</span>
+                              </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div th:replace="fragments/footerFragment :: footer"></div>
+</main>
+<script
+        src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+  $(document)
+          .ready(
+                  function() {
+                    $('.table th').click(
+                            function() {
+                              var table = $(this).parents('table')
+                                      .eq(0);
+                              var rows = table.find('tr:gt(0)')
+                                      .toArray().sort(
+                                              comparer($(this)
+                                                      .index()));
+                              this.asc = !this.asc;
+                              if (!this.asc) {
+                                rows = rows.reverse();
+                              }
+                              for (var i = 0; i < rows.length; i++) {
+                                table.append(rows[i]);
+                              }
+                            });
+                    function comparer(index) {
+                      return function(a, b) {
+                        var valA = getCellValue(a, index), valB = getCellValue(
+                                b, index);
+                        return $.isNumeric(valA)
+                        && $.isNumeric(valB) ? valA - valB
+                                : valA.toString().localeCompare(
+                                        valB);
+                      };
+                    }
+                    function getCellValue(row, index) {
+                      return $(row).children('td').eq(index).text();
+                    }
+                  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var searchInput = document.getElementById('searchInput');
+    var tableRows = document.querySelectorAll('.table tbody tr');
+
+    searchInput.addEventListener('input', function(event) {
+      var searchText = event.target.value.toLowerCase().trim();
+
+      tableRows.forEach(function(row) {
+        var isVisible = false;
+        row.querySelectorAll('td').forEach(function(cell) {
+          var cellText = cell.textContent.toLowerCase();
+          if (cellText.includes(searchText)) {
+            isVisible = true;
+          }
+        });
+
+        if (isVisible) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+  function getCurrentTimestamp() {
+    const now = new Date();
+    const pad = (n) => n.toString().padStart(2, '0');
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+  }
+
+  function exportTableToCSV() {
+    const table = document.querySelector("table");
+    let csv = [];
+    const rows = table.querySelectorAll("tr");
+
+    for (let row of rows) {
+      let cols = row.querySelectorAll("td, th");
+      let rowData = Array.from(cols).map(col => `"${col.innerText.trim()}"`);
+      csv.push(rowData.join(","));
+    }
+
+    const csvContent = csv.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const filename = `Intern Document Status_${getCurrentTimestamp()}.csv`;
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  }
+
+  async function exportTableToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const table = document.querySelector("table");
+    const rows = table.querySelectorAll("tr");
+
+    let data = [];
+    for (let row of rows) {
+      let cols = row.querySelectorAll("td, th");
+      data.push(Array.from(cols).map(col => col.innerText.trim()));
+    }
+
+    const timestamp = getCurrentTimestamp();
+    doc.text(`Intern Form Status - ${timestamp}`, 14, 14);
+    doc.autoTable({
+      startY: 20,
+      head: [data[0]],
+      body: data.slice(1),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [41, 128, 185] }
+    });
+
+    doc.save(`Intern Document Status_${timestamp}.pdf`);
+  }
+</script>
+</body>
+
+</html>

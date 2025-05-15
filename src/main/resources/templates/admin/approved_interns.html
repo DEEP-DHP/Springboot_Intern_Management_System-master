@@ -79,22 +79,15 @@
 			background-size: 16px 16px; /* Adjust the size of the icon */
 			background-repeat: no-repeat;
 			background-position: right center;
-			/* Position the icon to the right center */
 			padding-right: 20px; /* Add some padding to accommodate the icon */
 		}
 	</style>
 </head>
 
 <body>
-
-<!-- Include the header fragment -->
-<div th:replace="fragments/headerFragment :: header"></div>
-
-<!-- Include the aside fragment -->
-<div th:replace="fragments/asideFragment :: aside"></div>
-
+<th:block th:replace="~{fragments/headerFragment :: header}"></th:block>
+<th:block th:replace="~{fragments/asideFragment :: aside}"></th:block>
 <main id="main" class="main">
-
 	<div class="pagetitle">
 		<h1>Shortlisted Interns</h1>
 		<nav>
@@ -104,7 +97,12 @@
 			</ol>
 		</nav>
 	</div>
-	<!-- End Page Title -->
+	<div th:if="${successMessage}" class="alert alert-success" role="alert">
+		<span th:text="${successMessage}"></span>
+	</div>
+	<div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+		<span th:text="${errorMessage}"></span>
+	</div>
 
 	<section class="section">
 		<div class="row">
@@ -113,7 +111,6 @@
 				<div class="card">
 					<div class="card-body">
 						<h5 class="card-title">Interview Pending Applications</h5>
-						<!-- Table with stripped rows -->
 						<table class="table datatable">
 							<thead>
 							<tr>
@@ -146,21 +143,15 @@
 
 			</div>
 		</div>
-
 	</section>
-
-
-	<!-- Include the footer fragment -->
 	<div th:replace="fragments/footerFragment :: footer"></div>
 </main>
-<!-- End #main -->
 <script
 		src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
 	$(document)
 			.ready(
 					function() {
-						// Add click event listener to table headers for sorting
 						$('.table th').click(
 								function() {
 									var table = $(this).parents('table')
@@ -177,8 +168,6 @@
 										table.append(rows[i]);
 									}
 								});
-
-						// Function to compare rows based on the selected column
 						function comparer(index) {
 							return function(a, b) {
 								var valA = getCellValue(a, index), valB = getCellValue(
@@ -189,8 +178,6 @@
 												valB);
 							};
 						}
-
-						// Function to get the value of a cell
 						function getCellValue(row, index) {
 							return $(row).children('td').eq(index).text();
 						}
@@ -222,8 +209,5 @@
 		});
 	});
 </script>
-
-
 </body>
-
 </html>
