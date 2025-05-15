@@ -12,9 +12,8 @@ public class Undertaking {
     @Column(name = "id")
     private Long id;
 
-    @Lob
-    @Column(name = "content")
-    private String content; // The rules and regulations
+    @Column(name = "file_path")
+    private String filePath;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -22,7 +21,7 @@ public class Undertaking {
     @Column(name = "intern_id", nullable = false)
     private String intern;
 
-    private boolean accepted;
+//    private boolean accepted;
 
     private LocalDateTime acceptedAt;
 
@@ -30,12 +29,12 @@ public class Undertaking {
         this.createdAt = LocalDateTime.now();
     }
 
-    public Undertaking(Long id, String content, LocalDateTime createdAt, String intern, boolean accepted, LocalDateTime acceptedAt) {
+    public Undertaking(Long id, String filePath, LocalDateTime createdAt, String intern, LocalDateTime acceptedAt) {
         this.id = id;
-        this.content = content;
+        this.filePath = filePath;
         this.createdAt = createdAt;
         this.intern = intern;
-        this.accepted = accepted;
+//        this.accepted = accepted;
         this.acceptedAt = acceptedAt;
     }
 
@@ -47,12 +46,12 @@ public class Undertaking {
         this.id = id;
     }
 
-    public String getContent() {
-        return content;
+    public String getFilePath() {
+        return filePath;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -71,13 +70,13 @@ public class Undertaking {
         this.intern = intern;
     }
 
-    public boolean isAccepted() {
-        return accepted;
-    }
+//    public boolean isAccepted() {
+//        return accepted;
+//    }
 
-    public void setAccepted(boolean accepted) {
-        this.accepted = accepted;
-    }
+//    public void setAccepted(boolean accepted) {
+//        this.accepted = accepted;
+//    }
 
     public LocalDateTime getAcceptedAt() {
         return acceptedAt;

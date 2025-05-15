@@ -1,6 +1,8 @@
 package com.rh4.entities;
 
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -22,17 +24,31 @@ public class Message {
 
     @Column(nullable = false)
     private Date timestamp;
+    @Column(nullable = false)
+    private boolean isRead = false;
+
+    private LocalDateTime readTimestamp;
+
+    @Column(name = "file_path")
+    private String filePath;
+
+    @Column(name = "original_file_name")
+    private String originalFileName;
 
     public Message() {
         this.timestamp = new Date();
     }
 
-    public Message(Long id, String senderId, String receiverId, String messageText, Date timestamp) {
+    public Message(Long id, String senderId, String receiverId, String messageText, Date timestamp, boolean isRead, LocalDateTime readTimestamp, String filePath, String originalFileName) {
         this.id = id;
         this.senderId = senderId;
         this.receiverId = receiverId;
         this.messageText = messageText;
         this.timestamp = timestamp;
+        this.isRead = isRead;
+        this.readTimestamp = readTimestamp;
+        this.filePath = filePath;
+        this.originalFileName = originalFileName;
     }
     public Long getId() {
         return id;
@@ -63,5 +79,29 @@ public class Message {
     }
     public void setTimestamp(Date timestamp) {
         this.timestamp = timestamp;
+    }
+    public boolean isRead() {
+        return isRead;
+    }
+    public void setRead(boolean read) {
+        isRead = read;
+    }
+    public LocalDateTime getReadTimestamp() {
+        return readTimestamp;
+    }
+    public void setReadTimestamp(LocalDateTime readTimestamp) {
+        this.readTimestamp = readTimestamp;
+    }
+    public String getFilePath() {
+        return filePath;
+    }
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+    public String getOriginalFileName() {
+        return originalFileName;
+    }
+    public void setOriginalFileName(String originalFileName) {
+        this.originalFileName = originalFileName;
     }
 }

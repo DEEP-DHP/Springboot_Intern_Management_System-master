@@ -94,9 +94,12 @@ public class RRecord {
     @Column(name = "submission_timestamp")
     private LocalDateTime submissionTimestamp;
 
+    @Column(name = "send_account")
+    private String sendAccount;
+
     public RRecord() { super(); }
 
-    public RRecord(Long id, String internId, String FirstName, String groupId, String collegeName, Date joiningDate, Date plannedDate, String password, String media, String project, String thesis, String others, String books, String subscription, String accessRights, String pendrives, String unusedCd, String backupProject, String system, String identityCards, String stipend, String information, String weeklyReport, String attendance, String endInteriew, String finalReport, LocalDateTime submissionTimestamp) {
+    public RRecord(Long id, String internId, String FirstName, String groupId, String collegeName, Date joiningDate, Date plannedDate, String password, String media, String project, String thesis, String others, String books, String subscription, String accessRights, String pendrives, String unusedCd, String backupProject, String system, String identityCards, String stipend, String information, String weeklyReport, String attendance, String endInteriew, String finalReport, LocalDateTime submissionTimestamp, String sendAccount) {
         this.id = id;
         this.internId = internId;
         this.FirstName = FirstName;
@@ -124,6 +127,7 @@ public class RRecord {
         this.endInteriew = endInteriew;
         this.finalReport = finalReport;
         this.submissionTimestamp = submissionTimestamp;
+        this.sendAccount = sendAccount;
     }
 
     public Long getId() {
@@ -338,5 +342,13 @@ public class RRecord {
 
     public void setSubmissionTimestamp(LocalDateTime submissionTimestamp) {
         this.submissionTimestamp = submissionTimestamp;
+    }
+
+    public String getSendAccount() {
+        return sendAccount;
+    }
+
+    public void setSendAccount(String sendAccount) {
+        this.sendAccount = sendAccount;
     }
 }

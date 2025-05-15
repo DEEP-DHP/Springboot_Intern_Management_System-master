@@ -1,6 +1,7 @@
 package com.rh4.entities;
 
 import java.beans.JavaBean;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 
@@ -48,13 +49,22 @@ public class GroupEntity {
 
 	@Column(name = "confirmation_letter_path")
 	private String confirmationLetterPath;
+
+	@Column(name = "final_report_status_updated_at")
+	private LocalDateTime finalReportStatusUpdatedAt;
+
+	@Column(name = "admin_final_report_status_updated_at")
+	private LocalDateTime AdminfinalReportStatusUpdatedAt;
+
+	@Column(name = "confirmation_timestamp")
+	private LocalDateTime confirmationTimestamp;
 		
    public GroupEntity() {
 			super();
 		}
   	
 	public GroupEntity(long id, String groupId, String projectDefinition, String description, byte[] finalReport, String finalReportStatus,
-		String projectDefinitionStatus, byte[] projectDefinitionDocument, String domain, Guide guide, String confirmationLetter, String confirmationLetterPath) {
+		String projectDefinitionStatus, byte[] projectDefinitionDocument, String domain, Guide guide, String confirmationLetter, String confirmationLetterPath, LocalDateTime finalReportStatusUpdatedAt, LocalDateTime AdminfinalReportStatusUpdatedAt, LocalDateTime confirmationTimestamp) {
 	super();
 	this.id = id;
 	this.groupId = groupId;
@@ -68,6 +78,9 @@ public class GroupEntity {
 	this.guide = guide;
 	this.confirmationLetter = confirmationLetter;
 	this.confirmationLetterPath = confirmationLetterPath;
+	this.finalReportStatusUpdatedAt = finalReportStatusUpdatedAt;
+	this.AdminfinalReportStatusUpdatedAt = AdminfinalReportStatusUpdatedAt;
+	this.confirmationTimestamp = confirmationTimestamp;
 }
 	public String getFinalReportStatus() {
 		return finalReportStatus;
@@ -164,5 +177,28 @@ public class GroupEntity {
 
 	public void setConfirmationLetterPath(String confirmationLetterPath) {
 		this.confirmationLetterPath = confirmationLetterPath;
+	}
+
+	public LocalDateTime getFinalReportStatusUpdatedAt() {
+		return finalReportStatusUpdatedAt;
+	}
+
+	public void setFinalReportStatusUpdatedAt(LocalDateTime finalReportStatusUpdatedAt) {
+		this.finalReportStatusUpdatedAt = finalReportStatusUpdatedAt;
+	}
+
+	public LocalDateTime getAdminfinalReportStatusUpdatedAt() {
+	   return AdminfinalReportStatusUpdatedAt;
+	}
+	public void setAdminfinalReportStatusUpdatedAt(LocalDateTime adminfinalReportStatusUpdatedAt) {
+	   this.AdminfinalReportStatusUpdatedAt = adminfinalReportStatusUpdatedAt;
+	}
+
+	public LocalDateTime getConfirmationTimestamp() {
+		return confirmationTimestamp;
+	}
+
+	public void setConfirmationTimestamp(LocalDateTime confirmationTimestamp) {
+		this.confirmationTimestamp = confirmationTimestamp;
 	}
 }

@@ -172,6 +172,34 @@ public class Intern {
         this.firstLogin = firstLogin;
     }
 
+    @Column(name = "profile_updated", nullable = false)
+    private int profileUpdated = 0;
+
+    @Lob
+    @Column(name = "sign", columnDefinition = "LONGBLOB")
+    private byte[] sign;
+
+    @Column(name = "icard_approved", nullable = false)
+    private boolean icardApproved = false;
+
+    @Column(name = "security_approved", nullable = false)
+    private boolean securityApproved = false;
+
+    @Column(name = "security_form_approved", nullable = false)
+    private boolean securityFormApproved = false;
+
+    @Column(name = "cancellation_file_path")
+    private String cancellationFilePath;
+
+    @Column(name = "alertMessage")
+    private String alertMessage;
+
+    @Column(name = "alertTimestamp")
+    private LocalDateTime alertTimestamp;
+
+    @Column(name = "alertSeen", nullable = false)
+    private int alertSeen = 0;
+
     public Intern() {
         super();
     }
@@ -180,7 +208,7 @@ public class Intern {
                   String collegeName, byte[] collegeIcardImage, byte[] nocPdf, byte[] projectDefinitionForm, byte[] extraForm, byte[] extraForm2, byte[] resumePdf, int semester,
                   String permanentAddress, Date dateOfBirth, String gender, String collegeGuideHodName, String degree, Double aggregatePercentage, String projectDefinitionName, String cancellationStatus,
                   Guide guide, String domain, Date joiningDate, Date completionDate, String password, byte[] icardForm, byte[] registrationForm, byte[] securityForm,
-                  String usedResource, LocalDateTime createdAt, LocalDateTime updatedAt, GroupEntity group, boolean isActive, String status, LocalDateTime cancelTime, boolean isCredentialsGenerated) {
+                  String usedResource, LocalDateTime createdAt, LocalDateTime updatedAt, GroupEntity group, boolean isActive, String status, LocalDateTime cancelTime, boolean isCredentialsGenerated, int profileUpdated, byte[] sign, boolean icardApproved, boolean securityApproved, boolean securityFormApproved, String cancellationFilePath, String alertMessage, LocalDateTime alertTimestamp, int alertSeen) {
         super();
         this.internId = internId;
         this.firstName = firstName;
@@ -220,6 +248,15 @@ public class Intern {
         this.status = status;
         this.cancelTime = cancelTime;
         this.isCredentialsGenerated = isCredentialsGenerated;
+        this.profileUpdated = profileUpdated;
+        this.sign = sign;
+        this.icardApproved = icardApproved;
+        this.securityApproved = securityApproved;
+        this.securityFormApproved = securityFormApproved;
+        this.cancellationFilePath = cancellationFilePath;
+        this.alertMessage = alertMessage;
+        this.alertTimestamp = alertTimestamp;
+        this.alertSeen = alertSeen;
     }
 
     public Intern(String firstName, String contactNo, String email, String collegeName, Date joiningDate, Date completionDate,
@@ -596,5 +633,77 @@ public class Intern {
 
     public void setIsCredentialsGenerated(boolean credentialsGenerated) {
         isCredentialsGenerated = credentialsGenerated;
+    }
+
+    public int getProfileUpdated() {
+        return profileUpdated;
+    }
+
+    public void setProfileUpdated(int profileUpdated) {
+        this.profileUpdated = profileUpdated;
+    }
+
+    public byte[] getSign() {
+        return sign;
+    }
+
+    public void setSign(byte[] sign) {
+        this.sign = sign;
+    }
+
+    public boolean isIcardApproved() {
+        return icardApproved;
+    }
+
+    public void setIcardApproved(boolean icardApproved) {
+        this.icardApproved = icardApproved;
+    }
+
+    public boolean isSecurityApproved() {
+        return securityApproved;
+    }
+
+    public void setSecurityApproved(boolean securityApproved) {
+        this.securityApproved = securityApproved;
+    }
+
+    public boolean isSecurityFormApproved() {
+        return securityFormApproved;
+    }
+
+    public void setSecurityFormApproved(boolean securityFormApproved) {
+        this.securityFormApproved = securityFormApproved;
+    }
+
+    public String getCancellationFilePath() {
+        return cancellationFilePath;
+    }
+
+    public void setCancellationFilePath(String cancellationFilePath) {
+        this.cancellationFilePath = cancellationFilePath;
+    }
+
+    public String getAlertMessage() {
+        return alertMessage;
+    }
+
+    public void setAlertMessage(String alertMessage) {
+        this.alertMessage = alertMessage;
+    }
+
+    public LocalDateTime getAlertTimestamp() {
+        return alertTimestamp;
+    }
+
+    public void setAlertTimestamp(LocalDateTime alertTimestamp) {
+        this.alertTimestamp = alertTimestamp;
+    }
+
+    public int getAlertSeen() {
+        return alertSeen;
+    }
+
+    public void setAlertSeen(int alertSeen) {
+        this.alertSeen = alertSeen;
     }
 }

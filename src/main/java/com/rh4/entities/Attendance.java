@@ -21,13 +21,13 @@ public class Attendance {
     private int year;
 
     @Column(name = "total_working_days")
-    private int totalWorkingDays;
+    private float totalWorkingDays;
 
     @Column(name = "total_present_days")
-    private int totalPresentDays;
+    private float totalPresentDays;
 
     @Column(name = "total_absent_days")
-    private int totalAbsentDays;
+    private float totalAbsentDays;
 
     @Column(name = "attendance_percentage")
     private float attendancePercentage;
@@ -41,7 +41,7 @@ public class Attendance {
 
     public Attendance() {super();}
 
-    public Attendance(Long id, String internId, String month, int year, int totalWorkingDays, int totalPresentDays, int totalAbsentDays, float attendancePercentage, Date uploadDate, float totalAttendance) {
+    public Attendance(Long id, String internId, String month, int year, float totalWorkingDays, float totalPresentDays, float totalAbsentDays, float attendancePercentage, Date uploadDate, float totalAttendance) {
         super();
         this.id = id;
         this.internId = internId;
@@ -86,27 +86,27 @@ public class Attendance {
     public void setYear(int year) {
         this.year = year;
     }
-    public int getTotalWorkingDays() {
+    public float getTotalWorkingDays() {
         return totalWorkingDays;
     }
 
-    public void setTotalWorkingDays(int totalWorkingDays) {
+    public void setTotalWorkingDays(float totalWorkingDays) {
         this.totalWorkingDays = totalWorkingDays;
     }
 
-    public int getTotalPresentDays() {
+    public float getTotalPresentDays() {
         return totalPresentDays;
     }
 
-    public void setTotalPresentDays(int totalPresentDays) {
+    public void setTotalPresentDays(float totalPresentDays) {
         this.totalPresentDays = totalPresentDays;
     }
 
-    public int getTotalAbsentDays() {
+    public float getTotalAbsentDays() {
         return totalAbsentDays;
     }
 
-    public void setTotalAbsentDays(int totalAbsentDays) {
+    public void setTotalAbsentDays(float totalAbsentDays) {
         this.totalAbsentDays = totalAbsentDays;
     }
 

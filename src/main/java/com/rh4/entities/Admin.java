@@ -2,14 +2,8 @@ package com.rh4.entities;
 
 import java.util.Date;
 
+import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "admin")
@@ -39,13 +33,16 @@ public class Admin {
     @Column(name = "created_at", updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", nullable = true)
     private Date createdAt;
 
+	@Column(name = "digital_signature_path")
+	private String digitalSignaturePath;
+
     public Admin() {
 		super();
 	}
 
 	
 	public Admin(Long adminId, String name, String location, Long contactNo, String emailId, String password,
-			Date createdAt) {
+			Date createdAt, String digitalSignaturePath) {
 		super();
 		this.adminId = adminId;
 		this.name = name;
@@ -54,6 +51,8 @@ public class Admin {
 		this.emailId = emailId;
 		this.password = password;
 		this.createdAt = createdAt;
+		this.digitalSignaturePath = digitalSignaturePath;
+
 	}
 
 
@@ -115,4 +114,11 @@ public class Admin {
 		this.createdAt = createdAt;
 	}
 
+	public String getDigitalSignaturePath() {
+		return digitalSignaturePath;
+	}
+
+	public void setDigitalSignaturePath(String digitalSignaturePath) {
+		this.digitalSignaturePath = digitalSignaturePath;
+	}
 }

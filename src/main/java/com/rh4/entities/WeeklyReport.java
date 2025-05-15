@@ -18,7 +18,7 @@ public class WeeklyReport {
 	private Intern intern;
 	
 	@JoinColumn(name = "group_id")
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
 	private GroupEntity group;
 	
 	private Date reportSubmittedDate;
@@ -42,12 +42,15 @@ public class WeeklyReport {
 	@Column(name = "is_read", nullable = false)
 	private int isRead = 0;  // 0 = Unread, 1 = Read (default is Unread)
 
+	@Column(name = "g_is_read", nullable = false)
+	private int GisRead = 0;  // 0 = Unread, 1 = Read (default is Unread)
+
 	public WeeklyReport() {
 		super();
 	}
 
 	public WeeklyReport(long weeklyReportId, Intern intern, GroupEntity group, Date reportSubmittedDate, Date deadline,
-			int weekNo, byte[] submittedPdf, Guide guide, MyUser replacedBy, String status, int isRead) {
+			int weekNo, byte[] submittedPdf, Guide guide, MyUser replacedBy, String status, int isRead, int GisRead) {
 		super();
 		this.weeklyReportId = weeklyReportId;
 		this.intern = intern;
@@ -60,6 +63,7 @@ public class WeeklyReport {
 		this.replacedBy = replacedBy;
 		this.status = status;
 		this.isRead = isRead;
+		this.GisRead = GisRead;
 	}
 
 	public long getWeeklyReportId() {
@@ -148,5 +152,13 @@ public class WeeklyReport {
 
 	public void setIsRead(int isRead) {
 		this.isRead = isRead;
+	}
+
+	public int getGisRead() {
+		return GisRead;
+	}
+
+	public void setGisRead(int GisRead) {
+		this.GisRead = GisRead;
 	}
 }
