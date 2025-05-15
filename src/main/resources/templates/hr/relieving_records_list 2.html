@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+  <title>Intern Relieving Records</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+        crossorigin="anonymous">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+
+  <style>
+    body {
+      display: block;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    a {
+      text-decoration: none;
+      color: white;
+    }
+
+    table {
+      width: 60%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      margin-top: 40px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    button {
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .button-container {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .button-container form {
+      display: inline-block;
+    }
+
+    #detailsButton {
+      background-color: #2196F3;
+      color: white;
+    }
+
+    #updateButton {
+      background-color: #4caf50;
+      color: white;
+    }
+
+    #deleteButton {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .table th {
+      cursor: pointer;
+      background-image: url('default-icon.png'); /* Default icon image */
+      background-size: 16px 16px; /* Adjust the size of the icon */
+      background-repeat: no-repeat;
+      background-position: right center;
+      /* Position the icon to the right center */
+      padding-right: 20px; /* Add some padding to accommodate the icon */
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- Include the header fragment -->
+<div th:replace="fragments/hrHeaderFragment :: header"></div>
+
+<!-- Include the aside fragment -->
+<div th:replace="fragments/hrAsideFragment :: aside"></div>
+
+<main id="main" class="main">
+
+  <div class="pagetitle">
+    <h1>Relieving Records</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a th:href="@{/bisag/hr/relieving_records_list}">Records</a></li>
+        <li class="breadcrumb-item active">Relieving Records List</li>
+      </ol>
+    </nav>
+  </div>
+  <!-- End Page Title -->
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+        <input type="text" class="mb-4" id="searchInput" placeholder="Search...">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">List of Relieving Records for Interns</h5>
+            <!-- Success/Error Messages -->
+            <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+            <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+            <!-- Table with stripped rows -->
+            <table class="table table-bordered">
+              <thead>
+              <tr>
+                <th>ID</th>
+                <th>Intern ID</th>
+                <th>Intern Name</th>
+                <th>Group ID</th>
+                <th>Institute Name</th>
+                <th>Joining Date</th>
+                <th>Planned Date to Relieve</th>
+                <th>Identity Cards</th>
+
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:each="record : ${records}">
+                <td>
+                  <a th:href="@{/bisag/hr/relieving_records_detail/{id}(id=${record.id})}">
+                    <span th:text="${record.id}"></span>
+                  </a>
+                </td>
+                <td th:text="${record.internId}"></td>
+                <td th:text="${record.firstName}"></td>
+                <td th:text="${record.groupId}"></td>
+                <td th:text="${record.collegeName}"></td>
+                <td th:text="${#dates.format(T(java.util.Date).from(record.joiningDate.toLocalDate().atStartOfDay(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy')}"></td>
+                <td th:text="${#dates.format(T(java.util.Date).from(record.plannedDate.toLocalDate().atStartOfDay(T(java.time.ZoneId).systemDefault()).toInstant()), 'dd-MM-yyyy')}"></td>
+                <td>
+                  <span th:text="${record.identityCards}" class="identity-text"></span>
+                  <select class="form-select identity-dropdown" style="display: none;">
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                  <button class="btn btn-sm btn-primary edit-identity-btn">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                </td>
+
+              </tr>
+              </tbody>
+            </table>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- Include the footer fragment -->
+  <div th:replace="fragments/footerFragment :: footer"></div>
+</main>
+<!-- End #main -->
+<script
+        src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+  $(document)
+          .ready(
+                  function() {
+                    // Add click event listener to table headers for sorting
+                    $('.table th').click(
+                            function() {
+                              var table = $(this).parents('table')
+                                      .eq(0);
+                              var rows = table.find('tr:gt(0)')
+                                      .toArray().sort(
+                                              comparer($(this)
+                                                      .index()));
+                              this.asc = !this.asc;
+                              if (!this.asc) {
+                                rows = rows.reverse();
+                              }
+                              for (var i = 0; i < rows.length; i++) {
+                                table.append(rows[i]);
+                              }
+                            });
+
+                    // Function to compare rows based on the selected column
+                    function comparer(index) {
+                      return function(a, b) {
+                        var valA = getCellValue(a, index), valB = getCellValue(
+                                b, index);
+                        return $.isNumeric(valA)
+                        && $.isNumeric(valB) ? valA - valB
+                                : valA.toString().localeCompare(
+                                        valB);
+                      };
+                    }
+
+                    // Function to get the value of a cell
+                    function getCellValue(row, index) {
+                      return $(row).children('td').eq(index).text();
+                    }
+                  });
+</script>
+<script>
+  $(document).ready(function () {
+    $(".edit-identity-btn").click(function () {
+      var row = $(this).closest("tr");
+      var span = row.find(".identity-text");
+      var select = row.find(".identity-dropdown");
+      var button = $(this);
+
+      // Show dropdown, hide text and button
+      span.hide();
+      select.val(span.text().trim()).show();
+      button.hide();
+
+      // When dropdown value changes, send AJAX request
+      select.change(function () {
+        var newValue = $(this).val();
+        var recordId = row.find("td:first-child a").text().trim(); // Fetch ID from first column
+
+        // Send AJAX request to update database
+        $.ajax({
+          url: "/bisag/hr/updateIdentityCards",  // Update to match your backend API
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({ id: recordId, identityCards: newValue }),
+          success: function (response) {
+            // Update UI after successful update
+            span.text(newValue).show();
+            select.hide();
+            button.show();
+          },
+          error: function () {
+            alert("Error updating identity card status");
+          },
+        });
+      });
+    });
+  });
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var searchInput = document.getElementById('searchInput');
+    var tableRows = document.querySelectorAll('.table tbody tr');
+
+    searchInput.addEventListener('input', function(event) {
+      var searchText = event.target.value.toLowerCase().trim();
+
+      tableRows.forEach(function(row) {
+        var isVisible = false;
+        row.querySelectorAll('td').forEach(function(cell) {
+          var cellText = cell.textContent.toLowerCase();
+          if (cellText.includes(searchText)) {
+            isVisible = true;
+          }
+        });
+
+        if (isVisible) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  });
+</script>
+</body>
+
+</html>

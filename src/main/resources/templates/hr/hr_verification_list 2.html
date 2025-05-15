@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Approved Verifications</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<div th:replace="fragments/hrHeaderFragment :: header"></div>
+<div th:replace="fragments/hrAsideFragment :: aside"></div>
+
+<main id="main" class="main">
+  <div class="pagetitle">
+    <h1>Approved Verifications</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a th:href="@{/bisag/hr/verification_requests}">Verification</a></li>
+        <li class="breadcrumb-item active">Approved Verification</li>
+      </ol>
+    </nav>
+  </div>
+
+  <section class="section">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">List of Approved Verifications</h5>
+
+        <table class="table table-bordered">
+          <thead>
+          <tr>
+            <th>Intern ID</th>
+            <th>Company Name</th>
+            <th>Email</th>
+            <th>Approval Date</th>
+            <th>Remarks</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="verification : ${verifications}">
+            <td>
+              <a th:href="@{'/bisag/hr/intern_verification_details/' + ${verification.internId}}">
+                <span th:text="${verification.internId}"></span>
+              </a>
+            </td>
+            <td th:text="${verification.companyName}"></td>
+            <td th:text="${verification.email}"></td>
+            <td th:text="${#dates.format(T(java.util.Date).from(verification.verifiedDate.toInstant()), 'dd-MM-yyyy HH:mm:ss')}"></td>
+            <td th:text="${verification.remarks}"></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  $(document).ready(function () {
+    $(".sendToHrBtn").click(function () {
+      let verificationId = $(this).attr("data-id");
+
+      if (confirm("Are you sure you want to send this verification to HR?")) {
+        $.ajax({
+          type: "POST",
+          url: "/bisag/admin/send_verification_to_hr",
+          contentType: "application/json",
+          data: JSON.stringify({ verificationId: verificationId }),
+          success: function (response) {
+            alert("Verification sent to HR successfully!");
+            location.reload();
+          },
+          error: function () {
+            alert("Error sending verification to HR.");
+          }
+        });
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
