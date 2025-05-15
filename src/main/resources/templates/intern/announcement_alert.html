@@ -130,17 +130,8 @@
 </head>
 
 <body>
-
-
-<!-- Include the header fragment -->
 <div th:replace="fragments/internHeaderFragment :: header"></div>
-
-<!-- Include the aside fragment -->
 <div th:replace="fragments/internAsideFragment :: aside"></div>
-
-
-
-
 <main id="main" class="main">
     <div class="announcement-board">
         <h2 class="board-title">📢 Announcements</h2>
@@ -150,7 +141,6 @@
                             <span class="announcement-date" th:text="${announcement.createdAt}"></span>
             </div>
     </div>
-
     <script>
         $(document).ready(function() {
             $("#notificationBadge").hide();  // Hide notification

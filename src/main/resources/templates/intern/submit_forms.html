@@ -45,8 +45,6 @@
             </ol>
         </nav>
     </div>
-    <!-- End Page Title -->
-
     <div class="container">
         <table class="table table-bordered">
             <tr>
@@ -56,6 +54,18 @@
             <tr>
                 <th>Full Name</th>
                 <td th:text="${intern.firstName}"></td>
+            </tr>
+            <tr>
+                <th>I-Card From</th>
+                <td><a th:href="@{/bisag/intern/intern_icard/{id}(id=${intern.internId})}" class="btn btn-primary btn-sm">I-Card Form</a></td>
+            </tr>
+            <tr>
+                <th>Information Security From</th>
+                <td><a th:href="@{/bisag/intern/security_agreement/{id}(id=${intern.internId})}" class="btn btn-primary btn-sm">Information Security Form</a></td>
+            </tr>
+            <tr>
+                <th>Security From</th>
+                <td><a th:href="@{/bisag/intern/security_form/{id}(id=${intern.internId})}" class="btn btn-primary btn-sm">Security Form</a></td>
             </tr>
         </table>
     </div>

@@ -34,12 +34,36 @@
             background-color: white;
             /* Set your desired background color */
         }
+        .announcement-banner {
+            width: 100%;
+            background-color: transparent; /* changed */
+            color: black;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            padding: 10px 0;
+            font-weight: bold;
+            border-bottom: 2px solid #0056b3;
+        }
+
+        .announcement-slide {
+            display: inline-block;
+            padding-left: 100%;
+            animation: scroll-left 15s linear infinite;
+        }
+
+        @keyframes scroll-left {
+            0% {
+                transform: translateX(0%);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
+        }
     </style>
 </head>
 <body>
-<!-- Include the header fragment -->
 <div th:replace="fragments/internHeaderFragment :: header"></div>
-<!-- Include the aside fragment -->
 <div th:replace="fragments/internAsideFragment :: aside"></div>
 <main id="main" class="main">
     <div class="pagetitle">
@@ -50,6 +74,12 @@
                 <li class="breadcrumb-item active">Profile</li>
             </ol>
         </nav>
+    </div>
+    <!-- Announcement Banner -->
+    <div class="announcement-banner">
+        <div class="announcement-slide" th:each="announcement : ${announcements}">
+            <p class="announcement-content" th:text="${announcement.content}"></p>
+        </div>
     </div>
     <!-- End Page Title -->
     <section class="section profile">
@@ -85,30 +115,55 @@
                 </div>
             </div>
             <div class="col-xl-6">
-                <form action="/bisag/intern/requestCancellation" method="post" onsubmit="return confirmCancellation()">
+                <form action="/bisag/intern/requestCancellation" method="post" enctype="multipart/form-data" id="cancellationForm">
                     <div class="card">
-                        <div
-                                class="card-body profile-card pt-4 d-flex flex-column align-items-left">
+                        <div class="card-body profile-card pt-4 d-flex flex-column align-items-left">
                             <h4>Cancellation</h4>
+
+                            <!-- Initial Request Button -->
                             <div>
-                                <button type="submit"
+                                <button type="button"
                                         th:disabled="${intern.cancellationStatus != null}"
-                                        class="btn btn-danger py-1 px-4">Request
-                                </button>
+                                        class="btn btn-danger py-1 px-4"
+                                        onclick="handleRequestClick()">Request</button>
+
                                 <span class="text-danger mx-3"
-                                      th:if="${intern.cancellationStatus == 'requested'}">Wait
-										for admin to approve your cancellation</span> <span
-                                    class="text-danger mx-3"
-                                    th:if="${intern.cancellationStatus == 'cancelled'}">You
-										are not BISAG intern anymore</span>
+                                      th:if="${intern.cancellationStatus == 'requested'}">Wait for admin to approve your cancellation</span>
+                                <span class="text-danger mx-3"
+                                      th:if="${intern.cancellationStatus == 'cancelled'}">You are not BISAG intern anymore</span>
                             </div>
-                            <h6 class="mt-2">For any reason if you want to leave the
-                                internship, you can request for that from here.</h6>
+
+                            <!-- Instruction -->
+                            <h6 class="mt-2">For any reason if you want to leave the internship, you can request for that from here.</h6>
+
+                            <!-- Hidden File Input + Submit Button -->
+                            <div id="fileSection" style="display: none;" class="mt-3">
+                                <label for="cancellationFile">Upload Cancellation File:</label>
+                                <input type="file" name="cancellationFile" id="cancellationFile" class="form-control mt-2">
+
+                                <button type="submit" class="btn btn-primary mt-2">Submit Cancellation</button>
+                            </div>
                         </div>
                     </div>
                 </form>
             </div>
+
+            <script>
+                function handleRequestClick() {
+                    if (confirm("Are you sure you want to request cancellation?")) {
+                        document.getElementById("fileSection").style.display = "block";
+                        document.querySelector("button[onclick='handleRequestClick()']").disabled = true;
+                    }
+                }
+            </script>
         </div>
+        <div th:if="${intern.alertMessage != null and intern.alertSeen == 1}" class="alert alert-warning alert-dismissible fade show mt-3" role="alert">
+            <strong>Reminder!</strong> <span th:text="${intern.alertMessage}"></span><br>
+            <small class="text-muted" th:text="${#temporals.format(intern.alertTimestamp, 'dd MMM yyyy HH:mm')}"></small>
+
+            <form th:action="@{'/bisag/intern/mark-alert-seen/' + ${intern.internId}}" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-sm btn-outline-secondary float-end">Ok</button>
+            </form>
         </div>
         <div class="col-xl-12">
             <!-- Success Alert -->
@@ -304,8 +359,11 @@
                         </div>
 
                         <div class="tab-pane fade profile-edit pt-3" id="profile-edit">
+                            <p style="color: red; font-weight: bold; text-align: center;">
+                                THIS FORM CAN ONLY BE SUBMITTED ONCE
+                            </p>
                             <form th:action="@{'/bisag/intern/update_profile/' + ${intern.internId}}"
-                                  th:object="${intern}" method="post">
+                                  th:object="${intern}" method="post" enctype="multipart/form-data">
 
                                 <input type="hidden" th:field="*{internId}">
 
@@ -320,24 +378,24 @@
                                 <div class="row mb-3">
                                     <label for="dob" class="col-md-4 col-lg-3 col-form-label">Date of Birth</label>
                                     <div class="col-md-8 col-lg-9">
-                                        <input name="dob" type="date" class="form-control"
-                                               id="dob" th:field="*{dateOfBirth}" required>
+                                        <input name="dateOfBirth" type="date" class="form-control"
+                                               id="dateOfBirth" th:field="*{dateOfBirth}" required>
                                     </div>
                                 </div>
 
                                 <div class="row mb-3">
                                     <label for="guideName" class="col-md-4 col-lg-3 col-form-label">College Guide Name</label>
                                     <div class="col-md-8 col-lg-9">
-                                        <input name="guideName" type="text" class="form-control"
-                                               id="guideName" th:field="*{collegeGuideHodName}" required onblur="this.value = toTitleCase(this.value)">
+                                        <input name="collegeGuideHodName" type="text" class="form-control"
+                                               id="collegeGuideHodName" th:field="*{collegeGuideHodName}" required onblur="this.value = toTitleCase(this.value)">
                                     </div>
                                 </div>
 
                                 <div class="row mb-3">
                                     <label for="percentage" class="col-md-4 col-lg-3 col-form-label">Percentage</label>
                                     <div class="col-md-8 col-lg-9">
-                                        <input name="percentage" type="text" class="form-control"
-                                               id="percentage" th:field="*{aggregatePercentage}" required>
+                                        <input name="aggregatePercentage" type="text" class="form-control"
+                                               id="aggregatePercentage" th:field="*{aggregatePercentage}" required>
                                     </div>
                                 </div>
                                 <div class="row mb-3">
@@ -368,6 +426,13 @@
 <!--                                            <input class="form-check-input" type="radio" name="usedResources" id="pc" value="BISAG-PC" th:checked="${intern.usedResource == 'BISAG-PC'}" required>-->
 <!--                                            <label class="form-check-label" for="pc">BISAG-PC</label>-->
 <!--                                        </div>-->
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label for="sign" class="col-md-4 col-lg-3 col-form-label">Digital Signature</label>
+                                    <div class="col-md-8 col-lg-9">
+                                        <input type="file" class="form-control" id="signFile" name="signFile" accept=".jpg" required>
+                                        <small style="color: red; font-weight: bold;">Only JPG image, less then 50KB</small>
                                     </div>
                                 </div>
 

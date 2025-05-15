@@ -146,6 +146,9 @@
 
 					<div class="form-group">
 						<label for="description">Description:</label>
+						<p class="text-danger mb-2" style="font-size: 0.9rem;">
+							* Write the content in sentence format. Do not press Enter in between.
+						</p>
 						<textarea id="description" name="description"
 								  class="form-control" required></textarea>
 					</div>
@@ -155,6 +158,7 @@
 							(If Any):</label> <input type="file" class="form-control"
 													 id="projectDefinitionDocument" name="projectDefinitionDocument"
 													 accept=".pdf">
+						<label style="color: red; font-weight: bold;">File should be less than 100KB</label>
 					</div>
 
 					<!-- Repeat the above block for other fields -->

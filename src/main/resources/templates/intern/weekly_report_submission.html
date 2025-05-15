@@ -9,7 +9,6 @@
     <link
             href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
             rel="stylesheet">
-    <!-- Bootstrap CSS is used for the card layout in this example -->
 </head>
 <style>
     .late-status {
@@ -92,35 +91,12 @@
                     </div>
                 </div>
 
-                <!-- First Sales Card -->
-                <div class="col-xxl-6 col-md-6">
-                    <div class="card info-card sales-card">
-
-                        <div class="card-body">
-
-                            <div class="d-flex align-items-center">
-                                <div
-                                        class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                    <i class="bi bi-people"></i>
-                                </div>
-                                <div class="ps-3">
-                                    <h4>
-                                        <span>Status</span>
-                                    </h4>
-                                    <h5>
-                                        <span class="text-danger small pt-1 fw-bold">Pending</span>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </section>
-    <h1 class="text-danger small pt-1 mx-3 fw-bold"
-        th:if="${weeklyReportDisable1 != 'false' || weeklyReportDisable2 != 'false'}">No need to submit more reports.
-        You have completed your internship.</h1>
+<!--    <h1 class="text-danger small pt-1 mx-3 fw-bold"-->
+<!--        th:if="${weeklyReportDisable1 != 'false' || weeklyReportDisable2 != 'false'}">No need to submit more reports.-->
+<!--        You have completed your internship.</h1>-->
     <!-- Success message -->
     <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
         <span th:text="${success}"></span>
@@ -255,7 +231,7 @@
             if (file) {
                 const fileSizeKB = file.size / 1024;
                 if (fileSizeKB > maxSizeKB) {
-                    alert("Please select a file less than 500 KB.");
+                    alert("Don't you understand to select a file less than 500 KB.");
                     input.value = "";
                 }
             }

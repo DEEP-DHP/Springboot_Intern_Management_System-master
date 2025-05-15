@@ -17,32 +17,6 @@
 		<div class="container">
 			<div class="row">
 
-				<!-- Last Submitted Leave Card -->
-				<div class="col-xxl-6 col-md-6">
-					<div class="card info-card sales-card">
-						<div class="card-body">
-							<div class="d-flex align-items-center">
-								<div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-									<i class="bi bi-people"></i>
-								</div>
-								<div class="ps-3">
-									<h4><span>Your Last Leave</span></h4>
-									<h5>
-                                            <span class="text-success small pt-1 fw-bold">Submitted on:
-												<!--                                                <span th:text="${lastLeave != null ? #dates.format(lastLeave.submittedOn, 'dd/MM/yyyy - hh:mm a') : 'N/A'}"></span>-->
-                                            </span>
-									</h5>
-									<h5>
-                                            <span class="text-success small pt-1 fw-bold">Subject:
-												<!--                                                <span th:text="${lastLeave != null ? lastLeave.subject : 'N/A'}"></span>-->
-                                            </span>
-									</h5>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-
 				<!-- Attendance Card -->
 				<div class="col-xxl-6 col-md-6">
 					<div class="card info-card sales-card">
@@ -100,6 +74,9 @@
 
 					<div class="form-group">
 						<label for="body">Body:</label>
+						<p class="text-danger mb-2" style="font-size: 0.9rem;">
+							* Write the content in sentence format. Do not press Enter in between.
+						</p>
 						<textarea id="body" name="body" class="form-control" rows="6"
 								  placeholder="Respected [Recipient's Name],
 

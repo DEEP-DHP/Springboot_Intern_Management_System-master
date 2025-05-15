@@ -5,29 +5,20 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Final Report Submission</title>
-	<!-- Include any necessary styles or scripts -->
 	<link
 			href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
 			rel="stylesheet">
-	<!-- Bootstrap CSS is used for the card layout in this example -->
 </head>
 
 <body>
-
-<!-- Include the header fragment -->
 <div th:replace="fragments/internHeaderFragment :: header"></div>
-
-<!-- Include the aside fragment -->
 <div th:replace="fragments/internAsideFragment :: aside"></div>
-
 <main id="main" class="main">
 
 	<section class="section dashboard">
 		<div class="container">
 			<div class="row">
 
-
-				<!-- First Sales Card -->
 				<div class="col-xxl-7 col-md-7">
 					<div class="card info-card sales-card">
 
@@ -100,7 +91,9 @@
 			</div>
 		</div>
 	</section>
-
+	<div th:if="${error}" class="alert alert-danger" role="alert">
+		<span th:text="${error}"></span>
+	</div>
 	<div class="container mt-2" th:if="${!submitDisable}">
 		<div class="card">
 
