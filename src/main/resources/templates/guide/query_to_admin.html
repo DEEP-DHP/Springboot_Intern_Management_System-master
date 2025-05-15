@@ -3,15 +3,13 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Chat</title>
+	<title>Messenger</title>
 	<link rel="stylesheet"
 		  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-		  integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
 		  crossorigin="anonymous">
 	<style>
 		body {
 			font-family: Arial, sans-serif;
-			margin: 0;
 			padding: 20px;
 		}
 
@@ -52,27 +50,54 @@
 			color: #000;
 			align-self: flex-start;
 		}
-		.unread-option::after {
-			content: ' ●';
+
+		.red-unread-option {
 			color: red;
 			font-weight: bold;
-			margin-left: 5px;
+		}
+
+		#messageForm {
+			display: flex;
+			padding: 10px;
+			background: #f8f9fa;
+			border-top: 1px solid #ccc;
+			flex-wrap: wrap;
+			gap: 10px;
+		}
+
+		#messageInput, #receiverId, #fileInput {
+			padding: 10px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+		}
+
+		#messageInput {
+			flex: 1;
+			margin-right: 10px;
+		}
+
+		#sendMessage {
+			padding: 10px 15px;
+			background-color: #2196F3;
+			color: white;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
 		}
 	</style>
 </head>
 <body>
 
-<!-- Include header and aside fragments -->
 <div th:replace="fragments/guideHeaderFragment :: header"></div>
 <div th:replace="fragments/guideAsideFragment :: aside"></div>
 
 <main id="main" class="main">
 	<div class="pagetitle">
-		<h1>Chat</h1>
+		<h1>Messenger</h1>
 		<nav>
 			<ol class="breadcrumb">
-				<li class="breadcrumb-item"></li>
-				<li class="breadcrumb-item active">Chat</li>
+				<li class="breadcrumb-item">Home</li>
+				<li class="breadcrumb-item active">Messenger</li>
 			</ol>
 		</nav>
 	</div>
@@ -80,117 +105,100 @@
 	<div class="container">
 		<div class="card">
 			<div class="card-body chat-container my-5">
-				<div class="message-section" id="chatBox">
-					<!-- Chat messages will be appended here dynamically -->
+				<div id="messageContainer" class="message-section">
 				</div>
-				<div class="mt-4">
-					<form id="chatForm" class="row">
-						<input type="hidden" id="senderId" name="senderId" th:value="${guide.guideId}">
 
-						<!-- Receiver selection -->
-						<div class="col-md-3">
-							<select id="receiverId" name="receiverId" class="form-select">
-								<option value="">Select Receiver</option>
-								<option th:each="admin : ${admins}"
-										th:value="${admin.adminId}"
-										th:text="${unreadCounts[admin.adminId] != null ? '🔴 ' + admin.name : admin.name}">
-								</option>
+				<form id="messageForm" enctype="multipart/form-data">
+					<select id="receiverId" name="receiverId" class="form-select" required>
+						<option value="">Select Receiver</option>
+						<option th:each="admin : ${admins}"
+								th:value="${admin.adminId}"
+								th:text="${unreadCounts[admin.adminId] != null ? '🔴 ' + admin.name : admin.name}">
+						</option>
+						<option th:each="intern : ${interns}"
+								th:value="${intern.internId}"
+								th:text="${unreadCounts[intern.internId] != null ? '🔴 ' + intern.firstName : intern.firstName}">
+						</option>
+					</select>
 
-								<!-- Interns -->
-								<option th:each="intern : ${interns}"
-										th:value="${intern.internId}"
-										th:text="${unreadCounts[intern.internId] != null ? '🔴 ' + intern.firstName : intern.firstName}">
-								</option>
-							</select>
-						</div>
-
-						<!-- Message input -->
-						<div class="col-md-8">
-							<div class="form-group">
-								<input id="query" name="query" placeholder="Your Message..." class="form-control" required>
-							</div>
-						</div>
-
-						<!-- Send button -->
-						<div class="col-md-1">
-							<button type="submit" class="btn btn-primary">
-								<i class="fa fa-paper-plane" aria-hidden="true"></i>
-							</button>
-						</div>
-					</form>
-				</div>
+					<input id="messageInput" name="messageText" type="text" placeholder="Type your message..." required>
+					<input type="file" id="fileInput" name="file">
+					<button type="submit" id="sendMessage"><i class="fa fa-paper-plane"></i></button>
+				</form>
 			</div>
 		</div>
 	</div>
 
-	<!-- Include footer fragment -->
 	<div th:replace="fragments/footerFragment :: footer"></div>
 </main>
 
-<!-- JavaScript for Fetching and Sending Messages -->
 <script>
 	document.addEventListener("DOMContentLoaded", function () {
-		const chatBox = document.getElementById("chatBox");
-		const chatForm = document.getElementById("chatForm");
+		const messageContainer = document.getElementById("messageContainer");
+		const messageForm = document.getElementById("messageForm");
+		const receiverId = document.getElementById("receiverId");
+		const messageInput = document.getElementById("messageInput");
+		const fileInput = document.getElementById("fileInput");
 
-		// Load chat history when receiver is selected
-		document.getElementById("receiverId").addEventListener("change", function () {
-			loadChatHistory();
-		});
+		const senderId = "[[${loggedInGuide != null ? loggedInGuide.guideId : ''}]]";
 
-		// Handle form submission
-		chatForm.addEventListener("submit", function (event) {
+		function loadMessages() {
+			const receiver = receiverId.value;
+			if (!receiver) return;
+
+			fetch(`/bisag/guide/chat/history?receiverId=${receiver}`)
+					.then(response => response.json())
+					.then(messages => {
+						messageContainer.innerHTML = "";
+
+						messages.forEach(message => {
+							const messageDiv = document.createElement("div");
+							messageDiv.classList.add(message.senderId === senderId ? "sender" : "receiver");
+
+							let content = `<p>${message.messageText || ''}</p>`;
+							if (message.filePath && message.originalFileName) {
+								content += `<p><a href="/bisag/guide/chat/view?filePath=${message.filePath}" target="_blank">${message.originalFileName}</a></p>`;
+							}
+
+							messageDiv.innerHTML = content;
+							messageContainer.appendChild(messageDiv);
+						});
+
+						messageContainer.scrollTop = messageContainer.scrollHeight;
+					})
+					.catch(error => console.error("Error loading messages:", error));
+		}
+
+		messageForm.addEventListener("submit", function (event) {
 			event.preventDefault();
 
-			let senderId = document.getElementById("senderId").value;
-			let receiverId = document.getElementById("receiverId").value;
-			let messageText = document.getElementById("query").value;
+			const receiver = receiverId.value;
+			const messageText = messageInput.value.trim();
+			const file = fileInput.files[0];
 
-			if (!receiverId || !messageText) {
-				alert("Please select a receiver and enter a message.");
-				return;
+			if (!receiver || (!messageText && !file)) return;
+
+			const formData = new FormData();
+			formData.append("receiverId", receiver);
+			formData.append("messageText", messageText);
+			if (file) {
+				formData.append("file", file);
 			}
 
 			fetch("/bisag/guide/chat/send", {
 				method: "POST",
-				headers: { "Content-Type": "application/x-www-form-urlencoded" },
-				body: new URLSearchParams({ senderId, receiverId, messageText })
-			})
-					.then(response => response.json())
-					.then(data => {
-						appendMessage(data.messageText, "sender");
-						document.getElementById("query").value = "";
-					})
-					.catch(error => console.error("Error:", error));
+				body: formData
+			}).then(response => {
+				if (response.ok) {
+					loadMessages();
+					messageInput.value = "";
+					fileInput.value = "";
+				}
+			});
 		});
 
-		// Function to fetch and display chat history
-		function loadChatHistory() {
-			let senderId = document.getElementById("senderId").value;
-			let receiverId = document.getElementById("receiverId").value;
-
-			if (!receiverId) return;
-
-			fetch(`/bisag/guide/chat/history?senderId=${senderId}&receiverId=${receiverId}`)
-					.then(response => response.json())
-					.then(messages => {
-						chatBox.innerHTML = "";
-						messages.forEach(msg => {
-							let messageType = msg.senderId === senderId ? "sender" : "receiver";
-							appendMessage(msg.messageText, messageType);
-						});
-					})
-					.catch(error => console.error("Error:", error));
-		}
-
-		// Function to append a message to the chat box
-		function appendMessage(text, type) {
-			let messageDiv = document.createElement("div");
-			messageDiv.classList.add("message", type);
-			messageDiv.innerHTML = `<p class="mx-3">${text}</p>`;
-			chatBox.appendChild(messageDiv);
-			chatBox.scrollTop = chatBox.scrollHeight;
-		}
+		setInterval(loadMessages, 30000);
+		receiverId.addEventListener("change", loadMessages);
 	});
 </script>
 

@@ -181,11 +181,65 @@
 
 		</tbody>
 	</table>
+	<h4 class="text-primary fw-bold mt-4 mb-3">Approved Final Reports</h4>
+	<input type="text" class="mb-4" id="searchInput" placeholder="Search...">
+	<table class="table dataTable">
+		<thead>
+		<tr>
+			<th>Group ID</th>
+			<th>Intern(s)</th>
+			<th>Project Definition</th>
+			<th>Report</th>
+		</tr>
+		</thead>
+		<tbody>
+		<tr th:each="group : ${groupss}">
+			<td th:text="${group.groupId}"></td>
+			<td>
+            <span th:each="intern : ${interns}"
+				  th:if="${intern.group != null and intern.group.groupId == group.groupId}"
+				  th:text="${intern.firstName} + ' '"
+				  th:classappend="${intern.cancellationStatus == 'Cancelled'} ? 'text-danger d-block' : 'd-block'">
+            </span>
+			</td>
+			<td th:text="${group.projectDefinition}"></td>
+			<td>
+				<a th:href="@{'/bisag/guide/final_reports/' + ${group.groupId} + '/finalReport.pdf'}" target="_blank">Open Report</a>
+			</td>
+		</tr>
+		</tbody>
+	</table>
 	<div th:replace="fragments/footerFragment :: footer"></div>
 </main>
 
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script
 		src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		var searchInput = document.getElementById('searchInput');
+		var tableRows = document.querySelectorAll('.table tbody tr');
+
+		searchInput.addEventListener('input', function(event) {
+			var searchText = event.target.value.toLowerCase().trim();
+
+			tableRows.forEach(function(row) {
+				var isVisible = false;
+				row.querySelectorAll('td').forEach(function(cell) {
+					var cellText = cell.textContent.toLowerCase();
+					if (cellText.includes(searchText)) {
+						isVisible = true;
+					}
+				});
+
+				if (isVisible) {
+					row.style.display = '';
+				} else {
+					row.style.display = 'none';
+				}
+			});
+		});
+	});
+</script>
 </body>
 </html>
