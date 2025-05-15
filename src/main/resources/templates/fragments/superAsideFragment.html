@@ -51,11 +51,16 @@
 				<li><a th:href="@{/bisag/super_admin/hr_list}"><i class="bi bi-circle"></i><span>Manage HR</span></a></li>
 			</ul>
 		</li>
+		<li class="nav-item">
+			<a class="nav-link collapsed" data-bs-target="#account-components-nav" data-bs-toggle="collapse" href="#">
+				<i class="bi bi-menu-button-wide"></i><span>Accountant</span><i class="bi bi-chevron-down ms-auto"></i>
+			</a>
+			<ul id="account-components-nav" class="nav-content collapse " data-bs-parent="#account-nav">
+				<li><a th:href="@{/bisag/super_admin/register_account}"><i class="bi bi-circle"></i><span>Create Accountant</span></a></li>
+				<li><a th:href="@{/bisag/super_admin/account_list}"><i class="bi bi-circle"></i><span>Manage Accountant</span></a></li>
+			</ul>
+		</li>
 	</ul>
-
-
-
-	<!-- Vendor JS Files -->
 	<script th:src="@{/assets/vendor/apexcharts/apexcharts.min.js}"></script>
 	<script
 			th:src="@{/assets/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>

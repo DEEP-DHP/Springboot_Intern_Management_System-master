@@ -1,7 +1,4 @@
-<!-- asideFragment.html -->
 <aside id="sidebar" class="sidebar" xmlns:th="http://www.thymeleaf.org">
-
-    <!-- Vendor CSS Files -->
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
           integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
@@ -15,7 +12,6 @@
     <link th:href="@{/assets/vendor/simple-datatables/style.css}"
           rel="stylesheet" type="text/css">
 
-    <!-- Template Main CSS File -->
     <link th:href="@{/assets/css/style.css}" rel="stylesheet"
           type="text/css">
     <style>
@@ -46,7 +42,6 @@
             text-align: center;
         }
     </style>
-
 
     <ul class="sidebar-nav" id="interns-nav">
         <li class="nav-item"><a class="nav-link "
@@ -92,6 +87,8 @@
                         class="bi bi-circle"></i><span>Approved Interns</span></a></li>
                 <li><a th:href="@{/bisag/admin/logs}"><i
                         class="bi bi-circle"></i><span>Rejected Interns</span></a></li>
+                <li><a th:href="@{/bisag/admin/document_status}">
+                    <i class="bi bi-circle"></i><span>Intern Document Status</span></a></li>
                 <li><a th:href="@{/bisag/admin/group_selection}"><i
                         class="bi bi-circle"></i><span>Confirmation Letter</span></a></li>
                 <li><a th:href="@{/bisag/admin/generate_credentials}">
@@ -168,11 +165,11 @@
             </span>
                         </a></li>
                         <li><a th:href="@{/bisag/admin/update_project_def}">
-                            <i class="bi bi-circle"></i><span>Update Definitions </span>
+                            <i class="bi bi-circle"></i><span>Assign/Update Definitions </span>
                         </a></li>
-                        <li><a th:href="@{/bisag/admin/update_def_ans}">
-                            <i class="bi bi-circle"></i><span>Pending Update Definitions </span>
-                        </a></li>
+<!--                        <li><a th:href="@{/bisag/admin/update_def_ans}">-->
+<!--                            <i class="bi bi-circle"></i><span>Pending Update Definitions </span>-->
+<!--                        </a></li>-->
                     </ul>
                 </li>
             </ul>
@@ -180,7 +177,12 @@
             <ul class="sidebar-nav" id="def-nav">
                 <li class="nav-item"><a class="nav-link collapsed"
                                         data-bs-target="#weekly-report-nav" data-bs-toggle="collapse"
-                                        href="#"> <i class="bi bi-menu-button-wide"></i><span>Reports</span><i
+                                        href="#"> <i class="bi bi-menu-button-wide"></i><span>Reports</span>
+                    <span th:if="${notificationCounts['gApprovedFinalReportCount'] > 0}"
+                          th:text="${notificationCounts['gApprovedFinalReportCount']}"
+                          class="badge badge-danger">
+            </span>
+                    <i
                         class="bi bi-chevron-down ms-auto"></i>
                 </a>
                     <ul id="weekly-report-nav" class="nav-content collapse "
@@ -200,6 +202,10 @@
                         </a></li>
                         <li><a th:href="@{/bisag/admin/admin_pending_final_reports}">
                             <i class="bi bi-circle"></i><span>Final Reports</span>
+                            <span th:if="${notificationCounts['gApprovedFinalReportCount'] > 0}"
+                                  th:text="${notificationCounts['gApprovedFinalReportCount']}"
+                                  class="badge badge-danger">
+            </span>
                         </a></li>
                         <li><a th:href="@{/bisag/admin/admin_weekly_report_form}">
                             <i class="bi bi-circle"></i><span>Add Report</span>
