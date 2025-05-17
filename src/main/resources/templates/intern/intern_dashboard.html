@@ -35,30 +35,32 @@
             /* Set your desired background color */
         }
         .announcement-banner {
-            width: 100%;
-            background-color: transparent; /* changed */
-            color: black;
             overflow: hidden;
             white-space: nowrap;
-            position: relative;
+            background-color: transparent; /* transparent background */
             padding: 10px 0;
-            font-weight: bold;
-            border-bottom: 2px solid #0056b3;
+            position: relative;
         }
 
         .announcement-slide {
             display: inline-block;
-            padding-left: 100%;
-            animation: scroll-left 15s linear infinite;
+            padding: 0 50px;
+            animation: scroll-left 12s linear infinite;
         }
 
         @keyframes scroll-left {
-            0% {
-                transform: translateX(0%);
-            }
-            100% {
-                transform: translateX(-100%);
-            }
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .announcement-content {
+            display: inline;
+            font-weight: bold;
+            font-size: 19px;
+        }
+
+        .announcement-banner:hover .announcement-slide {
+            animation-play-state: paused;
         }
     </style>
 </head>
@@ -75,20 +77,17 @@
             </ol>
         </nav>
     </div>
-    <!-- Announcement Banner -->
     <div class="announcement-banner">
         <div class="announcement-slide" th:each="announcement : ${announcements}">
             <p class="announcement-content" th:text="${announcement.content}"></p>
         </div>
     </div>
-    <!-- End Page Title -->
     <section class="section profile">
         <div class="row">
             <div class="col-xl-6">
                 <div class="card">
                     <div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
                         <div class="icon position-relative">
-                            <!-- Conditional rendering of profile picture or icon -->
                             <div th:if="${intern.profilePicture != null}">
                                 <img th:src="@{/bisag/intern/image/{id}(id=${intern.internId})}"
                                      alt="Profile Picture"
@@ -376,6 +375,20 @@
                                 </div>
 
                                 <div class="row mb-3">
+                                    <label for="currentAddress" class="col-md-4 col-lg-3 col-form-label">Current Address</label>
+                                    <div class="col-md-8 col-lg-9">
+                                        <input name="currentAddress" type="text" class="form-control"
+                                               id="currentAddress" th:field="*{currentAddress}" required onblur="this.value = toTitleCase(this.value)">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" id="sameAsPermanent" onchange="copyPermanentAddress()">
+                                            <label class="form-check-label" for="sameAsPermanent">
+                                                Same as Permanent Address
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
                                     <label for="dob" class="col-md-4 col-lg-3 col-form-label">Date of Birth</label>
                                     <div class="col-md-8 col-lg-9">
                                         <input name="dateOfBirth" type="date" class="form-control"
@@ -431,7 +444,7 @@
                                 <div class="row mb-3">
                                     <label for="sign" class="col-md-4 col-lg-3 col-form-label">Digital Signature</label>
                                     <div class="col-md-8 col-lg-9">
-                                        <input type="file" class="form-control" id="signFile" name="signFile" accept=".jpg" required>
+                                        <input type="file" class="form-control" id="signFile" name="signFile" accept=".jpg">
                                         <small style="color: red; font-weight: bold;">Only JPG image, less then 50KB</small>
                                     </div>
                                 </div>
@@ -562,8 +575,7 @@
             }
         }
     });
-</script>
-<script>
+
     function confirmCancellation() {
         return confirm("Are you sure you want to request cancellation? This action cannot be undone.");
     }
@@ -571,6 +583,18 @@
         return str.toLowerCase().replace(/\b\w/g, function (char) {
             return char.toUpperCase();
         });
+    }
+</script>
+<script>
+    function copyPermanentAddress() {
+        const checkbox = document.getElementById('sameAsPermanent');
+        const permanent = document.getElementById('permanentAddress');
+        const current = document.getElementById('currentAddress');
+        if (checkbox.checked) {
+            current.value = permanent.value;
+        } else {
+            current.value = '';
+        }
     }
 </script>
 </body>
