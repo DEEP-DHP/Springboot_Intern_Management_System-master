@@ -29,6 +29,6 @@ List<Undertaking> findLatestFormSorted(); // Returns a list, take the first one
 
     boolean existsByIntern(String internId);
 
-    @Query("SELECT u.content FROM Undertaking u WHERE u.content IS NOT NULL AND u.content <> '' ORDER BY u.createdAt DESC LIMIT 1")
-    String findLatestUndertakingContent();
+//    @Query("SELECT u.content FROM Undertaking u WHERE u.content IS NOT NULL AND u.content <> '' ORDER BY u.createdAt DESC LIMIT 1")
+//    String findLatestUndertakingContent();
 }

@@ -17,4 +17,7 @@ public interface MessageRepo extends JpaRepository<Message, Long> {
     );
     @Query("SELECT m FROM Message m WHERE (m.senderId = :senderId AND m.receiverId = :receiverId) OR (m.senderId = :receiverId AND m.receiverId = :senderId) ORDER BY m.timestamp ASC")
     List<Message> findBySenderIdAndReceiverId(@Param("senderId") String senderId, @Param("receiverId") String receiverId);
+
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.senderId = :senderId AND m.receiverId = :receiverId AND m.isRead = false")
+    long countUnreadMessages(@Param("senderId") String senderId, @Param("receiverId") String receiverId);
 }
