@@ -1,7 +1,9 @@
 package com.rh4.controllers;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 import com.rh4.entities.*;
 import com.rh4.repositories.*;
 import com.rh4.services.*;
+import org.apache.poi.util.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -1530,5 +1533,186 @@ public ResponseEntity<Resource> openFinalReport(@PathVariable String groupId, @P
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filePath.getFileName() + "\"")
                 .body(resource);
+    }
+
+    @Value("${app.storage.base-dir4}")
+    private String appStorageBaseDir4;
+
+    @PostMapping("/upload_guide_sign/{id}")
+    public String uploadGuideSignature(@RequestParam("signatureFile") MultipartFile signatureFile,
+                                       @PathVariable("id") long id,
+                                       RedirectAttributes redirectAttributes) {
+        Optional<Guide> optionalGuide = guideService.getGuide(id);
+
+        if (optionalGuide.isPresent()) {
+            Guide guide = optionalGuide.get();
+
+            if (signatureFile != null && !signatureFile.isEmpty()) {
+                try {
+                    String originalFilename = signatureFile.getOriginalFilename();
+                    String extension = "";
+
+                    if (originalFilename != null && originalFilename.contains(".")) {
+                        extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                    }
+                    String emailFolder = guide.getEmailId().replaceAll("[^a-zA-Z0-9@.]", "_");
+                    String fullDirPath = appStorageBaseDir4 + File.separator + emailFolder;
+                    Path dirPath = Paths.get(fullDirPath);
+                    Files.createDirectories(dirPath);
+                    String fileName = guide.getName().replaceAll("\\s+", "_") + "_Sign" + extension;
+                    Path filePath = dirPath.resolve(fileName);
+                    Files.write(filePath, signatureFile.getBytes());
+                    String relativePath = "/files/Admin Docs/" + emailFolder + "/" + fileName;
+                    guide.setDigitalSignaturePath(relativePath);
+                    guideService.updateGuide(guide, Optional.of(guide));
+
+                    redirectAttributes.addFlashAttribute("success", "Signature uploaded successfully!");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    redirectAttributes.addFlashAttribute("error", "Error uploading signature!");
+                }
+            } else {
+                redirectAttributes.addFlashAttribute("error", "No file selected!");
+            }
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Guide not found!");
+        }
+
+        return "redirect:/bisag/guide/guide_dashboard";
+    }
+
+    @GetMapping("/guide_sign/{guideId}")
+    public ResponseEntity<byte[]> getGuideSignature(@PathVariable Long guideId) {
+        Optional<Guide> optionalGuide = guideService.getGuide(guideId);
+
+        if (optionalGuide.isPresent()) {
+            Guide guide = optionalGuide.get();
+            String relativePath = guide.getDigitalSignaturePath();
+
+            if (relativePath != null && !relativePath.isEmpty()) {
+                try {
+                    String absolutePath = appStorageBaseDir4 + File.separator +
+                            guide.getEmailId().replaceAll("[^a-zA-Z0-9@.]", "_") + File.separator +
+                            new File(relativePath).getName(); // extract filename
+
+                    Path imagePath = Paths.get(absolutePath);
+                    byte[] imageBytes = Files.readAllBytes(imagePath);
+                    String contentType = Files.probeContentType(imagePath);
+                    if (contentType == null) {
+                        contentType = MediaType.IMAGE_PNG_VALUE;
+                    }
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.parseMediaType(contentType));
+
+                    return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
+            }
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/document_status")
+    public String showDocumentStatus(Model model, Principal principal) {
+        String username = principal.getName();
+        Guide guide = guideService.getGuideByUsername(username);
+
+        if (guide != null) {
+            List<Intern> interns = internService.getInternsByGuideId(guide.getGuideId());
+            interns.sort(Comparator.comparing(Intern::getInternId).reversed());
+            model.addAttribute("interns", interns);
+
+            logService.saveLog(
+                    String.valueOf(guide.getGuideId()),
+                    "Accessed Intern Document List",
+                    "Guide " + guide.getName() + " viewed the list of document statuses for their assigned interns."
+            );
+            model.addAttribute("guide", guide);
+        } else {
+            model.addAttribute("interns", List.of()); // empty list
+        }
+
+        return "guide/document_status_list";
+    }
+
+    @GetMapping("/intern_icard/{internId}")
+    public ModelAndView viewInternICard(@PathVariable String internId,
+                                        RedirectAttributes redirectAttributes,
+                                        Principal principal) {
+        Intern intern = internService.getInternById(internId);
+        if (intern == null) {
+            redirectAttributes.addFlashAttribute("error", "Intern not found.");
+            return new ModelAndView("redirect:/bisag/guide/document_status");
+        }
+
+        if (!intern.isIcardApproved()) {
+            redirectAttributes.addFlashAttribute("error", "I-Card has not been approved by the intern yet.");
+            return new ModelAndView("redirect:/bisag/guide/document_status");
+        }
+        String username = principal.getName();
+        Guide guide = guideService.getGuideByUsername(username);
+        if (guide != null) {
+            logService.saveLog(
+                    String.valueOf(guide.getGuideId()),
+                    "Viewed Intern I-Card",
+                    "Guide " + guide.getName() + " viewed the I-Card of intern with ID " + internId + "."
+            );
+        }
+
+        ModelAndView mv = new ModelAndView("guide/intern_icard");
+        mv.addObject("intern", intern);
+        return mv;
+    }
+
+    @GetMapping("/photo/{internId}")
+    public ResponseEntity<byte[]> getPhoto(@PathVariable String internId) {
+        Intern intern = internService.getInternById(internId);
+        byte[] imageBytes = intern.getPassportSizeImage();
+        if (imageBytes == null || imageBytes.length == 0) {
+            InputStream in = getClass().getResourceAsStream("/static/images/default-avatar.jpg");
+            try {
+                imageBytes = IOUtils.toByteArray(in);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/digital_sign/{internId}")
+    public ResponseEntity<byte[]> getDigitalSign(@PathVariable String internId) throws IOException {
+        Intern intern = internService.getInternById(internId);
+        if (intern == null || intern.getSign() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        byte[] imageData = intern.getSign();
+        try (FileOutputStream fos = new FileOutputStream("debug_signature.jpg")) {
+            fos.write(imageData);
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        return new ResponseEntity<>(imageData, headers, HttpStatus.OK);
+    }
+
+    @PostMapping("/approve_icard/{internId}")
+    public String approveIcard(@PathVariable String internId, RedirectAttributes redirectAttributes) {
+        Optional<Intern> optionalIntern = internService.getInternByInternId(internId);
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            intern.setGuideApprovedIcard(true);
+            internService.saveIntern(intern);
+            redirectAttributes.addFlashAttribute("success", "I-Card approved successfully!!!");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Intern not found. Unable to approve i-Card.");
+        }
+        return "redirect:/bisag/guide/document_status";
     }
 }

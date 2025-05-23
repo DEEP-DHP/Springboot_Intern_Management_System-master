@@ -410,6 +410,7 @@ public class AdminController {
                                   @RequestParam("passportSizeImage") MultipartFile passportSizeImage,
                                   @RequestParam("icardImage") MultipartFile icardImage,
                                   @RequestParam("nocPdf") MultipartFile nocPdf,
+                                  @RequestParam("sign") MultipartFile sign,
                                   @RequestParam("resumePdf") MultipartFile resumePdf,
                                   @RequestParam("semester") int semester,
                                   @RequestParam("password") String password,
@@ -418,6 +419,11 @@ public class AdminController {
                                   @RequestParam("joiningDate") java.sql.Date joiningDate,
                                   @RequestParam("completionDate") java.sql.Date completionDate,
                                   @RequestParam("securityPin") String securityPin,
+                                  @RequestParam("permanentAddress") String permanentAddress,
+                                  @RequestParam("dateOfBirth") java.sql.Date dateOfBirth,
+                                  @RequestParam("gender") String gender,
+                                  @RequestParam("collegeGuideHodName") String collegeGuideHodName,
+                                  @RequestParam("aggregatePercentage") Double aggregatePercentage,
                                   HttpSession session) {
 
         try {
@@ -463,8 +469,14 @@ public class AdminController {
 
             internApplication.setPassportSizeImage(passportSizeImage.getBytes());
             internApplication.setCollegeIcardImage(icardImage.getBytes());
+            internApplication.setSign(sign.getBytes());
             internApplication.setNocPdf(nocPdf.getBytes());
             internApplication.setResumePdf(resumePdf.getBytes());
+            internApplication.setPermanentAddress(permanentAddress);
+            internApplication.setDateOfBirth(dateOfBirth);
+            internApplication.setGender(gender);
+            internApplication.setCollegeGuideHodName(collegeGuideHodName);
+            internApplication.setAggregatePercentage(aggregatePercentage);
 
             internApplicationRepo.save(internApplication);
 
@@ -651,10 +663,12 @@ public class AdminController {
 
         List<College> colleges = fieldService.getColleges();
         List<Domain> domains = fieldService.getDomains();
+        List<Degree> degrees = fieldService.getDegrees();
 //        List<Branch> branches = fieldService.getBranches();
         model = countNotifications(model);
 
         mv.addObject("colleges", colleges);
+        mv.addObject("degrees", degrees);
         mv.addObject("domains", domains);
 //        mv.addObject("branches", branches);
 
@@ -960,85 +974,106 @@ public class AdminController {
 
     @GetMapping("/intern/documents/registration/{id}")
     public ResponseEntity<byte[]> getRegistrationFormForIntern(@PathVariable("id") String id) {
-        Optional<Intern> optionalApplication = internService.getIntern(id);
+        Optional<Intern> optionalIntern = internService.getIntern(id);
 
-        if (optionalApplication.isPresent()) {
-            Intern application = optionalApplication.get();
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            String filePath = baseDir + intern.getEmail() + "/registrationForm.pdf";
 
-            byte[] pdf = application.getRegistrationForm();
+            try {
+                File file = new File(filePath);
+                if (file.exists()) {
+                    byte[] pdf = Files.readAllBytes(file.toPath());
 
-            if (pdf != null) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_PDF)
-                        .body(pdf);
-            } else {
-                return ResponseEntity.notFound().build();
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_PDF)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"registrationForm.pdf\"")
+                            .body(pdf);
+                }
+            } catch (IOException e) {
+                e.printStackTrace(); // Optional: Log error here
             }
-        } else {
-            return ResponseEntity.notFound().build();
         }
+
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/intern/documents/security/{id}")
     public ResponseEntity<byte[]> getSecurityFormForIntern(@PathVariable("id") String id) {
-        Optional<Intern> optionalApplication = internService.getIntern(id);
+        Optional<Intern> optionalIntern = internService.getIntern(id);
 
-        if (optionalApplication.isPresent()) {
-            Intern application = optionalApplication.get();
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            String filePath = baseDir + intern.getEmail() + "/securityForm.pdf";
 
-            byte[] pdf = application.getSecurityForm();
+            try {
+                File file = new File(filePath);
+                if (file.exists()) {
+                    byte[] pdf = Files.readAllBytes(file.toPath());
 
-            if (pdf != null) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_PDF)
-                        .body(pdf);
-            } else {
-                return ResponseEntity.notFound().build();
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_PDF)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"securityForm.pdf\"")
+                            .body(pdf);
+                }
+            } catch (IOException e) {
+                e.printStackTrace(); // Optional: log error here
             }
-        } else {
-            return ResponseEntity.notFound().build();
         }
+
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/intern/documents/icardForm/{id}")
     public ResponseEntity<byte[]> getICardFormForIntern(@PathVariable("id") String id) {
-        Optional<Intern> optionalApplication = internService.getIntern(id);
+        Optional<Intern> optionalIntern = internService.getIntern(id);
 
-        if (optionalApplication.isPresent()) {
-            Intern application = optionalApplication.get();
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            String filePath = baseDir + intern.getEmail() + "/icardForm.pdf";
 
-            byte[] pdf = application.getIcardForm();
+            try {
+                File file = new File(filePath);
+                if (file.exists()) {
+                    byte[] pdf = Files.readAllBytes(file.toPath());
 
-            if (pdf != null) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_PDF)
-                        .body(pdf);
-            } else {
-                return ResponseEntity.notFound().build();
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_PDF)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"icardForm.pdf\"")
+                            .body(pdf);
+                }
+            } catch (IOException e) {
+                e.printStackTrace(); // Optional: log error
             }
-        } else {
-            return ResponseEntity.notFound().build();
         }
+
+        return ResponseEntity.notFound().build();
     }
+
     @GetMapping("/intern/documents/projectDefinitionForm/{id}")
     public ResponseEntity<byte[]> getProjectDefinitionFormForIntern(@PathVariable("id") String id) {
-        Optional<Intern> optionalApplication = internService.getIntern(id);
+        Optional<Intern> optionalIntern = internService.getIntern(id);
 
-        if (optionalApplication.isPresent()) {
-            Intern application = optionalApplication.get();
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            String filePath = baseDir + intern.getEmail() + "/projectDefinitionForm.pdf";
 
-            byte[] pdf = application.getProjectDefinitionForm();
+            try {
+                File file = new File(filePath);
+                if (file.exists()) {
+                    byte[] pdf = Files.readAllBytes(file.toPath());
 
-            if (pdf != null) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_PDF)
-                        .body(pdf);
-            } else {
-                return ResponseEntity.notFound().build();
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_PDF)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"projectDefinitionForm.pdf\"")
+                            .body(pdf);
+                }
+            } catch (IOException e) {
+                e.printStackTrace(); // Optional: log error here
             }
-        } else {
-            return ResponseEntity.notFound().build();
         }
+
+        return ResponseEntity.notFound().build();
     }
 
     @PostMapping("/intern/documents/projectDefinitionForm/{id}")
@@ -1058,7 +1093,7 @@ public class AdminController {
             String newFilePath = storageDir + "projectDefinitionForm.pdf";
             Files.write(Paths.get(newFilePath), file.getBytes());
 
-            application.setProjectDefinitionForm(file.getBytes());
+//            application.setProjectDefinitionForm(file.getBytes());
             internService.save(application);
 
             return "redirect:/bisag/admin/intern_docs/" + id;
@@ -1317,7 +1352,7 @@ public class AdminController {
             String newFilePath = storageDir + "icardForm.pdf";
             Files.write(Paths.get(newFilePath), file.getBytes());
 
-            application.setIcardForm(file.getBytes());
+//            application.setIcardForm(file.getBytes());
             internService.save(application);
 
             return "redirect:/bisag/admin/intern_docs/" + id;
@@ -1432,7 +1467,7 @@ public class AdminController {
             String newFilePath = storageDir + "registrationForm.pdf";
             Files.write(Paths.get(newFilePath), file.getBytes());
 
-            application.setRegistrationForm(file.getBytes());
+//            application.setRegistrationForm(file.getBytes());
             internService.save(application);
 
             return "redirect:/bisag/admin/intern_docs/" + id;
@@ -1457,7 +1492,7 @@ public class AdminController {
             String newFilePath = storageDir + "securityForm.pdf";
             Files.write(Paths.get(newFilePath), file.getBytes());
 
-            application.setSecurityForm(file.getBytes());
+//            application.setSecurityForm(file.getBytes());
             internService.save(application);
 
             return "redirect:/bisag/admin/intern_docs/" + id;
@@ -1509,7 +1544,7 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("errorMessage", "Failed to update intern application status");
         }
 
-        return "redirect:/bisag/admin/intern_application/approved_interns";
+        return "redirect:/bisag/admin/intern_application";
     }
 
 
@@ -1541,6 +1576,12 @@ public class AdminController {
                     intern.get().setCompletionDate(internApplication.getCompletionDate());
                     intern.get().setGuideName(internApplication.getGuideName());
                     intern.get().setGuideId(internApplication.getGuideId());
+                    intern.get().setPermanentAddress(internApplication.getPermanentAddress());
+                    intern.get().setDateOfBirth(internApplication.getDateOfBirth());
+                    intern.get().setCollegeGuideHodName(internApplication.getCollegeGuideHodName());
+                    intern.get().setGender(internApplication.getGender());
+                    intern.get().setAggregatePercentage(internApplication.getAggregatePercentage());
+
 
                     logService.saveLog(String.valueOf(id), "Updated intern application details", "InternApplication Update");
                     redirectAttributes.addFlashAttribute("successMessage", "Intern application updated successfully.");
@@ -1671,6 +1712,19 @@ public class AdminController {
         return "redirect:/bisag/admin/intern_application/new_interns";
     }
 
+    @PostMapping("/intern/delete-document")
+    public String deleteDocument(@RequestParam String internId,
+                                 @RequestParam String documentType,
+                                 RedirectAttributes redirectAttributes) {
+        boolean success = internService.deleteDocument(internId, documentType);
+        if (success) {
+            redirectAttributes.addFlashAttribute("success", "Document deleted successfully.");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Failed to delete document.");
+        }
+        return "redirect:/bisag/admin/intern_docs/" + internId;
+    }
+
     @GetMapping("/intern_application/approved_interns")
     public ModelAndView approvedInterns(Model model) {
         ModelAndView mv = new ModelAndView();
@@ -1756,6 +1810,11 @@ public class AdminController {
                     intern.get().setSemester(internApplication.getSemester());
                     intern.get().setJoiningDate(internApplication.getJoiningDate());
                     intern.get().setCompletionDate(internApplication.getCompletionDate());
+                    intern.get().setPermanentAddress(internApplication.getPermanentAddress());
+                    intern.get().setAggregatePercentage(internApplication.getAggregatePercentage());
+                    intern.get().setGender(internApplication.getGender());
+                    intern.get().setCollegeGuideHodName(internApplication.getCollegeGuideHodName());
+                    intern.get().setDateOfBirth(internApplication.getDateOfBirth());
 
                     redirectAttributes.addFlashAttribute("successMessage", "Approved intern details updated successfully.");
                 } else {
@@ -1814,55 +1873,149 @@ public class AdminController {
         return "redirect:/bisag/admin/intern_application/approved_interns";
     }
 
-    @GetMapping("/intern_application/new_interns")
-    public ModelAndView newInterns(
-            Model model,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "30") int size,
-            @RequestParam(required = false) Boolean all
-    ) {
-        ModelAndView mv = new ModelAndView();
+//    @GetMapping("/intern_application/new_interns")
+//    public ModelAndView newInterns(
+//            Model model,
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "30") int size,
+//            @RequestParam(required = false) Boolean all
+//    ) {
+//        ModelAndView mv = new ModelAndView();
+//
+//        List<Intern> intern;
+//        if (Boolean.TRUE.equals(all)) {
+//            intern = internService.getInternsSortedByInternIdDesc();
+//            mv.addObject("showAll", true);
+//        } else {
+//            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("internId"))); // Sorting by internId in descending order
+//            Page<Intern> internPage = internRepo.findAllWithGroupAndGuideUsingEntityGraph(pageable);
+//            intern = internPage.getContent();
+//            mv.addObject("currentPage", page);
+//            mv.addObject("totalPages", internPage.getTotalPages());
+//            mv.addObject("pageSize", size);
+//            mv.addObject("showAll", false);
+//        }
+//
+//        mv.addObject("intern", intern);
+//
+//        model = countNotifications(model);
+//        mv.setViewName("admin/new_interns");
+//        mv.addObject("admin", adminName(session));
+//
+//        List<RRecord> records = recordService.getAllRecords();
+//        model.addAttribute("records", records);
+//        List<College> college = fieldService.getColleges();
+//        List<Domain> domain = fieldService.getDomains();
+//        List<Guide> guide = guideService.getGuide();
+//        List<Degree> degree = fieldService.getDegrees();
+////        List<GroupEntity> groupEntities = groupService.getGroups();
+//        List<String> projectDefinitions = internService.getDistinctProjectDefinitions();
+//        List<Intern> interns = internService.getAllInterns(); // used separately
+////        List<String> genders = internService.getDistinctGenders();
+//
+//        mv.addObject("interns", interns);
+//        mv.addObject("project_definition_name", projectDefinitions);
+//        mv.addObject("colleges", college);
+//        mv.addObject("domains", domain);
+//        mv.addObject("guides", guide);
+//        mv.addObject("degrees", degree);
+////        mv.addObject("genders", genders);
+//        mv.addObject("admin", adminName(session));
+//        List<String> internIds = intern.stream()
+//            .map(Intern::getInternId)
+//            .collect(Collectors.toList());
+//
+//    Map<String, String> finalReportStatuses = recordService.findFinalReportsForInternIds(internIds);
+//    model.addAttribute("finalReportStatuses", finalReportStatuses);
+//    Map<String, String> reportTimestamps = recordService.findLatestTimestampsForInternIds(internIds);
+//    mv.addObject("reportTimestamps", reportTimestamps);
+////        Map<String, String> finalReportStatuses = new HashMap<>();
+////        for (Intern i : intern) {
+////            String finalReport = recordService.findFinalReportByInternId(i.getInternId());
+////            finalReportStatuses.put(i.getInternId(), finalReport != null ? finalReport : "no");
+////        }
+////        model.addAttribute("finalReportStatuses", finalReportStatuses);
+////
+////        Map<String, String> reportTimestamps = new HashMap<>();
+////        for (Intern i : intern) {
+////            RRecord record = recordService.findLatestRecordByInternId(i.getInternId());
+////            if (record != null && record.getSubmissionTimestamp() != null) {
+////                reportTimestamps.put(i.getInternId(),
+////                        record.getSubmissionTimestamp().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")));
+////            } else {
+////                reportTimestamps.put(i.getInternId(), "N/A");
+////            }
+////        }
+////        model.addAttribute("reportTimestamps", reportTimestamps);
+//
+//        String username = (String) session.getAttribute("username");
+//        Admin admin = adminService.getAdminByUsername(username);
+//        if (admin != null) {
+//            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed New Interns",
+//                    "Admin " + admin.getName() + " accessed the new interns page.");
+//        }
+//
+//        return mv;
+//    }
+@GetMapping("/intern_application/new_interns")
+public ModelAndView newInterns(
+        Model model,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "30") int size,
+        @RequestParam(required = false) Boolean all,
+        @RequestParam(required = false) String keyword
+) {
+    ModelAndView mv = new ModelAndView();
 
-        List<Intern> intern;
-        if (Boolean.TRUE.equals(all)) {
-            intern = internService.getInternsSortedByInternIdDesc();
-            mv.addObject("showAll", true);
+    List<Intern> intern;
+    if (Boolean.TRUE.equals(all)) {
+        Pageable pageableAll = PageRequest.of(0, Integer.MAX_VALUE, Sort.by(Sort.Order.desc("internId")));
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            intern = internService.searchInternsSortedByInternIdDesc(keyword.trim(), pageableAll).getContent();
         } else {
-            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("internId"))); // Sorting by internId in descending order
-            Page<Intern> internPage = internRepo.findAllWithGroupAndGuideUsingEntityGraph(pageable);
-            intern = internPage.getContent();
-            mv.addObject("currentPage", page);
-            mv.addObject("totalPages", internPage.getTotalPages());
-            mv.addObject("pageSize", size);
-            mv.addObject("showAll", false);
+            intern = internService.getInternsSortedByInternIdDesc();
         }
+        mv.addObject("showAll", true);
+    } else {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("internId")));
+        Page<Intern> internPage;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            internPage = internService.searchInternsSortedByInternIdDesc(keyword.trim(), pageable);
+        } else {
+            internPage = internRepo.findAllWithGroupAndGuideUsingEntityGraph(pageable);
+        }
+        intern = internPage.getContent();
+        mv.addObject("currentPage", page);
+        mv.addObject("totalPages", internPage.getTotalPages());
+        mv.addObject("pageSize", size);
+        mv.addObject("showAll", false);
+    }
 
-        mv.addObject("intern", intern);
+    mv.addObject("intern", intern);
 
-        model = countNotifications(model);
-        mv.setViewName("admin/new_interns");
-        mv.addObject("admin", adminName(session));
+    model = countNotifications(model);
+    mv.setViewName("admin/new_interns");
+    mv.addObject("admin", adminName(session));
 
-        List<RRecord> records = recordService.getAllRecords();
-        model.addAttribute("records", records);
-        List<College> college = fieldService.getColleges();
-        List<Domain> domain = fieldService.getDomains();
-        List<Guide> guide = guideService.getGuide();
-        List<Degree> degree = fieldService.getDegrees();
-//        List<GroupEntity> groupEntities = groupService.getGroups();
-        List<String> projectDefinitions = internService.getDistinctProjectDefinitions();
-        List<Intern> interns = internService.getAllInterns(); // used separately
-//        List<String> genders = internService.getDistinctGenders();
+    List<RRecord> records = recordService.getAllRecords();
+    model.addAttribute("records", records);
+    List<College> college = fieldService.getColleges();
+    List<Domain> domain = fieldService.getDomains();
+    List<Guide> guide = guideService.getGuide();
+    List<Degree> degree = fieldService.getDegrees();
+    List<String> projectDefinitions = internService.getDistinctProjectDefinitions();
+    List<Intern> interns = internService.getAllInterns();
 
-        mv.addObject("interns", interns);
-        mv.addObject("project_definition_name", projectDefinitions);
-        mv.addObject("colleges", college);
-        mv.addObject("domains", domain);
-        mv.addObject("guides", guide);
-        mv.addObject("degrees", degree);
-//        mv.addObject("genders", genders);
-        mv.addObject("admin", adminName(session));
-        List<String> internIds = intern.stream()
+    mv.addObject("interns", interns);
+    mv.addObject("project_definition_name", projectDefinitions);
+    mv.addObject("colleges", college);
+    mv.addObject("domains", domain);
+    mv.addObject("guides", guide);
+    mv.addObject("degrees", degree);
+    mv.addObject("admin", adminName(session));
+    mv.addObject("keyword", keyword); // retain search term in UI
+
+    List<String> internIds = intern.stream()
             .map(Intern::getInternId)
             .collect(Collectors.toList());
 
@@ -1870,34 +2023,16 @@ public class AdminController {
     model.addAttribute("finalReportStatuses", finalReportStatuses);
     Map<String, String> reportTimestamps = recordService.findLatestTimestampsForInternIds(internIds);
     mv.addObject("reportTimestamps", reportTimestamps);
-//        Map<String, String> finalReportStatuses = new HashMap<>();
-//        for (Intern i : intern) {
-//            String finalReport = recordService.findFinalReportByInternId(i.getInternId());
-//            finalReportStatuses.put(i.getInternId(), finalReport != null ? finalReport : "no");
-//        }
-//        model.addAttribute("finalReportStatuses", finalReportStatuses);
-//
-//        Map<String, String> reportTimestamps = new HashMap<>();
-//        for (Intern i : intern) {
-//            RRecord record = recordService.findLatestRecordByInternId(i.getInternId());
-//            if (record != null && record.getSubmissionTimestamp() != null) {
-//                reportTimestamps.put(i.getInternId(),
-//                        record.getSubmissionTimestamp().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")));
-//            } else {
-//                reportTimestamps.put(i.getInternId(), "N/A");
-//            }
-//        }
-//        model.addAttribute("reportTimestamps", reportTimestamps);
 
-        String username = (String) session.getAttribute("username");
-        Admin admin = adminService.getAdminByUsername(username);
-        if (admin != null) {
-            logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed New Interns",
-                    "Admin " + admin.getName() + " accessed the new interns page.");
-        }
-
-        return mv;
+    String username = (String) session.getAttribute("username");
+    Admin admin = adminService.getAdminByUsername(username);
+    if (admin != null) {
+        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed New Interns",
+                "Admin " + admin.getName() + " accessed the new interns page.");
     }
+
+    return mv;
+}
 //@GetMapping("/intern_application/new_interns")
 //public ModelAndView newInterns(
 //        Model model,
@@ -2025,7 +2160,8 @@ public class AdminController {
                             internApplication.getDegree(),
                             internApplication.getPassword(), internApplication.getCollegeIcardImage(),
                             internApplication.getNocPdf(), internApplication.getResumePdf(), internApplication.getPassportSizeImage(),
-                            internApplication.getSemester(), internApplication.getDomain(), group);
+                            internApplication.getSemester(), internApplication.getPermanentAddress(), internApplication.getCollegeGuideHodName(),
+                            internApplication.getAggregatePercentage(), internApplication.getSign(), internApplication.getGender(), internApplication.getDateOfBirth(), "LAPTOP", internApplication.getDomain(), group);
 
                     intern.setInternId(generateInternId());
                     internService.addIntern(intern);
@@ -2911,10 +3047,7 @@ public String getReportsByYear(@RequestParam(value = "date", required = true) St
             return null;
         }
     }
-
-    // Method to get the groupId from internId
     private Long getGroupIdByInternId(String internId) {
-        // Fetch the intern based on internId
         Intern intern = internService.getInternById(internId);  // Assuming InternService has this method
 
         if (intern == null || intern.getGroup() == null) {
@@ -3000,6 +3133,7 @@ public String getReportsByYear(@RequestParam(value = "date", required = true) St
 
         MyUser user = myUserService.getUserByUsername(admin.getEmailId());
         report.setReplacedBy(user);
+        report.setChangedReport(true);
         Date currentDate = new Date();
 
         if (report.getDeadline().compareTo(currentDate) >= 0) {
@@ -3201,11 +3335,11 @@ public String adminPendingFinalReports(@RequestParam("apendingAns") String apend
 }
     @GetMapping("/weekly-reports/pending")
     public String getPendingReports(Model model, @RequestParam(value = "page", defaultValue = "0") int page) {
-        Pageable pageable = PageRequest.of(page, 10);
+        Pageable pageable = PageRequest.of(page, 15);
         Map<String, Integer> pendingReports = weeklyReportService.getPendingReports(pageable);
 
         int totalReports = weeklyReportService.getTotalPendingCount();
-        int totalPages = (int) Math.ceil((double) totalReports / 10);
+        int totalPages = (int) Math.ceil((double) totalReports / 15);
 
         model.addAttribute("pendingReports", pendingReports);
         model.addAttribute("currentPage", page);
@@ -3495,13 +3629,51 @@ public String adminPendingFinalReports(@RequestParam("apendingAns") String apend
 
     // Show all thesis records
     @GetMapping("/thesis_list")
-    public String getThesisList(Model model) {
-        List<Thesis> thesisList = thesisService.getAllTheses();
-        model.addAttribute("thesisList", thesisList);
+    public String getThesisList(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "false") boolean showAll,
+            Model model) {
+
+        if (showAll) {
+            List<Thesis> thesisList;
+
+            if (startDate != null && endDate != null) {
+                thesisList = thesisService.findByIssueDateBetweenn(startDate, endDate);
+            } else {
+                thesisList = thesisService.getAllTheses();
+            }
+
+            model.addAttribute("showAll", true);
+            model.addAttribute("thesisList", thesisList);
+
+        } else {
+            Pageable pageable = PageRequest.of(page, 30, Sort.by("issueDate").descending());
+            Page<Thesis> thesisPage;
+
+            if (startDate != null && endDate != null) {
+                thesisPage = thesisService.findByIssueDateBetween(startDate, endDate, pageable);
+            } else {
+                thesisPage = thesisService.getAllThesess(pageable);
+            }
+
+            model.addAttribute("showAll", false);
+            model.addAttribute("thesisPage", thesisPage);
+            model.addAttribute("totalPages", thesisPage.getTotalPages());
+        }
+
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("currentPage", page);
+
         Admin admin = getSignedInAdmin();
         model.addAttribute("admin", admin);
 
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Thesis List View", "Admin " + admin.getName() + " viewed the list of thesis.");
+        logService.saveLog(
+                String.valueOf(admin.getAdminId()),
+                "Thesis List View",
+                "Admin " + admin.getName() + " viewed the list of thesis.");
 
         return "admin/thesis_list";
     }
@@ -3734,6 +3906,7 @@ public String adminPendingFinalReports(@RequestParam("apendingAns") String apend
 
         return modelAndView;
     }
+
     @GetMapping("/get-intern-suggestions")
     @ResponseBody
     public List<String> getInternSuggestions(@RequestParam String name) {
@@ -5157,7 +5330,10 @@ public String getAllRelievingRecords(@RequestParam(defaultValue = "0") int page,
 
         List<Admin> admins = adminService.getAdmin();
         List<Guide> guides = guideService.getGuide();
-        List<Intern> interns = internService.getInterns();
+        List<Intern> interns = internService.getInterns()
+                .stream()
+                .filter(intern -> intern.getCompletionDate() != null && intern.getCompletionDate().after(new Date()))
+                .collect(Collectors.toList());
         List<GroupEntity> groups = groupService.getAllocatedGroups();
         Admin admin = getSignedInAdmin();
         model = countNotifications(model);
@@ -5616,24 +5792,35 @@ public String getAllRelievingRecords(@RequestParam(defaultValue = "0") int page,
         }
         return "redirect:/bisag/admin/announcement";
     }
+
     @GetMapping("/update_project_def")
     public String showAssignProjectDefinitionForm(Model model) {
         Admin admin = getSignedInAdmin();
         model.addAttribute("admin", admin);
 
-        logService.saveLog(String.valueOf(admin.getAdminId()), "Viewed Assign Project Definition Form", "Admin " + admin.getName() + " accessed the Assign Project Definition Form page.");
+        logService.saveLog(
+                String.valueOf(admin.getAdminId()),
+                "Viewed Assign Project Definition Form",
+                "Admin " + admin.getName() + " accessed the Assign Project Definition Form page."
+        );
 
-        List<GroupEntity> groups = groupRepo.findAll();
-        model.addAttribute("groups", groups);
+        // Replace this:
+        // List<GroupEntity> groups = groupRepo.findAll();
+        // model.addAttribute("groups", groups);
 
+        // With this:
+        List<String> groupIds = groupService.getGroupIdsWithActiveInterns();
+        model.addAttribute("groupIds", groupIds);
+
+        // Map groupId to list of intern names
         Map<String, List<String>> groupInternMap = new HashMap<>();
-        for (GroupEntity group : groups) {
-            List<Intern> interns = internService.getInternsByGroupId(group.getGroupId());
+        for (String groupId : groupIds) {
+            List<Intern> interns = internService.getInternsByGroupId(groupId);
             List<String> names = interns.stream()
                     .map(Intern::getFirstName)
                     .collect(Collectors.toList());
 
-            groupInternMap.put(group.getGroupId(), names);
+            groupInternMap.put(groupId, names);
         }
 
         model.addAttribute("groupInternMap", groupInternMap);
@@ -6128,6 +6315,7 @@ public String getAllRelievingRecords(@RequestParam(defaultValue = "0") int page,
         mv.addObject("intern", intern);
         return mv;
     }
+
     @GetMapping("/photo/{internId}")
     public ResponseEntity<byte[]> getPhoto(@PathVariable String internId) {
         Intern intern = internService.getInternById(internId);
@@ -6145,6 +6333,7 @@ public String getAllRelievingRecords(@RequestParam(defaultValue = "0") int page,
         headers.setContentType(MediaType.IMAGE_JPEG);
         return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
     }
+
     @GetMapping("/digital-sign/{internId}")
     public ResponseEntity<byte[]> getDigitalSignature(@PathVariable String internId) throws IOException {
         Intern intern = internService.getInternById(internId);
@@ -6267,13 +6456,49 @@ public String getAllRelievingRecords(@RequestParam(defaultValue = "0") int page,
 
         if (optionalAdmin.isPresent()) {
             Admin admin = optionalAdmin.get();
-            String relativePath = admin.getDigitalSignaturePath();  // e.g., "/files/Admin Docs/email/Admin_Sign.png"
+            String relativePath = admin.getDigitalSignaturePath();
 
             if (relativePath != null && !relativePath.isEmpty()) {
                 try {
                     // Convert relative path to absolute file path
                     String absolutePath = appStorageBaseDir4 + File.separator +
                             admin.getEmailId().replaceAll("[^a-zA-Z0-9@.]", "_") + File.separator +
+                            new File(relativePath).getName(); // extract filename
+
+                    Path imagePath = Paths.get(absolutePath);
+                    byte[] imageBytes = Files.readAllBytes(imagePath);
+                    String contentType = Files.probeContentType(imagePath);
+                    if (contentType == null) {
+                        contentType = MediaType.IMAGE_PNG_VALUE;
+                    }
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.parseMediaType(contentType));
+
+                    return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
+            }
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/guide_sign/{guideId}")
+    public ResponseEntity<byte[]> getGuideSignature(@PathVariable Long guideId) {
+        Optional<Guide> optionalGuide = guideService.getGuide(guideId);
+
+        if (optionalGuide.isPresent()) {
+            Guide guide = optionalGuide.get();
+            String relativePath = guide.getDigitalSignaturePath();
+
+            if (relativePath != null && !relativePath.isEmpty()) {
+                try {
+                    String absolutePath = appStorageBaseDir4 + File.separator +
+                            guide.getEmailId().replaceAll("[^a-zA-Z0-9@.]", "_") + File.separator +
                             new File(relativePath).getName(); // extract filename
 
                     Path imagePath = Paths.get(absolutePath);
@@ -6310,7 +6535,7 @@ public String getAllRelievingRecords(@RequestParam(defaultValue = "0") int page,
 
         if (!Boolean.TRUE.equals(intern.isSecurityFormApproved())) {
             redirectAttributes.addFlashAttribute("error", "Security Form not submitted yet.");
-            return new ModelAndView("redirect:/bisag/admin/intern_docs/" + internId);
+            return new ModelAndView("redirect:/bisag/admin/document_status");
         }
         if (admin != null) {
             logService.saveLog(
@@ -6333,12 +6558,13 @@ public String getAllRelievingRecords(@RequestParam(defaultValue = "0") int page,
 
         if (intern == null) {
             redirectAttributes.addFlashAttribute("error", "Intern not found.");
-            return new ModelAndView("redirect:/bisag/admin/intern_docs/" + internId);
+            return new ModelAndView("redirect:/bisag/admin/document_status");
         }
 
-        if (intern.getProfileUpdated() != 1) {
+        // Check if internRegistrationForm is false or null
+        if (intern.isInternRegistrationForm() == false || !intern.isInternRegistrationForm()) {
             redirectAttributes.addFlashAttribute("error", "Registration form is not submitted by the intern.");
-            return new ModelAndView("redirect:/bisag/admin/intern_docs/" + internId);
+            return new ModelAndView("redirect:/bisag/admin/document_status");
         }
 
         if (admin != null) {
@@ -6378,5 +6604,192 @@ public String getAllRelievingRecords(@RequestParam(defaultValue = "0") int page,
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    @PostMapping("/icard_unapproved/{internId}")
+    @ResponseBody
+    public ResponseEntity<String> setIcardUnapproved(@PathVariable String internId) {
+        System.out.println("Received internId = " + internId); // For debug
+        Optional<Intern> optionalIntern = internService.getInternByInternId(internId);
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            intern.setIcardApproved(false);
+            internService.saveIntern(intern);
+            return ResponseEntity.ok("iCard status set to 0");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Intern not found");
+        }
+    }
+
+    @PostMapping("/approve_icard/{internId}")
+    public String approveIcard(@PathVariable String internId, RedirectAttributes redirectAttributes) {
+        Optional<Intern> optionalIntern = internService.getInternByInternId(internId);
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            intern.setAdminApprovedIcard(true);
+            internService.saveIntern(intern);
+            redirectAttributes.addFlashAttribute("success", "I-Card approved successfully!!!");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Intern not found. Unable to approve i-Card.");
+        }
+        return "redirect:/bisag/admin/document_status";
+    }
+
+    @PostMapping("/reject_icard/{internId}")
+    public String rejectIcard(@PathVariable String internId, RedirectAttributes redirectAttributes) {
+        Optional<Intern> optionalIntern = internService.getInternByInternId(internId);
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            intern.setIcardApproved(false);
+            intern.setAdminApprovedIcard(false);
+            internService.saveIntern(intern);
+            redirectAttributes.addFlashAttribute("success", "I-Card approval revoked successfully.");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Intern not found. Unable to reject I-Card.");
+        }
+        return "redirect:/bisag/admin/document_status";
+    }
+
+    @PostMapping("/reject_security_agreement/{internId}")
+    public String rejectSecurityAgreement(@PathVariable String internId, RedirectAttributes redirectAttributes) {
+        Optional<Intern> optionalIntern = internService.getInternByInternId(internId);
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            intern.setSecurityApproved(false);
+            intern.setAdminSecurityApproved(false);
+            internService.saveIntern(intern);
+            redirectAttributes.addFlashAttribute("success", "Security Agreement approval revoked successfully.");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Intern not found. Unable to reject Security Agreement.");
+        }
+        return "redirect:/bisag/admin/document_status";
+    }
+
+    @PostMapping("/approve_security/{internId}")
+    public String approveSecurity(@PathVariable String internId, RedirectAttributes redirectAttributes) {
+        Optional<Intern> optionalIntern = internService.getInternByInternId(internId);
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            intern.setAdminSecurityApproved(true);
+            internService.saveIntern(intern);
+            redirectAttributes.addFlashAttribute("success", "Security Agreement approved successfully!!!");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Intern not found. Unable to approve security agreement.");
+        }
+        return "redirect:/bisag/admin/document_status";
+    }
+
+    @PostMapping("/reject_security_form/{internId}")
+    public String rejectSecurityForm(@PathVariable String internId, RedirectAttributes redirectAttributes) {
+        Optional<Intern> optionalIntern = internService.getInternByInternId(internId);
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            intern.setSecurityFormApproved(false);
+            intern.setAdminSecurityFormApproved(false);
+            internService.saveIntern(intern);
+            redirectAttributes.addFlashAttribute("success", "Security Form approval revoked successfully.");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Intern not found. Unable to reject Security Form.");
+        }
+        return "redirect:/bisag/admin/document_status";
+    }
+
+    @PostMapping("/approve_security_form/{internId}")
+    public String approveSecurityForm(@PathVariable String internId, RedirectAttributes redirectAttributes) {
+        Optional<Intern> optionalIntern = internService.getInternByInternId(internId);
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            intern.setAdminSecurityFormApproved(true);
+            internService.saveIntern(intern);
+            redirectAttributes.addFlashAttribute("success", "Security Form approved successfully!!!");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Intern not found. Unable to approve security form.");
+        }
+        return "redirect:/bisag/admin/document_status";
+    }
+
+    @PostMapping("/reject_registration/{internId}")
+    public String rejectRegistration(@PathVariable String internId, RedirectAttributes redirectAttributes) {
+        Optional<Intern> optionalIntern = internService.getInternByInternId(internId);
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            intern.setInternRegistrationForm(false);
+            intern.setAdminRegistrationApproved(false);
+            internService.saveIntern(intern);
+            redirectAttributes.addFlashAttribute("success", "Registration Form revoked successfully.");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Intern not found. Unable to reject Registration Form.");
+        }
+        return "redirect:/bisag/admin/document_status";
+    }
+
+    @PostMapping("/approve_registration/{internId}")
+    public String approveRegistration(@PathVariable String internId, RedirectAttributes redirectAttributes) {
+        Optional<Intern> optionalIntern = internService.getInternByInternId(internId);
+        if (optionalIntern.isPresent()) {
+            Intern intern = optionalIntern.get();
+            intern.setAdminRegistrationApproved(true);
+            internService.saveIntern(intern);
+            redirectAttributes.addFlashAttribute("success", "Registration Form approved successfully!!!");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Intern not found. Unable to approve registration.");
+        }
+        return "redirect:/bisag/admin/document_status";
+    }
+
+    @GetMapping("/project-definition-details/{groupId}")
+    public String showProjectDefinitionDetails(@PathVariable String groupId, Model model) {
+        GroupEntity group = groupService.getGroupByGroupId(groupId);
+        if (group == null) {
+            return "redirect:/bisag/admin/admin_dashboard";
+        }
+
+        List<Intern> interns = internService.getInternsByGroupId(groupId);
+        Intern sampleIntern = interns.isEmpty() ? new Intern() : interns.get(0);
+
+        model.addAttribute("group", group);
+        model.addAttribute("interns", interns);
+        model.addAttribute("intern", sampleIntern);
+        return "admin/project_definition_details";
+    }
+
+    @GetMapping("/get_intern_details_by_name/{internname}")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> getInternDetailsByNamee(@PathVariable("internname") String internname) {
+        Intern intern = internService.getInternByName(internname);
+
+        if (intern != null) {
+            Map<String, String> internDetails = new HashMap<>();
+            internDetails.put("contactNo", intern.getContactNo());
+
+            Admin admin = getSignedInAdmin();
+
+            if (admin != null) {
+                logService.saveLog(String.valueOf(admin.getAdminId()), "Fetched Intern Details",
+                        "Admin " + admin.getName() + " fetched details for Intern Name " + internname);
+            }
+
+            return ResponseEntity.ok(internDetails);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+    }
+
+    @GetMapping("/viewProjectDefinition/{groupId}")
+    public ResponseEntity<byte[]> viewProjectDefinition(@PathVariable String groupId) throws IOException {
+        String filePath = baseDir2 + groupId + "/projectDefinitionDocument.pdf";
+        File file = new File(filePath);
+
+        if (!file.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        byte[] fileContent = Files.readAllBytes(file.toPath());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.inline().filename("projectDefinitionDocument.pdf").build());
+
+        return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
     }
 }

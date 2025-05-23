@@ -2,6 +2,7 @@ package com.rh4.controllers;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -87,6 +88,8 @@ public class InternController {
     @Autowired
     private MyUserService userService;
     @Autowired
+    private GroupService groupService;
+    @Autowired
     HttpSession session;
     @Autowired
     GroupRepo groupRepo;
@@ -119,11 +122,15 @@ public class InternController {
         for (Intern i : interns) {
             Date joiningDate = i.getJoiningDate();
 
-            // Check if the oldestJoiningDate is null or if the current intern's joining
-            // date is older
-            if (oldestJoiningDate == null || joiningDate.before(oldestJoiningDate)) {
+            if (oldestJoiningDate == null || (joiningDate != null && joiningDate.before(oldestJoiningDate))) {
                 oldestJoiningDate = joiningDate;
             }
+        }
+
+        // If no joining date found, return null or handle accordingly
+        if (oldestJoiningDate == null) {
+            System.out.println("No joining dates found for interns in group.");
+            return null;
         }
 
         System.out.println("Oldest joining date from each intern: " + oldestJoiningDate);
@@ -131,16 +138,22 @@ public class InternController {
         Integer recentWeekNo = (Integer) weeklyReportService.getRecentWeekNo(group);
         System.out.println(recentWeekNo);
 
-        // Calculate next submission date based on recentWeekNo and oldestJoiningDate
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(oldestJoiningDate);
         calendar.set(Calendar.HOUR_OF_DAY, 11);
         calendar.set(Calendar.MINUTE, 30);
         calendar.set(Calendar.SECOND, 0);
-        calendar.add(Calendar.DAY_OF_MONTH, (recentWeekNo) * 7); // Add 6 weeks for each week number
-        // compare with completion date
+        calendar.add(Calendar.DAY_OF_MONTH, recentWeekNo * 7); // Add weeks
 
-        return calendar.getTime();
+        Date nextSubmissionDate = calendar.getTime();
+
+        Date completionDate = intern.getCompletionDate();
+
+        if (completionDate != null && nextSubmissionDate.after(completionDate)) {
+            return null;
+        }
+
+        return nextSubmissionDate;
     }
 
     public void checkWeeklyReportDisable() {
@@ -209,7 +222,7 @@ public class InternController {
         }
     }
 
-//    @GetMapping("/intern_dashboard")
+    //    @GetMapping("/intern_dashboard")
 //    public ModelAndView intern_dashboard(HttpSession session, Model model) {
 //        ModelAndView mv;
 //
@@ -265,64 +278,64 @@ public class InternController {
 //
 //        return mv;
 //    }
-@GetMapping("/intern_dashboard")
-public ModelAndView intern_dashboard(HttpSession session, Model model) {
-    ModelAndView mv;
+    @GetMapping("/intern_dashboard")
+    public ModelAndView intern_dashboard(HttpSession session, Model model) {
+        ModelAndView mv;
 
-    Intern intern = getSignedInIntern();
-    if (intern == null) {
-        return new ModelAndView("intern/cancelled_intern");
+        Intern intern = getSignedInIntern();
+        if (intern == null) {
+            return new ModelAndView("intern/cancelled_intern");
+        }
+
+        String internId = intern.getInternId();
+        session.setAttribute("internId", internId);
+
+        String email = (String) session.getAttribute("email");
+
+        if (!intern.getIsCredentialsGenerated()) {
+            return new ModelAndView("redirect:/bisag/intern/credentials");
+        }
+
+        boolean hasAccepted = undertakingRepo.existsByIntern(internId);
+        if (!hasAccepted) {
+            return new ModelAndView("redirect:/bisag/intern/undertaking");
+        }
+
+        if (intern.getFirstLogin() == 0) {
+            session.setAttribute("username", getUsername());
+            return new ModelAndView("redirect:/bisag/intern/change_passwordd");
+        }
+
+        if (intern.getSecurityVerified() == 0) {
+            return new ModelAndView("redirect:/bisag/intern/verify_pin");
+        }
+
+        mv = new ModelAndView("intern/intern_dashboard");
+        List<Announcement> announcements = announcementService.getAllAnnouncements();
+        model.addAttribute("announcements", announcements);
+        if (intern.getGroupEntity() != null) {
+            mv.addObject("group", intern.getGroupEntity());
+            List<Intern> interns = internService.getInternsByGroupId(intern.getGroup().getId());
+            mv.addObject("interns", interns);
+            mv.addObject("internCountGroupWise", interns.size());
+        } else {
+            mv.addObject("group", null);
+        }
+
+        if (intern.getProfilePicture() != null) {
+            String encodedImage = Base64.encodeBase64String(intern.getProfilePicture());
+            model.addAttribute("encodedProfilePicture", encodedImage);
+        }
+
+        session.setAttribute("id", internId);
+        mv.addObject("username", getUsername());
+        mv.addObject("intern", intern);
+
+        String internFullName = intern.getFirstName();
+        logService.saveLog(internId, "Intern Accessed Dashboard", "Intern " + internFullName + " visited their dashboard.");
+
+        return mv;
     }
-
-    String internId = intern.getInternId();
-    session.setAttribute("internId", internId);
-
-    String email = (String) session.getAttribute("email");
-
-    if (!intern.getIsCredentialsGenerated()) {
-        return new ModelAndView("redirect:/bisag/intern/credentials");
-    }
-
-    boolean hasAccepted = undertakingRepo.existsByIntern(internId);
-    if (!hasAccepted) {
-        return new ModelAndView("redirect:/bisag/intern/undertaking");
-    }
-
-    if (intern.getFirstLogin() == 0) {
-        session.setAttribute("username", getUsername());
-        return new ModelAndView("redirect:/bisag/intern/change_passwordd");
-    }
-
-    if (intern.getSecurityVerified() == 0) {
-        return new ModelAndView("redirect:/bisag/intern/verify_pin");
-    }
-
-    mv = new ModelAndView("intern/intern_dashboard");
-    List<Announcement> announcements = announcementService.getAllAnnouncements();
-    model.addAttribute("announcements", announcements);
-    if (intern.getGroupEntity() != null) {
-        mv.addObject("group", intern.getGroupEntity());
-        List<Intern> interns = internService.getInternsByGroupId(intern.getGroup().getId());
-        mv.addObject("interns", interns);
-        mv.addObject("internCountGroupWise", interns.size());
-    } else {
-        mv.addObject("group", null);
-    }
-
-    if (intern.getProfilePicture() != null) {
-        String encodedImage = Base64.encodeBase64String(intern.getProfilePicture());
-        model.addAttribute("encodedProfilePicture", encodedImage);
-    }
-
-    session.setAttribute("id", internId);
-    mv.addObject("username", getUsername());
-    mv.addObject("intern", intern);
-
-    String internFullName = intern.getFirstName();
-    logService.saveLog(internId, "Intern Accessed Dashboard", "Intern " + internFullName + " visited their dashboard.");
-
-    return mv;
-}
 
     @GetMapping("/verify_pin")
     public String showVerifyPinPage(HttpSession session, Model model) {
@@ -488,18 +501,15 @@ public ModelAndView intern_dashboard(HttpSession session, Model model) {
     @GetMapping("/weekly_report_submission")
     public ModelAndView weeklyReportSubmission() {
         ModelAndView mv = new ModelAndView("intern/weekly_report_submission");
+
         Date nextSubmissionDate = getNextSubmissionDate();
         Intern intern = getSignedInIntern();
         GroupEntity group = intern.getGroup();
         Integer nextSubmissionWeekNo = (Integer) weeklyReportService.getRecentWeekNo(group);
         List<WeeklyReport> weeklyReports = weeklyReportService.getReportsByGroupId(group.getId());
         checkWeeklyReportDisable();
-        String weeklyReportDisable1;
-        if (WEEKLYREPORTDISABLE) {
-            weeklyReportDisable1 = "true";
-        } else {
-            weeklyReportDisable1 = "false";
-        }
+
+        String weeklyReportDisable1 = WEEKLYREPORTDISABLE ? "true" : "false";
 
         // Retrieve the last weekly report
         WeeklyReport lastWeeklyReport = null;
@@ -509,23 +519,32 @@ public ModelAndView intern_dashboard(HttpSession session, Model model) {
 
         // Extract deadline of the last weekly report if it exists
         Date deadlineOfLastWeeklyReport = null;
-        String weeklyReportDisable2;
+        String weeklyReportDisable2 = "false";
         if (lastWeeklyReport != null) {
             deadlineOfLastWeeklyReport = lastWeeklyReport.getDeadline();
             LocalDate localDate = deadlineOfLastWeeklyReport.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String formattedDate = localDate.format(formatter);
 
-            String checkWithFormattedDate = checkLastWeeklyReportSubmissionDate(nextSubmissionDate).toString();
+            // Safely handle nextSubmissionDate null check
+            String checkWithFormattedDate = (nextSubmissionDate != null) ?
+                    checkLastWeeklyReportSubmissionDate(nextSubmissionDate).toString() : "";
+
             if (formattedDate.equals(checkWithFormattedDate)) {
                 weeklyReportDisable2 = "true";
-            } else {
-                weeklyReportDisable2 = "false";
             }
-            mv.addObject("weeklyReportDisable2", weeklyReportDisable2);
         }
+        mv.addObject("weeklyReportDisable2", weeklyReportDisable2);
 
-        mv.addObject("nextSubmissionDate", checkLastWeeklyReportSubmissionDate(nextSubmissionDate));
+        // Handle nextSubmissionDate null safely for view
+        Object nextSubmissionDateForView;
+        if (nextSubmissionDate == null) {
+            nextSubmissionDateForView = "Completed";
+        } else {
+            nextSubmissionDateForView = checkLastWeeklyReportSubmissionDate(nextSubmissionDate);
+        }
+        mv.addObject("nextSubmissionDate", nextSubmissionDateForView);
+
         mv.addObject("nextSubmissionWeekNo", nextSubmissionWeekNo);
         mv.addObject("weeklyReports", weeklyReports);
         mv.addObject("intern", intern);
@@ -564,7 +583,7 @@ public ModelAndView intern_dashboard(HttpSession session, Model model) {
         weeklyReport.setGuide(group.getGuide());
         weeklyReport.setIntern(intern);
         weeklyReport.setReportSubmittedDate(currentDate);
-        weeklyReport.setSubmittedPdf(weeklyReportSubmission.getBytes());
+//        weeklyReport.setSubmittedPdf(weeklyReportSubmission.getBytes());
         weeklyReport.setWeekNo(currentWeekNo);
 
         Date updatedNextSubmissionDate = checkLastWeeklyReportSubmissionDate(getNextSubmissionDate());
@@ -616,53 +635,74 @@ public ModelAndView intern_dashboard(HttpSession session, Model model) {
 
     @GetMapping("/viewPdf/{internId}/{weekNo}")
     public ResponseEntity<byte[]> viewPdf(@PathVariable String internId, @PathVariable int weekNo) {
-        WeeklyReport report = weeklyReportService.getReportByInternIdAndWeekNo(internId, weekNo);
-        byte[] pdfContent = report.getSubmittedPdf();
+        try {
+            Intern intern = internService.getInternById(internId);
+            if (intern == null || intern.getGroup() == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
 
-        Intern intern = internService.getInternById(internId);
-        String internFullName = intern != null ? intern.getFirstName() : "Unknown";
-        logService.saveLog(internId, "Viewed Weekly Report PDF", internFullName + " viewed the PDF report for week " + weekNo);
+            String groupId = intern.getGroup().getGroupId();
+            String filePath = baseDir2 + groupId + "/Weekly Reports/" + groupId + "_Week" + weekNo + ".pdf";
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
+            File file = new File(filePath);
+            if (!file.exists()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
 
-        return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+            byte[] pdfContent = Files.readAllBytes(Paths.get(filePath));
+
+            String internFullName = intern.getFirstName() != null ? intern.getFirstName() : "Unknown";
+            logService.saveLog(internId, "Viewed Weekly Report PDF", internFullName + " viewed the PDF report for week " + weekNo);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+
+            return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     @PostMapping("/change_weekly_report/changed_report")
-    public String chanegWeeklyReportSubmission(@RequestParam("weekNo") int weekNo, @RequestParam("weeklyReportSubmission") MultipartFile weeklyReportSubmission)
+    public String chanegWeeklyReportSubmission(@RequestParam("weekNo") int weekNo,
+                                               @RequestParam("weeklyReportSubmission") MultipartFile weeklyReportSubmission)
             throws IllegalStateException, IOException, Exception {
         Intern intern = getSignedInIntern();
         GroupEntity group = intern.getGroup();
         WeeklyReport report = weeklyReportService.getReportByWeekNoAndGroupId(weekNo, group);
         CurrentWeekNo = weekNo;
-        report.setSubmittedPdf(weeklyReportSubmission.getBytes());
+        String storageDir = baseDir2 + intern.getGroup().getGroupId() + "/Weekly Reports/";
+        String filePath = storageDir + intern.getGroup().getGroupId() + "_Week" + weekNo + ".pdf";
 
-        String storageDir = baseDir2 + intern.getGroup().getGroupId() + "/Weekly Reports/" + intern.getGroup().getGroupId() + "_Week" + weekNo + ".pdf";
-        File existingFile = new File(storageDir);
+        File dir = new File(storageDir);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
 
+        File existingFile = new File(filePath);
         if (existingFile.exists()) {
             existingFile.delete();
         }
 
-        Files.write(Paths.get(storageDir), weeklyReportSubmission.getBytes());
+        Files.write(Paths.get(filePath), weeklyReportSubmission.getBytes());
 
+        // Metadata updates
         MyUser user = myUserService.getUserByUsername(intern.getEmail());
         report.setReplacedBy(user);
+        report.setChangedReport(false);
         Date currentDate = new Date();
-        // Check if the deadline is greater than or equal to the reportSubmittedDate
+
         if (report.getDeadline().compareTo(currentDate) >= 0) {
-            // If the deadline is greater than or equal to the reportSubmittedDate, set the
-            // status to "submitted"
             report.setStatus("submitted");
         } else {
-            // If the deadline is less than the reportSubmittedDate, set the status to "late
-            // submitted"
             report.setStatus("late submitted");
         }
+
         report.setIsRead(0); // Mark as unread since it's a new update
 
+        // Save updated metadata to DB (excluding PDF)
         weeklyReportService.addReport(report);
+
         logService.saveLog(intern.getInternId(), "Weekly Report Changed", "Weekly Report changed successfully.");
         return "redirect:/bisag/intern/change_weekly_report/" + weekNo;
     }
@@ -739,16 +779,71 @@ public ModelAndView intern_dashboard(HttpSession session, Model model) {
 
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
-            byte[] pdf = application.getIcardForm();
+            String filePath = baseDir + application.getEmail() + "/icardForm.pdf";
 
-            if (pdf != null) {
+            try {
+                File file = new File(filePath);
+                if (file.exists()) {
+                    byte[] pdf = Files.readAllBytes(file.toPath());
 
-                logService.saveLog(id, "Viewed I-Card Form",
-                        "Intern " + application.getFirstName() + " accessed their I-Card form.");
-                return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
+                    logService.saveLog(id, "Viewed I-Card Form",
+                            "Intern " + application.getFirstName() + " accessed their I-Card form.");
+
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_PDF)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"icardForm.pdf\"")
+                            .body(pdf);
+                }
+            } catch (IOException e) {
+                e.printStackTrace(); // Optional: Log the error
             }
         }
+
         return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/documents/icardForm/{id}")
+    public String updateICardFormByIntern(@PathVariable("id") String id,
+                                          @RequestParam("file") MultipartFile file,
+                                          RedirectAttributes redirectAttributes) {
+        try {
+            Optional<Intern> optionalIntern = internService.getIntern(id);
+
+            if (optionalIntern.isPresent()) {
+                Intern intern = optionalIntern.get();
+
+                if (file.getSize() > 512000) {
+                    redirectAttributes.addFlashAttribute("error", "File size must be less than 500 KB.");
+                    return "redirect:/bisag/intern/submit_forms";
+                }
+
+                String storageDir = baseDir + intern.getEmail() + "/";
+                File directory = new File(storageDir);
+                if (!directory.exists()) {
+                    directory.mkdirs();
+                }
+
+                String filePath = storageDir + "icardForm.pdf";
+                Files.write(Paths.get(filePath), file.getBytes());
+
+//                intern.setIcardForm(file.getBytes());
+//                internRepo.updateICardForm(id, file.getBytes());
+
+                logService.saveLog(id, "Updated I-Card Form",
+                        "Intern " + intern.getFirstName() + " updated their I-Card form.");
+
+                redirectAttributes.addFlashAttribute("success", "I-Card form updated successfully.");
+                return "redirect:/bisag/intern/submit_forms";
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Intern not found.");
+                return "redirect:/bisag/intern/submit_forms";
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace(); // Optional: Log this
+            redirectAttributes.addFlashAttribute("error", "An error occurred while uploading the I-Card form: " + e.getMessage());
+            return "redirect:/bisag/intern/submit_forms";
+        }
     }
 
     @GetMapping("/documents/projectDefinitionForm/{id}")
@@ -757,16 +852,71 @@ public ModelAndView intern_dashboard(HttpSession session, Model model) {
 
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
-            byte[] pdf = application.getProjectDefinitionForm();
+            String filePath = baseDir + application.getEmail() + "/projectDefinitionForm.pdf";
 
-            if (pdf != null) {
+            try {
+                File file = new File(filePath);
+                if (file.exists()) {
+                    byte[] pdf = Files.readAllBytes(file.toPath());
 
-                logService.saveLog(id, "Viewed Project Definition Form",
-                        "Intern " + application.getFirstName() + " accessed their Project Definition form.");
-                return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
+                    logService.saveLog(id, "Viewed Project Definition Form",
+                            "Intern " + application.getFirstName() + " accessed their Project Definition form.");
+
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_PDF)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"projectDefinitionForm.pdf\"")
+                            .body(pdf);
+                }
+            } catch (IOException e) {
+                e.printStackTrace(); // Optional: log error
             }
         }
+
         return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/documents/projectDefinitionForm/{id}")
+    public String updateProjectDefinitionFormByIntern(@PathVariable("id") String id,
+                                                      @RequestParam("file") MultipartFile file,
+                                                      RedirectAttributes redirectAttributes) {
+        try {
+            Optional<Intern> optionalIntern = internService.getIntern(id);
+
+            if (optionalIntern.isPresent()) {
+                Intern intern = optionalIntern.get();
+
+                if (file.getSize() > 512000) {
+                    redirectAttributes.addFlashAttribute("error", "File size must be less than 500 KB.");
+                    return "redirect:/bisag/intern/submit_forms";
+                }
+
+                String storageDir = baseDir + intern.getEmail() + "/";
+                File directory = new File(storageDir);
+                if (!directory.exists()) {
+                    directory.mkdirs();
+                }
+
+                String filePath = storageDir + "projectDefinitionForm.pdf";
+                Files.write(Paths.get(filePath), file.getBytes());
+
+//                intern.setProjectDefinitionForm(file.getBytes());
+//                internRepo.updateProjectDefinitionForm(id, file.getBytes());
+
+                logService.saveLog(id, "Updated Project Definition Form",
+                        "Intern " + intern.getFirstName() + " updated their Project Definition form.");
+
+                redirectAttributes.addFlashAttribute("success", "Project Definition form updated successfully.");
+                return "redirect:/bisag/intern/submit_forms";
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Intern not found.");
+                return "redirect:/bisag/intern/submit_forms";
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "File size must be less than 500 KB.");
+            return "redirect:/bisag/intern/submit_forms";
+        }
     }
 
     @GetMapping("/documents/extraForm/{id}")
@@ -792,15 +942,71 @@ public ModelAndView intern_dashboard(HttpSession session, Model model) {
 
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
-            byte[] pdf = application.getSecurityForm();
+            String filePath = baseDir + application.getEmail() + "/securityForm.pdf";
 
-            if (pdf != null) {
-                logService.saveLog(id, "Viewed Security Form",
-                        "Intern " + application.getFirstName() + " accessed their security form.");
-                return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
+            try {
+                File file = new File(filePath);
+                if (file.exists()) {
+                    byte[] pdf = Files.readAllBytes(file.toPath());
+
+                    logService.saveLog(id, "Viewed Security Form",
+                            "Intern " + application.getFirstName() + " accessed their security form.");
+
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_PDF)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"securityForm.pdf\"")
+                            .body(pdf);
+                }
+            } catch (IOException e) {
+                e.printStackTrace(); // Optional logging
             }
         }
+
         return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/documents/securityForm/{id}")
+    public String updateSecurityFormByIntern(@PathVariable("id") String id,
+                                             @RequestParam("file") MultipartFile file,
+                                             RedirectAttributes redirectAttributes) {
+        try {
+            Optional<Intern> optionalIntern = internService.getIntern(id);
+
+            if (optionalIntern.isPresent()) {
+                Intern intern = optionalIntern.get();
+
+                if (file.getSize() > 512000) {
+                    redirectAttributes.addFlashAttribute("error", "File size must be less than 500 KB.");
+                    return "redirect:/bisag/intern/submit_forms";
+                }
+
+                String storageDir = baseDir + intern.getEmail() + "/";
+                File directory = new File(storageDir);
+                if (!directory.exists()) {
+                    directory.mkdirs();
+                }
+
+                String filePath = storageDir + "securityForm.pdf";
+                Files.write(Paths.get(filePath), file.getBytes());
+
+//                intern.setSecurityForm(file.getBytes());
+//                internRepo.updateSecurityForm(id, file.getBytes());
+
+                logService.saveLog(id, "Updated Security Form",
+                        "Intern " + intern.getFirstName() + " updated their Security form.");
+
+                redirectAttributes.addFlashAttribute("success", "Security form updated successfully.");
+                return "redirect:/bisag/intern/submit_forms";
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Intern not found.");
+                return "redirect:/bisag/intern/submit_forms";
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "File size must be less than 500 KB.");
+            return "redirect:/bisag/intern/submit_forms";
+        }
     }
 
     @GetMapping("/documents/registration/{id}")
@@ -809,15 +1015,71 @@ public ModelAndView intern_dashboard(HttpSession session, Model model) {
 
         if (optionalApplication.isPresent()) {
             Intern application = optionalApplication.get();
-            byte[] pdf = application.getRegistrationForm();
+            String filePath = baseDir + application.getEmail() + "/registrationForm.pdf";
 
-            if (pdf != null) {
-                logService.saveLog(id, "Viewed Registration Form",
-                        "Intern " + application.getFirstName() + " accessed their registration form.");
-                return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf);
+            try {
+                File file = new File(filePath);
+                if (file.exists()) {
+                    byte[] pdf = Files.readAllBytes(file.toPath());
+
+                    logService.saveLog(id, "Viewed Registration Form",
+                            "Intern " + application.getFirstName() + " accessed their registration form.");
+
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_PDF)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"registrationForm.pdf\"")
+                            .body(pdf);
+                }
+            } catch (IOException e) {
+                e.printStackTrace(); // Optional: log the error
             }
         }
+
         return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/documents/registrationForm/{id}")
+    public String updateRegistrationFormByIntern(@PathVariable("id") String id,
+                                                 @RequestParam("file") MultipartFile file,
+                                                 RedirectAttributes redirectAttributes) {
+        try {
+            Optional<Intern> optionalIntern = internService.getIntern(id);
+
+            if (optionalIntern.isPresent()) {
+                Intern intern = optionalIntern.get();
+
+                if (file.getSize() > 512000) {
+                    redirectAttributes.addFlashAttribute("error", "File size must be less than 500 KB.");
+                    return "redirect:/bisag/intern/submit_forms";
+                }
+
+                String storageDir = baseDir + intern.getEmail() + "/";
+                File directory = new File(storageDir);
+                if (!directory.exists()) {
+                    directory.mkdirs();
+                }
+
+                String filePath = storageDir + "registrationForm.pdf";
+                Files.write(Paths.get(filePath), file.getBytes());
+
+//                intern.setRegistrationForm(file.getBytes());
+//                internRepo.updateRegistrationForm(id, file.getBytes());
+
+                logService.saveLog(id, "Updated Registration Form",
+                        "Intern " + intern.getFirstName() + " updated their Registration form.");
+
+                redirectAttributes.addFlashAttribute("success", "Registration form updated successfully.");
+                return "redirect:/bisag/intern/submit_forms";
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Intern not found.");
+                return "redirect:/bisag/intern/submit_forms";
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "File size must be less than 500 KB.");
+            return "redirect:/bisag/intern/submit_forms";
+        }
     }
 
     @GetMapping("/documents/resume/{id}")
@@ -1117,63 +1379,39 @@ public ModelAndView intern_dashboard(HttpSession session, Model model) {
 
         return mv;
     }
-//@GetMapping("/undertaking/view")
-//public ResponseEntity<Resource> viewUndertakingPdf() {
-//    Optional<Undertaking> latestFormOpt = undertakingRepo.findTopByOrderByCreatedAtDesc();
-//
-//    if (latestFormOpt.isEmpty() || latestFormOpt.get().getFilePath() == null) {
-//        return ResponseEntity.notFound().build();
-//    }
-//
-//    Undertaking latestForm = latestFormOpt.get();
-//
-//    try {
-//        Path filePath = Paths.get("uploads/undertakings/", latestForm.getFilePath());
-//        Resource resource = new UrlResource(filePath.toUri());
-//
-//        if (resource.exists() && resource.isReadable()) {
-//            return ResponseEntity.ok()
-//                    .contentType(MediaType.APPLICATION_PDF)
-//                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
-//                    .body(resource);
-//        } else {
-//            return ResponseEntity.notFound().build();
-//        }
-//    } catch (Exception e) {
-//        e.printStackTrace();
-//        return ResponseEntity.internalServerError().build();
-//    }
-//}
-@Value("${app.storage.base-dir5}")
-private String undertakingDir;
-@GetMapping("/undertaking/view")
-public ResponseEntity<Resource> viewUndertakingPdf() {
-    Optional<Undertaking> latestFormOpt = undertakingRepo.findTopByOrderByCreatedAtDesc();
 
-    if (latestFormOpt.isEmpty() || latestFormOpt.get().getFilePath() == null) {
-        return ResponseEntity.notFound().build();
-    }
+    @Value("${app.storage.base-dir5}")
+    private String undertakingDir;
 
-    Undertaking latestForm = latestFormOpt.get();
+    @GetMapping("/undertaking/view")
+    public ResponseEntity<Resource> viewUndertakingPdf() {
+        Optional<Undertaking> latestFormOpt = undertakingRepo.findTopByOrderByCreatedAtDesc();
 
-    try {
-        // Retrieve the file path using the same directory as in the admin upload method
-        Path filePath = Paths.get(undertakingDir + latestForm.getFilePath());
-        Resource resource = new UrlResource(filePath.toUri());
-
-        if (resource.exists() && resource.isReadable()) {
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
-                    .body(resource);
-        } else {
+        if (latestFormOpt.isEmpty() || latestFormOpt.get().getFilePath() == null) {
             return ResponseEntity.notFound().build();
         }
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.internalServerError().build();
+
+        Undertaking latestForm = latestFormOpt.get();
+
+        try {
+            // Retrieve the file path using the same directory as in the admin upload method
+            Path filePath = Paths.get(undertakingDir + latestForm.getFilePath());
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (resource.exists() && resource.isReadable()) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                        .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
     }
-}
+
     @GetMapping("/view-undertaking-pdf")
     public ResponseEntity<Resource> viewLatestUndertakingPdf() {
         Optional<Undertaking> latestFormOpt = undertakingRepo.findTopByOrderByCreatedAtDesc();
@@ -1198,6 +1436,7 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
             return ResponseEntity.internalServerError().build();
         }
     }
+
     // Accept Undertaking (Save only if not already accepted)
     @PostMapping("/accept-undertaking")
     public ResponseEntity<Boolean> acceptUndertaking(HttpSession session) {
@@ -1217,15 +1456,6 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
         return ResponseEntity.ok(true);
     }
 
-//    @GetMapping("/undertaking-content")
-//    @ResponseBody
-//    public String getLatestUndertakingContent(HttpSession session) {
-//        String internId = (String) session.getAttribute("internId");
-//        String latestContent = undertakingRepo.findLatestUndertakingContent();
-//        logService.saveLog(internId, "Viewed Undertaking Content",
-//                "Intern viewed the latest undertaking content.");
-//        return (latestContent != null && !latestContent.isEmpty()) ? latestContent : "No undertaking content available.";
-//    }
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-View Thesis PDF_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     // View Thesis PDF
     @GetMapping("/view-thesis/{id}")
@@ -1272,6 +1502,7 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filePath.getFileName() + "\"")
                 .body(resource);
     }
+
     //_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-Messaging Module_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
     // Intern sends a message
     @PostMapping("/chat/send")
@@ -1295,6 +1526,7 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
 
         return ResponseEntity.ok(message);
     }
+
     // Intern fetches chat history (both sent and received messages)
     @GetMapping("/chat/history")
     public ResponseEntity<List<Message>> getChatHistoryAsIntern(
@@ -1355,6 +1587,7 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
         model.addAttribute("internId", internId);
         return "intern/intern-tasks";
     }
+
     //  Update Task Status by Intern
     @PutMapping("/tasks/update-status/{taskId}")
     public ResponseEntity<Map<String, String>> updateTaskStatus(@PathVariable("taskId") Long taskId, @RequestBody Map<String, String> request) {
@@ -1373,6 +1606,7 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
     @PostMapping("/tasks/upload-proof/{taskId}")
     public ResponseEntity<Map<String, String>> uploadProof(@PathVariable Long taskId, @RequestParam("file") MultipartFile file) {
         Map<String, String> response = new HashMap<>();
@@ -1414,6 +1648,7 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
     @GetMapping("/tasks/proof/{taskId}")
     public ResponseEntity<Resource> getProofAttachment(@PathVariable Long taskId) {
         Optional<TaskAssignment> taskOpt = taskAssignmentRepo.findById(taskId);
@@ -1447,6 +1682,7 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
     //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_Feedback Module-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
     @GetMapping("/feedback_form")
     public String showFeedbackForm(Model model) {
@@ -1471,23 +1707,31 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
     }
 
     @PostMapping("/feedback_form")
-    public String submitFeedback(@ModelAttribute Feedback feedback) {
+    public String submitFeedback(@ModelAttribute Feedback feedback, RedirectAttributes redirectAttributes) {
         try {
             Intern currentIntern = getSignedInIntern();
             feedback.setInternId(currentIntern.getInternId());
             feedback.setFirstName(currentIntern.getFirstName());
-//            feedback.setLastName(currentIntern.getLastName());
+
+            // Set the feedback date to today
+            feedback.setFeedbackDate(LocalDate.now());
+
             feedBackService.saveFeedback(feedback);
+
             logService.saveLog(currentIntern.getInternId(), "Submitted Feedback",
                     "Intern " + currentIntern.getFirstName() + " submitted feedback.");
 
+            redirectAttributes.addFlashAttribute("success", "Feedback submitted successfully!");
             return "redirect:/bisag/intern/intern_dashboard";
         } catch (Exception e) {
             logService.saveLog("N/A", "Feedback Submission Error",
                     "Error during feedback submission: " + e.getMessage());
-            return "redirect:/bisag/intern/feedback_form?error=true";
+
+            redirectAttributes.addFlashAttribute("error", "An error occurred while submitting feedback. Please try again.");
+            return "redirect:/bisag/intern/feedback_form";
         }
     }
+
     @GetMapping("/announcement_alert")
     public String getAllAnnouncements(Model model) {
         List<Announcement> announcements = announcementService.getAllAnnouncements();
@@ -1508,49 +1752,17 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
 
         return mv;
     }
-//    @PostMapping("/update_profile/{internId}")
-//    public String updateInternProfile(@PathVariable String internId,
-//                                      @ModelAttribute Intern internDetails,
-//                                      RedirectAttributes redirectAttributes) {
-//        Intern existingIntern = internService.getInternById(internId);
-//        if (existingIntern != null) {
-//            logService.saveLog(internId, "Intern Profile Update Attempt", "Intern " + existingIntern.getFirstName() + " attempted to update their profile.");
-//            if (existingIntern.getProfileUpdated() == 1) {
-//                logService.saveLog(internId, "Intern Profile Update Denied", "Intern " + existingIntern.getFirstName() + " tried to update their profile again after it was already updated.");
-//
-//                redirectAttributes.addFlashAttribute("error", "Profile has already been updated once.");
-//                return "redirect:/bisag/intern/intern_dashboard";
-//            }
-//            existingIntern.setPermanentAddress(internDetails.getPermanentAddress());
-//            existingIntern.setDateOfBirth(internDetails.getDateOfBirth());
-//            existingIntern.setCollegeGuideHodName(internDetails.getCollegeGuideHodName());
-//            existingIntern.setAggregatePercentage(internDetails.getAggregatePercentage());
-//            existingIntern.setGender(internDetails.getGender());
-//            existingIntern.setUsedResource(internDetails.getUsedResource());
-//            existingIntern.setSign(internDetails.getSign());
-//            existingIntern.setProfileUpdated(1);
-//            internService.saveIntern(existingIntern);
-//            logService.saveLog(internId, "Intern Profile Updated", "Intern " + existingIntern.getFirstName() + " successfully updated their profile.");
-//
-//            redirectAttributes.addFlashAttribute("success", "Profile updated successfully.");
-//            return "redirect:/bisag/intern/intern_dashboard";
-//        } else {
-//            logService.saveLog(internId, "Intern Not Found", "Intern with ID " + internId + " was not found during the profile update attempt.");
-//
-//            redirectAttributes.addFlashAttribute("error", "Intern not found.");
-//            return "redirect:/bisag/intern/intern_dashboard";
-//        }
-//    }
 
     @PostMapping("/update_profile/{internId}")
     public String updateInternProfile(@PathVariable String internId,
                                       @RequestParam("permanentAddress") String permanentAddress,
-                                      @RequestParam("dateOfBirth") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate dateOfBirth,
-                                      @RequestParam("collegeGuideHodName") String collegeGuideHodName,
-                                      @RequestParam("aggregatePercentage") String aggregatePercentage,
-                                      @RequestParam("gender") String gender,
-                                      @RequestParam("usedResource") String usedResource,
-                                      @RequestParam("signFile") MultipartFile signFile,
+                                      @RequestParam("currentAddress") String currentAddress,
+//                                      @RequestParam("dateOfBirth") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate dateOfBirth,
+//                                      @RequestParam("collegeGuideHodName") String collegeGuideHodName,
+//                                      @RequestParam("aggregatePercentage") String aggregatePercentage,
+//                                      @RequestParam("gender") String gender,
+//                                      @RequestParam("usedResource") String usedResource,
+//                                      @RequestParam("signFile") MultipartFile signFile,
                                       RedirectAttributes redirectAttributes) {
         Intern existingIntern = internService.getInternById(internId);
 
@@ -1564,40 +1776,33 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
             return "redirect:/bisag/intern/intern_dashboard";
         }
 
-        try {
-            // Update fields manually
-            existingIntern.setPermanentAddress(permanentAddress);
-            existingIntern.setDateOfBirth(java.sql.Date.valueOf(dateOfBirth));
-            existingIntern.setCollegeGuideHodName(collegeGuideHodName);
-            existingIntern.setAggregatePercentage(Double.valueOf(aggregatePercentage));
-            existingIntern.setGender(gender);
-            existingIntern.setUsedResource(usedResource);
+        existingIntern.setPermanentAddress(permanentAddress);
+        existingIntern.setCurrentAddress(currentAddress);
+//            existingIntern.setDateOfBirth(java.sql.Date.valueOf(dateOfBirth));
+//            existingIntern.setCollegeGuideHodName(collegeGuideHodName);
+//            existingIntern.setAggregatePercentage(Double.valueOf(aggregatePercentage));
+//            existingIntern.setGender(gender);
+//            existingIntern.setUsedResource(usedResource);
 
-            // Save signature to DB
-            byte[] signBytes = signFile.getBytes();
-            existingIntern.setSign(signBytes);
+//            byte[] signBytes = signFile.getBytes();
+//            existingIntern.setSign(signBytes);
 
-            // Save signature to local storage
-            String internEmail = existingIntern.getEmail();
-            String storagePath = Paths.get(baseDir, internEmail).toString();
-            File dir = new File(storagePath);
-            if (!dir.exists()) dir.mkdirs();
+//            String internEmail = existingIntern.getEmail();
+//            String storagePath = Paths.get(baseDir, internEmail).toString();
+//            File dir = new File(storagePath);
+//            if (!dir.exists()) dir.mkdirs();
+//
+//            Path signPath = Paths.get(storagePath, "signature.jpg");
+//            Files.write(signPath, signBytes);
 
-            Path signPath = Paths.get(storagePath, "signature.jpg");
-            Files.write(signPath, signBytes);
+        existingIntern.setProfileUpdated(1);
+        internService.saveIntern(existingIntern);
 
-            existingIntern.setProfileUpdated(1);
-            internService.saveIntern(existingIntern);
-
-            logService.saveLog(internId, "Intern Profile Updated", "Intern " + existingIntern.getFirstName() + " successfully updated their profile.");
-            redirectAttributes.addFlashAttribute("success", "Profile updated successfully.");
-            return "redirect:/bisag/intern/intern_dashboard";
-        } catch (IOException e) {
-            e.printStackTrace();
-            redirectAttributes.addFlashAttribute("error", "Error saving profile/signature.");
-            return "redirect:/bisag/intern/intern_dashboard";
-        }
+        logService.saveLog(internId, "Intern Profile Updated", "Intern " + existingIntern.getFirstName() + " successfully updated their profile.");
+        redirectAttributes.addFlashAttribute("success", "Profile updated successfully.");
+        return "redirect:/bisag/intern/intern_dashboard";
     }
+
     @GetMapping("/final_report_rejection")
     public String showFinalReportRejection(Model model) {
         Intern intern = getSignedInIntern();
@@ -1609,7 +1814,7 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
         if (file.exists()) {
             model.addAttribute("rejectionFilePath", filePath);
         } else {
-            model.addAttribute("rejectionFilePath", null); // fallback if file doesn't exist
+            model.addAttribute("rejectionFilePath", null);
         }
 
         model.addAttribute("intern", intern);
@@ -1644,23 +1849,26 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
         headers.setContentType(MediaType.IMAGE_JPEG);
         return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
     }
+
     @GetMapping("/intern_icard/{internId}")
     public ModelAndView viewInternICard(@PathVariable String internId) {
-        Intern intern = internService.getInternById(internId); // Make sure this method exists
+        Intern intern = internService.getInternById(internId);
         ModelAndView mv = new ModelAndView("intern/intern_icard");
         mv.addObject("intern", intern);
         return mv;
     }
+
     @PostMapping("/approve_icard/{internId}")
     public String approveICard(@PathVariable String internId, RedirectAttributes redirectAttributes) {
         Intern intern = internService.getInternById(internId);
         if (intern != null) {
             intern.setIcardApproved(true);
             internService.saveIntern(intern);
-            redirectAttributes.addFlashAttribute("success", "I-Card approved successfully.");
+            redirectAttributes.addFlashAttribute("success", "I-Card Form Submitted successfully.");
         }
-        return "redirect:/bisag/intern/intern_dashboard";
+        return "redirect:/bisag/intern/submit_forms";
     }
+
     @PostMapping("/approve_security/{internId}")
     public String approveSecurity(@PathVariable String internId, RedirectAttributes redirectAttributes) {
         Intern intern = internService.getInternById(internId);
@@ -1669,7 +1877,7 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
             internService.saveIntern(intern);
             redirectAttributes.addFlashAttribute("success", "Information Security form submitted successfully.");
         }
-        return "redirect:/bisag/intern/intern_dashboard";
+        return "redirect:/bisag/intern/submit_forms";
     }
     @GetMapping("/security_agreement/{internId}")
     public ModelAndView viewSecurityAgreement(@PathVariable String internId) {
@@ -1703,18 +1911,153 @@ public ResponseEntity<Resource> viewUndertakingPdf() {
             internService.saveIntern(intern);
             redirectAttributes.addFlashAttribute("success", "Security form submitted successfully.");
         }
-        return "redirect:/bisag/intern/intern_dashboard";
+        return "redirect:/bisag/intern/submit_forms";
     }
 
     @PostMapping("/mark-alert-seen/{internId}")
     public String markAlertAsSeen(@PathVariable String internId, HttpSession session, RedirectAttributes redirectAttributes) {
         Intern intern = internService.getInternById(internId);
         if (intern != null) {
-            internService.markAlertAsSeen(internId); // Calls custom update query
+            internService.markAlertAsSeen(internId);
             intern.setAlertSeen(0);
             session.setAttribute("intern", intern);
             redirectAttributes.addFlashAttribute("success", "Submit it now!!!!!");
         }
         return "redirect:/bisag/intern/intern_dashboard";
+    }
+
+    @GetMapping("/digital-sign/{internId}")
+    public ResponseEntity<byte[]> getDigitalSignature(@PathVariable String internId) throws IOException {
+        Intern intern = internService.getInternById(internId);
+        if (intern == null || intern.getSign() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        byte[] imageData = intern.getSign();
+        try (FileOutputStream fos = new FileOutputStream("debug_signature.jpg")) {
+            fos.write(imageData);
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        return new ResponseEntity<>(imageData, headers, HttpStatus.OK);
+    }
+
+    @Value("${app.storage.base-dir4}")
+    private String appStorageBaseDir4;
+    @GetMapping("/guide_sign/{guideId}")
+    public ResponseEntity<byte[]> getGuideSignature(@PathVariable Long guideId) {
+        Optional<Guide> optionalGuide = guideService.getGuide(guideId);
+
+        if (optionalGuide.isPresent()) {
+            Guide guide = optionalGuide.get();
+            String relativePath = guide.getDigitalSignaturePath();
+
+            if (relativePath != null && !relativePath.isEmpty()) {
+                try {
+                    String absolutePath = appStorageBaseDir4 + File.separator +
+                            guide.getEmailId().replaceAll("[^a-zA-Z0-9@.]", "_") + File.separator +
+                            new File(relativePath).getName(); // extract filename
+
+                    Path imagePath = Paths.get(absolutePath);
+                    byte[] imageBytes = Files.readAllBytes(imagePath);
+                    String contentType = Files.probeContentType(imagePath);
+                    if (contentType == null) {
+                        contentType = MediaType.IMAGE_PNG_VALUE;
+                    }
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.parseMediaType(contentType));
+
+                    return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
+            }
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/intern_registration/{internId}")
+    public ModelAndView viewRegistrationForm(@PathVariable String internId) {
+        Intern intern = internService.getInternById(internId);
+        ModelAndView mv = new ModelAndView("intern/intern_registration");
+        mv.addObject("intern", intern);
+        return mv;
+    }
+
+    @PostMapping("/intern_registration_form/{internId}")
+    public String approveRegistrationForm(@PathVariable String internId, RedirectAttributes redirectAttributes) {
+        Intern intern = internService.getInternById(internId);
+        if (intern != null) {
+            intern.setInternRegistrationForm(true);
+            internService.saveIntern(intern);
+            redirectAttributes.addFlashAttribute("success", "Registration form submitted successfully.");
+        }
+        return "redirect:/bisag/intern/submit_forms";
+    }
+
+    @GetMapping("/project_definition_form/{internId}")
+    public String showProjectDefinitionForm(@PathVariable String internId, Model model) {
+        Optional<Intern> optionalIntern = internService.getInternByInternId(internId);
+        if (optionalIntern.isEmpty()) {
+            model.addAttribute("error", "Intern not found.");
+            return "error_page";
+        }
+
+        Intern intern = optionalIntern.get();
+        if (intern.getGroup() == null) {
+            model.addAttribute("error", "Group not found for this intern.");
+            return "error_page";
+        }
+
+        GroupEntity group = intern.getGroup();
+        model.addAttribute("group", group);
+        model.addAttribute("intern", intern);
+
+        List<Intern> interns = internService.getInternsByGroupId(group.getId());
+        model.addAttribute("interns", interns);
+        model.addAttribute("internCountGroupWise", interns.size());
+
+        boolean alreadySubmitted = Boolean.TRUE.equals(group.isProjectDefinitionSubmitted());
+        model.addAttribute("submitted", alreadySubmitted);
+
+        return "intern/project_definition_form";
+    }
+
+    @PostMapping("/project_definition_form/{internId}")
+    public String submitProjectDefinitionForm(@PathVariable String internId,
+                                              @ModelAttribute GroupEntity formGroup,
+                                              RedirectAttributes redirectAttributes) {
+        Optional<Intern> optionalIntern = internService.getInternByInternId(internId);
+        Intern intern = optionalIntern.orElse(null);
+
+        if (intern == null || intern.getGroup() == null) {
+            redirectAttributes.addFlashAttribute("error", "Intern or Group not found.");
+            return "redirect:/error";
+        }
+
+        GroupEntity group = intern.getGroup();
+
+        if (Boolean.TRUE.equals(group.isProjectDefinitionSubmitted())) {
+            redirectAttributes.addFlashAttribute("message", "Project Definition already submitted.");
+            return "redirect:/bisag/intern/project_definition_form/" + internId;
+        }
+
+        group.setProjectObjectives(formGroup.getProjectObjectives());
+        group.setExpectedOutcomes(formGroup.getExpectedOutcomes());
+        group.setImpactAreaTechnology(formGroup.getImpactAreaTechnology());
+        group.setImpactAreaDomain(formGroup.getImpactAreaDomain());
+        group.setImpactAreaManagement(formGroup.getImpactAreaManagement());
+        group.setImpactAreaOthers(formGroup.getImpactAreaOthers());
+        group.setImpactStatement(formGroup.getImpactStatement());
+
+        group.setProjectDefinitionSubmitted(true);
+
+        groupRepo.save(group);
+
+        redirectAttributes.addFlashAttribute("success", "Project Definition submitted successfully.");
+        return "redirect:/bisag/intern/project_definition_form/" + internId;
     }
 }

@@ -117,113 +117,6 @@ public class HomeController {
     }
 
 //    @PostMapping("/bisag_internship")
-//    public String bisag_iternship(@RequestParam("firstName") String firstName,
-//                                  @RequestParam("lastName") String lastName,
-//                                  @RequestParam("contactNo") String contactNo,
-//                                  @RequestParam("email") String email,
-//                                  @RequestParam("collegeName") String collegeName,
-//                                  @RequestParam("branch") String branch,
-//                                  @RequestParam("passportSizeImage") MultipartFile passportSizeImage,
-//                                  @RequestParam("icardImage") MultipartFile icardImage,
-//                                  @RequestParam("nocPdf") MultipartFile nocPdf,
-//                                  @RequestParam("resumePdf") MultipartFile resumePdf,
-//                                  @RequestParam("semester") int semester,
-//                                  @RequestParam("password") String password,
-//                                  @RequestParam("degree") String degree,
-//                                  @RequestParam("domain") String domain,
-//                                  @RequestParam("joiningDate") Date joiningDate,
-//                                  @RequestParam("completionDate") Date completionDate, HttpSession session) {
-//
-//        try {
-//            String storageDir = baseDir + email + "/";
-//            File directory = new File(storageDir);
-//
-//            // Create directory if it doesn't exist
-//            if (!directory.exists()) {
-//                directory.mkdirs();
-//            }
-//
-//            // Save files to local storage
-//            String passportFileName = storageDir + "passportSizeImage.jpg";
-//            String icardFileName = storageDir + "collegeIcardImage.jpg";
-//            String nocFileName = storageDir + "nocPdf.pdf";
-//            String resumeFileName = storageDir + "resumePdf.pdf";
-//
-//            // Save Passport Size Image
-//            Files.write(Paths.get(passportFileName), passportSizeImage.getBytes());
-//
-//            // Save College Icard Image
-//            Files.write(Paths.get(icardFileName), icardImage.getBytes());
-//
-//            // Save NOC PDF
-//            Files.write(Paths.get(nocFileName), nocPdf.getBytes());
-//
-//            // Save Resume PDF
-//            Files.write(Paths.get(resumeFileName), resumePdf.getBytes());
-//
-//            InternApplication internApplication = new InternApplication();
-//            internApplication.setFirstName(firstName);
-//            internApplication.setLastName(lastName);
-//            internApplication.setContactNo(contactNo);
-//            internApplication.setEmail(email);
-//            internApplication.setCollegeName(collegeName);
-//            internApplication.setBranch(branch);
-//            internApplication.setSemester(semester);
-//            internApplication.setPassword(password);
-//            internApplication.setDegree(degree);
-//            internApplication.setDomain(domain);
-//            internApplication.setJoiningDate(joiningDate);
-//            internApplication.setCompletionDate(completionDate);
-//
-//            internApplication.setPassportSizeImage(passportSizeImage.getBytes());
-//            internApplication.setCollegeIcardImage(icardImage.getBytes());
-//            internApplication.setNocPdf(nocPdf.getBytes());
-//            internApplication.setResumePdf(resumePdf.getBytes());
-//
-//            internApplicationRepo.save(internApplication);
-//
-//            MyUser user = new MyUser();
-//            user.setUsername(email);
-//            String encryptedPassword = passwordEncoder().encode(password);
-//            user.setPassword(encryptedPassword);
-//            user.setEnabled(true);
-//            user.setUserId(Long.toString(internApplication.getId()));
-//            user.setRole("UNDERPROCESSINTERN");
-//            userRepo.save(user);
-//
-//            // Send success email
-//            emailService.sendSimpleEmail(
-//                    internApplication.getEmail(),
-//                    "Notification: Successful Application for BISAG Internship\r\n" +
-//                            "\r\n" +
-//                            "Dear " + internApplication.getFirstName() + ",\r\n" +
-//                            "\r\n" +
-//                            "Congratulations! We are pleased to inform you that your application for the BISAG internship has been successful. Your enthusiasm, qualifications, and potential have stood out, and we believe that you will make valuable contributions to our team.\r\n" +
-//                            "\r\n" +
-//                            "As an intern, you will have the opportunity to learn, grow, and gain hands-on experience in a dynamic and innovative environment. We trust that your time with us will be rewarding, and we look forward to seeing your skills and talents in action.\r\n" +
-//                            "\r\n" +
-//                            "Please find attached detailed information about the internship program, including your start date, orientation details, and any additional requirements. If you have any questions or need further assistance, feel free to contact [Contact Person/Department].\r\n" +
-//                            "\r\n" +
-//                            "Once again, congratulations on being selected for the BISAG internship program. We are excited to welcome you to our team and wish you a fulfilling and successful internship experience.\r\n" +
-//                            "\r\n" +
-//                            "Best regards,\r\n" +
-//                            "\r\n" +
-//                            "Your Colleague,\r\n" +
-//                            "Internship Coordinator\r\n" +
-//                            "BISAG INTERNSHIP PROGRAM\r\n" +
-//                            "1231231231",
-//                    "BISAG ADMINISTRATIVE OFFICE"
-//            );
-//            session.setAttribute("msg", "Application Submitted Successfully");
-//            return "redirect:/bisag_internship";
-//        } catch (Exception e) {
-//            logger.info("Issue while submitting application: " + e.getMessage());
-//            session.setAttribute("msg", "Error: " + e.getMessage() + ". Please try again.");
-//            return "redirect:/bisag_internship";
-//        }
-//    }
-
-//    @PostMapping("/bisag_internship")
 //    public String bisagInternship(
 //            @RequestParam("firstName") String firstName,
 ////            @RequestParam("lastName") String lastName,
@@ -344,6 +237,12 @@ public class HomeController {
             @RequestParam("joiningDate") Date joiningDate,
             @RequestParam("completionDate") Date completionDate,
             @RequestParam("securityPin") String securityPin,
+            @RequestParam("permanentAddress") String permanentAddress,
+            @RequestParam("dateOfBirth") Date dateOfBirth,
+            @RequestParam("gender") String gender,
+            @RequestParam("collegeGuideHodName") String collegeGuideHodName,
+            @RequestParam("aggregatePercentage") Double aggregatePercentage,
+            @RequestParam("sign") MultipartFile sign,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
@@ -384,6 +283,12 @@ public class HomeController {
             internApplication.setNocPdf(nocPdf.getBytes());
             internApplication.setResumePdf(resumePdf.getBytes());
             internApplication.setSecurityPin(securityPin);
+            internApplication.setPermanentAddress(permanentAddress);
+            internApplication.setDateOfBirth(dateOfBirth);
+            internApplication.setGender(gender);
+            internApplication.setCollegeGuideHodName(collegeGuideHodName);
+            internApplication.setAggregatePercentage(aggregatePercentage);
+            internApplication.setSign(sign.getBytes());
 
             internApplicationRepo.save(internApplication);
 
@@ -461,14 +366,12 @@ public class HomeController {
 
     }
 
-
     @PostMapping("/remove-session-msg")
     public ResponseEntity<Void> removeSessionMessage(HttpSession session, RedirectAttributes redirectAttributes) {
 //        session.removeAttribute("msg");
         redirectAttributes.addFlashAttribute("msg", "Removing Session");
         return ResponseEntity.ok().build();
     }
-
 
     @GetMapping("/logout")
     public String logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {

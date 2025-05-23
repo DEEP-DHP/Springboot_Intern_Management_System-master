@@ -5,8 +5,12 @@ import com.rh4.repositories.RecordRepo;
 import com.rh4.repositories.VerificationRepo;
 import com.rh4.services.*;
 import jakarta.servlet.http.HttpSession;
+import org.apache.poi.util.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,6 +18,15 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.Principal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,6 +54,8 @@ public class HRController {
     private FieldService fieldService;
     @Autowired
     private GroupService groupService;
+    @Autowired
+    private GuideService guideService;
 
 
     public HR getSignedInHR() {
@@ -212,5 +227,123 @@ public class HRController {
         }
 
         return mv;
+    }
+
+    @GetMapping("/document_status")
+    public String showDocumentStatus(Model model, Principal principal) {
+        List<Intern> interns = internService.getInternsSortedByInternIdDesc();
+        model.addAttribute("interns", interns);
+        String username = principal.getName();
+        HR hr = hrService.getHRByUsername(username);
+        if (hr != null) {
+            logService.saveLog(
+                    String.valueOf(hr.getHRId()),
+                    "Accessed Intern Document List",
+                    "HR " + hr.getName() + " viewed the list of document statuses for all interns."
+            );
+        }
+        model.addAttribute("hr", hr);
+        return "hr/document_status_list";
+    }
+
+    @Value("${app.storage.base-dir4}")
+    private String appStorageBaseDir4;
+
+    @GetMapping("/guide_sign/{guideId}")
+    public ResponseEntity<byte[]> getGuideSignature(@PathVariable Long guideId) {
+        Optional<Guide> optionalGuide = guideService.getGuide(guideId);
+
+        if (optionalGuide.isPresent()) {
+            Guide guide = optionalGuide.get();
+            String relativePath = guide.getDigitalSignaturePath();
+
+            if (relativePath != null && !relativePath.isEmpty()) {
+                try {
+                    String absolutePath = appStorageBaseDir4 + File.separator +
+                            guide.getEmailId().replaceAll("[^a-zA-Z0-9@.]", "_") + File.separator +
+                            new File(relativePath).getName(); // extract filename
+
+                    Path imagePath = Paths.get(absolutePath);
+                    byte[] imageBytes = Files.readAllBytes(imagePath);
+                    String contentType = Files.probeContentType(imagePath);
+                    if (contentType == null) {
+                        contentType = MediaType.IMAGE_PNG_VALUE;
+                    }
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.parseMediaType(contentType));
+
+                    return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
+            }
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/intern_icard/{internId}")
+    public ModelAndView viewInternICard(@PathVariable String internId,
+                                        RedirectAttributes redirectAttributes,
+                                        Principal principal) {
+        Intern intern = internService.getInternById(internId);
+        if (intern == null) {
+            redirectAttributes.addFlashAttribute("error", "Intern not found.");
+            return new ModelAndView("redirect:/bisag/hr/hr_dashboard");
+        }
+
+        if (!intern.isIcardApproved()) {
+            redirectAttributes.addFlashAttribute("error", "I-Card has not been approved by the intern yet.");
+            return new ModelAndView("redirect:/bisag/hr/hr_dashboard");
+        }
+        String username = principal.getName();
+        HR hr = hrService.getHRByUsername(username);
+        if (hr != null) {
+            logService.saveLog(
+                    String.valueOf(hr.getHRId()),
+                    "Viewed Intern I-Card",
+                    "HR " + hr.getName() + " viewed the I-Card of intern with ID " + internId + "."
+            );
+        }
+
+        ModelAndView mv = new ModelAndView("hr/intern_icard");
+        mv.addObject("intern", intern);
+        return mv;
+    }
+
+    @GetMapping("/photo/{internId}")
+    public ResponseEntity<byte[]> getPhoto(@PathVariable String internId) {
+        Intern intern = internService.getInternById(internId);
+        byte[] imageBytes = intern.getPassportSizeImage();
+        if (imageBytes == null || imageBytes.length == 0) {
+            InputStream in = getClass().getResourceAsStream("/static/images/default-avatar.jpg");
+            try {
+                imageBytes = IOUtils.toByteArray(in);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/digital_sign/{internId}")
+    public ResponseEntity<byte[]> getDigitalSign(@PathVariable String internId) throws IOException {
+        Intern intern = internService.getInternById(internId);
+        if (intern == null || intern.getSign() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        byte[] imageData = intern.getSign();
+        try (FileOutputStream fos = new FileOutputStream("debug_signature.jpg")) {
+            fos.write(imageData);
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        return new ResponseEntity<>(imageData, headers, HttpStatus.OK);
     }
 }
