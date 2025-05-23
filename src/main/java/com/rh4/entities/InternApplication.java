@@ -110,6 +110,29 @@ public class InternApplication {
     @Column(nullable = false)
     private String securityPin; // Hashed 6-digit pin
 
+    @Column(name = "permanent_address")
+    private String permanentAddress;
+
+    @Column(name = "date_of_birth")
+    @Past(message = "Birth date must be in the past")
+    private Date dateOfBirth;
+
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "college_guide_hod_name")
+    private String collegeGuideHodName;
+
+    @Column(name = "aggregate_percentage")
+    private Double aggregatePercentage;
+
+    @Lob
+    @Column(name = "sign", columnDefinition = "LONGBLOB")
+    private byte[] sign;
+
+    @Column(name = "usedResource")
+    private String usedResource;
+
     public long getId() {
 		// TODO Auto-generated method stub
 		return id;  // changes-----------------------------------------------

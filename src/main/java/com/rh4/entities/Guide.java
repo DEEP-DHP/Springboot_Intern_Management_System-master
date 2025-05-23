@@ -72,6 +72,9 @@ public class Guide {
 	@Column(name = "first_login", nullable = false, columnDefinition = "INT DEFAULT 1")
 	private Integer firstLogin = 1; // Use Integer instead of int
 
+	@Column(name = "digital_signature_path")
+	private String digitalSignaturePath;
+
 	private String definitionStatus="pending";
 
 	public List<GroupEntity> getGroups() {
@@ -92,7 +95,7 @@ public class Guide {
 			@NotNull @Digits(integer = 10, fraction = 0, message = "Contact number must be a numeric value with up to 10 digits") long floor,
 			@NotNull @Digits(integer = 10, fraction = 0, message = "Contact number must be a numeric value with up to 10 digits") long labNo,
 			@NotNull @Digits(integer = 10, fraction = 0, message = "Contact number must be a numeric value with up to 10 digits") long contactNo,
-			@Email String emailId, Date createdAt, String password, String definitionStatus) {
+			@Email String emailId, Date createdAt, String password, String definitionStatus, String digitalSignaturePath) {
 		super();
 		this.guideId = guideId;
 		this.name = name;
@@ -104,6 +107,7 @@ public class Guide {
 		this.createdAt = createdAt;
 		this.password = password;
 		this.definitionStatus = definitionStatus;
+		this.digitalSignaturePath = digitalSignaturePath;
 	}
 
 	public long getGuideId() {
@@ -190,5 +194,13 @@ public class Guide {
 
 	public void setFirstLogin(int firstLogin) {
 		this.firstLogin = firstLogin;
+	}
+
+	public String getDigitalSignaturePath() {
+		return digitalSignaturePath;
+	}
+
+	public void setDigitalSignaturePath(String digitalSignaturePath) {
+		this.digitalSignaturePath = digitalSignaturePath;
 	}
 }

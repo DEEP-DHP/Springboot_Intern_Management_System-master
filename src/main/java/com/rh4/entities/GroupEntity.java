@@ -19,8 +19,9 @@ public class GroupEntity {
 	
 	@Column(name = "project_definition")
 	private String projectDefinition;
-	
-	@Column(name = "description")
+
+	@Lob
+	@Column(name = "description", columnDefinition = "TEXT")
 	private String description;
 	
 	@Column(name = "project_definition_status")
@@ -58,13 +59,36 @@ public class GroupEntity {
 
 	@Column(name = "confirmation_timestamp")
 	private LocalDateTime confirmationTimestamp;
+
+	@Column(length = 1000)
+	private String projectObjectives;
+
+	@Column(length = 1000)
+	private String expectedOutcomes;
+
+	@Column(length = 1000)
+	private String impactAreaTechnology;
+
+	@Column(length = 1000)
+	private String impactAreaDomain;
+
+	@Column(length = 1000)
+	private String impactAreaManagement;
+
+	@Column(length = 1000)
+	private String impactAreaOthers;
+
+	@Column(length = 1000)
+	private String impactStatement;
+
+	private boolean projectDefinitionSubmitted;
 		
    public GroupEntity() {
 			super();
 		}
   	
 	public GroupEntity(long id, String groupId, String projectDefinition, String description, byte[] finalReport, String finalReportStatus,
-		String projectDefinitionStatus, byte[] projectDefinitionDocument, String domain, Guide guide, String confirmationLetter, String confirmationLetterPath, LocalDateTime finalReportStatusUpdatedAt, LocalDateTime AdminfinalReportStatusUpdatedAt, LocalDateTime confirmationTimestamp) {
+		String projectDefinitionStatus, byte[] projectDefinitionDocument, String domain, Guide guide, String confirmationLetter, String confirmationLetterPath, LocalDateTime finalReportStatusUpdatedAt, LocalDateTime AdminfinalReportStatusUpdatedAt, LocalDateTime confirmationTimestamp, String projectObjectives, String expectedOutcomes, String impactAreaTechnology, String impactAreaDomain, String impactAreaManagement, String impactAreaOthers, String impactStatement, boolean projectDefinitionSubmitted) {
 	super();
 	this.id = id;
 	this.groupId = groupId;
@@ -81,6 +105,14 @@ public class GroupEntity {
 	this.finalReportStatusUpdatedAt = finalReportStatusUpdatedAt;
 	this.AdminfinalReportStatusUpdatedAt = AdminfinalReportStatusUpdatedAt;
 	this.confirmationTimestamp = confirmationTimestamp;
+	this.projectObjectives = projectObjectives;
+	this.expectedOutcomes = expectedOutcomes;
+	this.impactAreaTechnology = impactAreaTechnology;
+	this.impactAreaDomain = impactAreaDomain;
+	this.impactAreaManagement = impactAreaManagement;
+	this.impactAreaOthers = impactAreaOthers;
+	this.impactStatement = impactStatement;
+	this.projectDefinitionSubmitted = projectDefinitionSubmitted;
 }
 	public String getFinalReportStatus() {
 		return finalReportStatus;
@@ -200,5 +232,69 @@ public class GroupEntity {
 
 	public void setConfirmationTimestamp(LocalDateTime confirmationTimestamp) {
 		this.confirmationTimestamp = confirmationTimestamp;
+	}
+
+	public String getProjectObjectives() {
+		return projectObjectives;
+	}
+
+	public void setProjectObjectives(String projectObjectives) {
+		this.projectObjectives = projectObjectives;
+	}
+
+	public String getExpectedOutcomes() {
+		return expectedOutcomes;
+	}
+
+	public void setExpectedOutcomes(String expectedOutcomes) {
+		this.expectedOutcomes = expectedOutcomes;
+	}
+
+	public String getImpactAreaTechnology() {
+		return impactAreaTechnology;
+	}
+
+	public void setImpactAreaTechnology(String impactAreaTechnology) {
+		this.impactAreaTechnology = impactAreaTechnology;
+	}
+
+	public String getImpactAreaDomain() {
+		return impactAreaDomain;
+	}
+
+	public void setImpactAreaDomain(String impactAreaDomain) {
+		this.impactAreaDomain = impactAreaDomain;
+	}
+
+	public String getImpactAreaManagement() {
+		return impactAreaManagement;
+	}
+
+	public void setImpactAreaManagement(String impactAreaManagement) {
+		this.impactAreaManagement = impactAreaManagement;
+	}
+
+	public String getImpactAreaOthers() {
+		return impactAreaOthers;
+	}
+
+	public void setImpactAreaOthers(String impactAreaOthers) {
+		this.impactAreaOthers = impactAreaOthers;
+	}
+
+	public String getImpactStatement() {
+		return impactStatement;
+	}
+
+	public void setImpactStatement(String impactStatement) {
+		this.impactStatement = impactStatement;
+	}
+
+	public boolean isProjectDefinitionSubmitted() {
+		return projectDefinitionSubmitted;
+	}
+
+	public void setProjectDefinitionSubmitted(boolean projectDefinitionSubmitted) {
+		this.projectDefinitionSubmitted = projectDefinitionSubmitted;
 	}
 }

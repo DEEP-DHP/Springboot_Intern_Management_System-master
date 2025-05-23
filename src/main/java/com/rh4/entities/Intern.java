@@ -122,7 +122,7 @@ public class Intern {
     private String cancellationStatus;
 
     @Lob
-    @Column(name = "icard_form", columnDefinition = "LONGBLOB")
+    @Column(name = "icard_form", columnDefinition = "LONGBLOB", nullable = true)
     private byte[] icardForm;
 
     @Lob
@@ -200,6 +200,27 @@ public class Intern {
     @Column(name = "alertSeen", nullable = false)
     private int alertSeen = 0;
 
+    @Column(name = "current_address")
+    private String currentAddress;
+
+    @Column(name = "admin_approved_icard", nullable = false)
+    private boolean adminApprovedIcard = false;
+
+    @Column(name = "guide_approved_icard", nullable = false)
+    private boolean guideApprovedIcard = false;
+
+    @Column(name = "intern_registration_form", nullable = false)
+    private boolean internRegistrationForm = false;
+
+    @Column(name = "admin_security_approved", nullable = false)
+    private boolean adminSecurityApproved = false;
+
+    @Column(name = "admin_security_form_approved", nullable = false)
+    private boolean adminSecurityFormApproved = false;
+
+    @Column(name = "admin_registration_approved", nullable = false)
+    private boolean adminRegistrationApproved = false;
+
     public Intern() {
         super();
     }
@@ -208,7 +229,7 @@ public class Intern {
                   String collegeName, byte[] collegeIcardImage, byte[] nocPdf, byte[] projectDefinitionForm, byte[] extraForm, byte[] extraForm2, byte[] resumePdf, int semester,
                   String permanentAddress, Date dateOfBirth, String gender, String collegeGuideHodName, String degree, Double aggregatePercentage, String projectDefinitionName, String cancellationStatus,
                   Guide guide, String domain, Date joiningDate, Date completionDate, String password, byte[] icardForm, byte[] registrationForm, byte[] securityForm,
-                  String usedResource, LocalDateTime createdAt, LocalDateTime updatedAt, GroupEntity group, boolean isActive, String status, LocalDateTime cancelTime, boolean isCredentialsGenerated, int profileUpdated, byte[] sign, boolean icardApproved, boolean securityApproved, boolean securityFormApproved, String cancellationFilePath, String alertMessage, LocalDateTime alertTimestamp, int alertSeen) {
+                  String usedResource, LocalDateTime createdAt, LocalDateTime updatedAt, GroupEntity group, boolean isActive, String status, LocalDateTime cancelTime, boolean isCredentialsGenerated, int profileUpdated, byte[] sign, boolean icardApproved, boolean securityApproved, boolean securityFormApproved, String cancellationFilePath, String alertMessage, LocalDateTime alertTimestamp, int alertSeen, String currentAddress, boolean adminApprovedIcard, boolean guideApprovedIcard, boolean internRegistrationForm, boolean adminSecurityApproved, boolean adminSecurityFormApproved, boolean adminRegistrationApproved) {
         super();
         this.internId = internId;
         this.firstName = firstName;
@@ -257,10 +278,17 @@ public class Intern {
         this.alertMessage = alertMessage;
         this.alertTimestamp = alertTimestamp;
         this.alertSeen = alertSeen;
+        this.currentAddress = currentAddress;
+        this.adminApprovedIcard = adminApprovedIcard;
+        this.guideApprovedIcard = guideApprovedIcard;
+        this.internRegistrationForm = internRegistrationForm;
+        this.adminSecurityApproved = adminSecurityApproved;
+        this.adminSecurityFormApproved = adminSecurityFormApproved;
+        this.adminRegistrationApproved = adminRegistrationApproved;
     }
 
     public Intern(String firstName, String contactNo, String email, String collegeName, Date joiningDate, Date completionDate,
-                   String degree, String password, byte[] collegeIcardImage, byte[] nocPdf, byte[] resumePdf, byte[] passportSizeImage, int semester, String domain, GroupEntity group) {
+                   String degree, String password, byte[] collegeIcardImage, byte[] nocPdf, byte[] resumePdf, byte[] passportSizeImage, int semester, String permanentAddress, String collegeGuideHodName, double aggregatePercentage, byte[] sign, String gender, Date dateOfBirth, String usedResource, String domain, GroupEntity group) {
         super();
         this.firstName = firstName;
 //        this.lastName = lastName;
@@ -276,6 +304,13 @@ public class Intern {
         this.resumePdf = resumePdf;
         this.passportSizeImage = passportSizeImage;
         this.semester = semester;
+        this.permanentAddress = permanentAddress;
+        this.collegeGuideHodName = collegeGuideHodName;
+        this.aggregatePercentage = aggregatePercentage;
+        this.sign = sign;
+        this.gender = gender;
+        this.dateOfBirth = dateOfBirth;
+        this.usedResource = usedResource;
         this.password = password;
         this.domain = domain;
         this.group = group;
@@ -705,5 +740,61 @@ public class Intern {
 
     public void setAlertSeen(int alertSeen) {
         this.alertSeen = alertSeen;
+    }
+
+    public String getCurrentAddress() {
+        return currentAddress;
+    }
+
+    public void setCurrentAddress(String currentAddress) {
+        this.currentAddress = currentAddress;
+    }
+
+    public boolean isAdminApprovedIcard() {
+        return adminApprovedIcard;
+    }
+
+    public void setAdminApprovedIcard(boolean adminApprovedIcard) {
+        this.adminApprovedIcard = adminApprovedIcard;
+    }
+
+    public boolean isGuideApprovedIcard() {
+        return guideApprovedIcard;
+    }
+
+    public void setGuideApprovedIcard(boolean guideApprovedIcard) {
+        this.guideApprovedIcard = guideApprovedIcard;
+    }
+
+    public boolean isInternRegistrationForm() {
+        return internRegistrationForm;
+    }
+
+    public void setInternRegistrationForm(boolean internRegistrationForm) {
+        this.internRegistrationForm = internRegistrationForm;
+    }
+
+    public boolean isAdminSecurityApproved() {
+        return adminSecurityApproved;
+    }
+
+    public void setAdminSecurityApproved(boolean adminSecurityApproved) {
+        this.adminSecurityApproved = adminSecurityApproved;
+    }
+
+    public boolean isAdminSecurityFormApproved() {
+        return adminSecurityFormApproved;
+    }
+
+    public void setAdminSecurityFormApproved(boolean adminSecurityFormApproved) {
+        this.adminSecurityFormApproved = adminSecurityFormApproved;
+    }
+
+    public boolean isAdminRegistrationApproved() {
+        return adminRegistrationApproved;
+    }
+
+    public void setAdminRegistrationApproved(boolean adminRegistrationApproved) {
+        this.adminRegistrationApproved = adminRegistrationApproved;
     }
 }

@@ -45,12 +45,15 @@ public class WeeklyReport {
 	@Column(name = "g_is_read", nullable = false)
 	private int GisRead = 0;  // 0 = Unread, 1 = Read (default is Unread)
 
+	@Column(name = "changed_report", nullable = false)
+	private boolean changedReport = false;
+
 	public WeeklyReport() {
 		super();
 	}
 
 	public WeeklyReport(long weeklyReportId, Intern intern, GroupEntity group, Date reportSubmittedDate, Date deadline,
-			int weekNo, byte[] submittedPdf, Guide guide, MyUser replacedBy, String status, int isRead, int GisRead) {
+			int weekNo, byte[] submittedPdf, Guide guide, MyUser replacedBy, String status, int isRead, int GisRead, boolean changedReport) {
 		super();
 		this.weeklyReportId = weeklyReportId;
 		this.intern = intern;
@@ -64,6 +67,7 @@ public class WeeklyReport {
 		this.status = status;
 		this.isRead = isRead;
 		this.GisRead = GisRead;
+		this.changedReport = changedReport;
 	}
 
 	public long getWeeklyReportId() {
@@ -160,5 +164,12 @@ public class WeeklyReport {
 
 	public void setGisRead(int GisRead) {
 		this.GisRead = GisRead;
+	}
+
+	public boolean isChangedReport() {
+		return changedReport;
+	}
+	public void setChangedReport(boolean changedReport) {
+		this.changedReport = changedReport;
 	}
 }
