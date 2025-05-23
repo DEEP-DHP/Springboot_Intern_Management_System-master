@@ -1,608 +1,513 @@
- <!DOCTYPE html>
-                                <html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BISAG-N Internship Portal</title>
+    <link rel="icon" href="assets/img/logo.jpg" type="image/jpg" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            padding-top: 70px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+        }
+        .hero {
+            background: linear-gradient(to right, #71a6e3, #e9ecef);
+            padding: 60px 20px;
+            text-align: center;
+        }
 
-                                <head>
-                                    <meta charset="UTF-8">
-                                    <meta name="viewport"
-                                          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-                                    <title>Apply for the Internship</title>
-                                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-                                          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-                                </head>
-                                <style>
-                                    html, body {
-                                        height: 100%;
-                                        margin: 0;
-                                        overflow: hidden;
-                                    }
+        .footer a {
+            color: #adb5bd;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .register-right {
+            background-color: #b1d1f0 !important; /* light grey to match hero background */
+            color: #212529 !important; /* Bootstrap's default dark text */
+            padding: 2rem !important; /* keep the padding */
+            border-radius: 0.25rem; /* subtle rounded corners for nicer look */
+            max-width: 1100px;
+            margin: auto;
+        }
+        .register-right .row {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+        }
 
-                                    .register {
-                                        background: #040404 url("./assets/img/1.JPG") top right no-repeat;
-                                        background-size: cover;
-                                        margin-top: 3%;
-                                        padding: 3%;
-                                        width: 100%;
-                                        max-width: 100%;
-                                        margin: 0;
-                                        height: 100%;
-                                    }
+        .register-right .col-md-4 {
+            flex: 1 1 0;
+            min-width: 280px;
+            max-width: 100%;
+        }
 
-                                    .register-left {
-                                        text-align: center;
-                                        color: #fff;
-                                        margin-top: 1.5%;
-                                    }
+        .navbar {
+            background-color: #ffffff !important;
+        }
+        .navbar-brand {
+            color: #0d6efd !important;
+        }
+        .hero {
+            background: linear-gradient(to right, #71a6e3, #dbe7f3);
+            padding: 80px 20px;
+            text-align: center;
+        }
+        .hero h1 {
+            color: #0d3b66;
+        }
+        .hero p {
+            color: #495057;
+        }
+        .btn-outline-primary:hover {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+        }
+        .card-body input {
+            border-radius: 6px;
+        }
+        .card-footer a {
+            color: #0d6efd;
+        }
+    </style>
+</head>
+<body>
 
-                                    .register-left input {
-                                        border: none;
-                                        border-radius: 1.5rem;
-                                        padding: 2%;
-                                        width: 60%;
-                                        background: #f8f9fa;
-                                        font-weight: bold;
-                                        color: #383d41;
-                                        margin-top: 8%;
-                                        margin-bottom: 3%;
-                                        cursor: pointer;
-                                    }
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#">
+            <img src="assets/img/bisag_logo.png" th:action="@{/}" alt="Logo" width="30" height="30" class="d-inline-block align-text-top me-2">
+            BISAG-N
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <!-- Reserved for future nav items -->
+        </div>
+    </div>
+</nav>
 
-                                    .register-right {
-                                        background: rgba(1, 1, 1, 0.35);
-                                        backdrop-filter: blur(1px); /* Adjust the blur amount as needed */
-                                        background-size: cover;
-                                        border-top-left-radius: 10% 50%;
-                                        border-bottom-left-radius: 10% 50%;
-                                        border-top-right-radius: 10% 50%;
-                                        border-bottom-right-radius: 10% 50%;
-                                        position: relative;
-                                        overflow: hidden;
-                                        /* Ensure the box-shadow doesn't extend beyond the container */
-                                        outline: 1px solid white;
-                                        /* Add an outline for the outer glow effect */
-                                    }
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <h1 class="display-5 fw-bold">Welcome to BISAG-N Internship Portal</h1>
+        <p class="lead mb-4">Empowering innovation through Geo-informatics and Space Technology</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="/login" class="btn btn-outline-primary btn-lg">Login</a>
+            <a href="/bisag_internship" class="btn btn-primary btn-lg">Apply for Internship</a>
+            <a href="/" class="btn btn-outline-primary btn-lg">Home</a>
+        </div>
+    </div>
+</section>
 
-                                    .register-right::before {
-                                        content: "";
-                                        position: absolute;
-                                        top: 0;
-                                        left: 0;
-                                        right: 0;
-                                        bottom: 0;
-                                        background: inherit;
-                                        backdrop-filter: blur(1px); /* Adjust the blur amount as needed */
-                                        z-index: -1;
-                                    }
+<!-- INTERN APPLY FORM -->
+<div class="container-fluid register mt-5">
+    <div class="row">
+        <!-- Right Section -->
+        <div class="col-md-9 register-right bg-dark text-white p-4">
+            <h3 class="register-heading text-center mb-4" style="color: #0d6efd; font-weight: 600;">Internship Application</h3>
+            <form action="bisag_internship" method="post" enctype="multipart/form-data">
+                <div class="row">
+                    <!-- Column 1 -->
+                    <div class="col-md-4">
+                        <div class="form-group" style="position: relative;">
+                            <input type="text" class="form-control" placeholder="Full Name*" id="firstName"
+                                   name="firstName"
+                                   required data-tooltip="Please enter your full name" onblur="this.value = toTitleCase(this.value)">
 
-                                    .register-left img {
-                                        margin-top: 15%;
-                                        margin-bottom: 5%;
-                                        width: 25%;
-                                        -webkit-animation: mover 2s infinite alternate;
-                                        animation: mover 1s infinite alternate;
-                                    }
+                            <div class="tooltip" id="tooltip-firstName"></div>
+                        </div>
+                        <div class="form-group mt-2" style="position: relative;">
+                            <input type="tel" class="form-control"
+                                   placeholder="Contact Number*" id="contactNo" name="contactNo"
+                                   required data-tooltip="Please enter your contact number">
+                            <div class="tooltip" id="tooltip-contactNo"></div>
+                        </div>
+                        <div class="form-group mt-2" style="position: relative;">
+                            <input type="email" class="form-control"
+                                   placeholder="Email*" id="email" name="email" required
+                                   data-tooltip="Please enter your email id">
+                            <div class="tooltip" id="tooltip-email"></div>
+                        </div>
+                        <div class="form-group mt-2" style="position: relative;">
+                            <input type="number" class="form-control"
+                                   placeholder="Semester*" id="semester" name="semester"
+                                   required
+                                   data-tooltip="Please enter your current semester, must between 1 to 15">
+                            <div class="tooltip" id="tooltip-semester"></div>
+                        </div>
+                        <div class="form-group mt-2" style="position: relative;">
+                            <input type="date" class="form-control" id="joiningDate" placeholder="Joining Date*"
+                                   name="joiningDate" onfocus="(this.type='date')" onblur="(this.type='text')"
+                                   required data-tooltip="Please enter your Joining date">
+                            <div class="tooltip" id="tooltip-joiningDate"></div>
+                        </div>
+                        <div class="form-group mt-2 mb-3" style="position: relative;">
+                            <input type="date" class="form-control" id="completionDate"
+                                   placeholder="Completion Date*"
+                                   name="completionDate" onfocus="(this.type='date')"
+                                   onblur="(this.type='text')" required
+                                   data-tooltip="Please enter your Completion date, must be in future">
+                            <div class="tooltip" id="tooltip-completionDate"></div>
+                        </div>
+                        <div class="form-group mb-3" style="position: relative;">
+                            <input type="text" class="form-control" placeholder="Permanent Address*" id="permanentAddress"
+                                   name="permanentAddress"
+                                   required data-tooltip="Please enter your Permanent Address" onblur="this.value = toTitleCase(this.value)">
 
-                                    .register-left p {
-                                        font-weight: lighter;
-                                        padding: 8%;
-                                        margin-top: -4%;
-                                    }
+                            <div class="tooltip" id="tooltip-permanentAddress"></div>
+                        </div>
+                        <div class="form-group mb-3" style="position: relative;">
+                            <input type="text" class="form-control" placeholder="College Guide/HOD Name*" id="collegeGuideHodName"
+                                   name="collegeGuideHodName"
+                                   required data-tooltip="Please enter your college guide/HOD name" onblur="this.value = toTitleCase(this.value)">
 
-                                    .register .register-form {
-                                        padding: 8%;
-                                        margin-top: 10%;
-                                    }
+                            <div class="tooltip" id="tooltip-collegeGuideHodName"></div>
+                        </div>
+                        <div class="form-group mb-3" style="position: relative;">
+                            <input type="number" class="form-control" placeholder="Percentage/CGPA*"
+                                   id="aggregatePercentage" name="aggregatePercentage" required
+                                   step="0.01" min="1" max="100"
+                                   oninput="validity.valid||(value='');"
+                                   data-tooltip="Please enter your Percentage/CGPA">
+                            <div class="tooltip" id="tooltip-aggregatePercentage"></div>
+                        </div>
+                        <div class="form-group mt-2 mb-3" style="position: relative;">
+                            <input type="text" class="form-control" id="dateOfBirth"
+                                   placeholder="Date Of Birth*" name="dateOfBirth"
+                                   onfocus="this.type='date'; setMaxPastDate(this);"
+                                   onblur="if(!this.value) this.type='text';"
+                                   required data-tooltip="Please enter your date of birth.">
+                            <div class="tooltip" id="tooltip-dateOfBirth"></div>
+                        </div>
+                        <div class="form-group mt-2 mb-3" style="position: relative;">
+                            <label class="form-label d-block mb-1">Gender <span class="text-danger">*</span></label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender" id="gender" value="Male" required>
+                                <label class="form-check-label" for="gender">Male</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender" id="gender1" value="Female" required>
+                                <label class="form-check-label" for="gender1">Female</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender" id="gender2" value="Other" required>
+                                <label class="form-check-label" for="gender2">Other</label>
+                            </div>
+                            <div class="tooltip" id="tooltip-gender">Please select your gender.</div>
+                        </div>
+                        <!--                    </div>-->
 
-                                    .btnRegister {
-                                        border: none;
-                                        border-radius: 1.5rem;
-                                        padding: 0.7%;
-                                        background: #0062cc;
-                                        color: #fff;
-                                        font-weight: 600;
-                                        width: 10%;
-                                        cursor: pointer;
-                                        text-decoration: none;
-                                    }
-
-                                    .register .nav-tabs {
-                                        margin-top: 3%;
-                                        border: none;
-                                        background: #0062cc;
-                                        border-radius: 1.5rem;
-                                        width: 28%;
-                                        float: right;
-                                    }
-
-                                    .register .nav-tabs .nav-link {
-                                        padding: 2%;
-                                        height: 34px;
-                                        font-weight: 600;
-                                        color: #fff;
-                                        border-top-right-radius: 1.5rem;
-                                        border-bottom-right-radius: 1.5rem;
-                                    }
-
-                                    .register .nav-tabs .nav-link:hover {
-                                        border: none;
-                                    }
-
-                                    .register .nav-tabs .nav-link.active {
-                                        width: 100px;
-                                        color: #0062cc;
-                                        border: 2px solid #0062cc;
-                                        border-top-left-radius: 1.5rem;
-                                        border-bottom-left-radius: 1.5rem;
-                                    }
-
-                                    .register-heading {
-                                        text-align: center;
-                                        margin-top: 6%;
-                                        margin-bottom: -14%;
-                                        color: #495057;
-                                    }
-
-                                    .tooltip {
-                                        display: none; /* Hidden by default */
-                                        position: absolute;
-                                        top: -30px; /* Position tooltip above the input */
-                                        left: 0;
-                                        background-color: #333;
-                                        color: #fff;
-                                        padding: 5px 10px;
-                                        border-radius: 4px;
-                                        font-size: 0.8em;
-                                        white-space: nowrap;
-                                        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-                                        z-index: 1;
-                                    }
-
-                                    .tooltip-content {
-                                        display: none; /* Hidden by default */
-                                        position: absolute;
-                                        top: 50px; /* Adjust based on input position */
-                                        left: 0;
-                                        background-color: #333;
-                                        padding: 10px;
-                                        border: 1px solid #ddd;
-                                        border-radius: 5px;
-                                        width: 200px;
-                                        font-size: 0.9em;
-                                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-                                        z-index: 1;
-                                    }
-                                    .tooltip-content p {
-                                        margin: 0;
-                                        color: red;
-                                    }
-                                    .tooltip-content p.valid {
-                                        color: #fff;
-                                    }
-                                    .tooltip-content p.invalid {
-                                        color: #fff;
-                                    }
-
-                                    .container {
-                                        position: relative;
-                                        background-color: rgba(1, 1, 1, 0.5);
-                                        /* Adjust the alpha value for transparency */
-                                        border-radius: 10px;
-                                        /* Optional: Add border-radius for rounded corners */
-                                        padding-left: 30px;
-                                        padding-right: 30px;
-                                        height: 100%;
-                                        display: flex;
-                                        align-items: center;
-                                        justify-content: center;
-                                    }
-
-                                    .container::before {
-                                        content: "";
-                                        position: absolute;
-                                        top: 0;
-                                        left: 0;
-                                        right: 0;
-                                        bottom: 0;
-                                        background: inherit;
-                                        backdrop-filter: blur(10px);
-                                        /* Adjust the blur amount as needed */
-                                        z-index: -1;
-                                    }
-
-                                    .custom-tooltip {
-                                        position: absolute;
-                                        background-color: #333;
-                                        color: #fff;
-                                        padding: 5px 10px;
-                                        border-radius: 4px;
-                                        font-size: 0.8em;
-                                        display: none; /* Initially hidden */
-                                        white-space: nowrap; /* Prevent line breaks */
-                                        z-index: 1000; /* Make sure it appears above other elements */
-                                    }
-                                </style>
-                                <body>
-                                <div class="container-fluid register">
-                                    <div class="row">
-                                        <div class="col-md-3 register-left">
-                                            <div style="position: relative; display: inline-block;">
-                                                <div
-                                                        style="position: absolute; border-radius: 50%; background-color: white; width: 100px; height: 100px; top: 20px;"></div>
-                                                <img th:src="@{/assets/img/bisag_logo.png}" alt=""
-                                                     style="position: relative; z-index: 1; width: 100px; height: 100px;">
-                                            </div>
-                                            <h3 class="mt-4">Welcome</h3>
-                                            <p>If you have previously submitted an application, kindly
-                                                verify your application status by logging into your account</p>
-                                            <a th:href="@{/login}"><input type="submit" name=""
-                                                                          value="Login"/></a><br/>
-                                        </div>
-                                        <div class="col-md-9 register-right">
-                                            <div class="tab-content" id="myTabContent">
-
-                                                <div class="tab-pane fade show active" id="home" role="tabpanel"
-                                                     aria-labelledby="home-tab">
-                                                    <h3 class="register-heading text-white">Apply for the
-                                                        Internship</h3>
-                                                    <form action="bisag_internship" method="post"
-                                                          enctype="multipart/form-data">
-                                                        <div class="row register-form">
-                                                            <!-- Column 1 -->
-                                                            <div class="col-md-4">
-                                                                <div class="form-group" style="position: relative;">
-                                                                    <input type="text" class="form-control" placeholder="Full Name*" id="firstName"
-                                                                           name="firstName"
-                                                                           required data-tooltip="Please enter your full name" onblur="this.value = toTitleCase(this.value)">
-
-                                                                    <div class="tooltip" id="tooltip-firstName"></div>
-                                                                </div>
-                                                                <div class="form-group mt-2" style="position: relative;">
-                                                                    <input type="tel" class="form-control"
-                                                                           placeholder="Contact Number*" id="contactNo" name="contactNo"
-                                                                           required data-tooltip="Please enter your contact number">
-                                                                    <div class="tooltip" id="tooltip-contactNo"></div>
-                                                                </div>
-                                                                <div class="form-group mt-2" style="position: relative;">
-                                                                    <input type="email" class="form-control"
-                                                                           placeholder="Email*" id="email" name="email" required
-                                                                           data-tooltip="Please enter your email id">
-                                                                    <div class="tooltip" id="tooltip-email"></div>
-                                                                </div>
-                                                                <div class="form-group mt-2" style="position: relative;">
-                                                                    <input type="number" class="form-control"
-                                                                           placeholder="Semester*" id="semester" name="semester"
-                                                                           required
-                                                                           data-tooltip="Please enter your current semester, must between 1 to 15">
-                                                                    <div class="tooltip" id="tooltip-semester"></div>
-                                                                </div>
-                                                                <div class="form-group mt-2" style="position: relative;">
-                                                                    <input type="date" class="form-control" id="joiningDate" placeholder="Joining Date*"
-                                                                           name="joiningDate" onfocus="(this.type='date')" onblur="(this.type='text')"
-                                                                           required data-tooltip="Please enter your Joining date">
-                                                                    <div class="tooltip" id="tooltip-joiningDate"></div>
-                                                                </div>
-                                                                <div class="form-group mt-2" style="position: relative;">
-                                                                    <input type="date" class="form-control" id="completionDate"
-                                                                           placeholder="Completion Date*"
-                                                                           name="completionDate" onfocus="(this.type='date')"
-                                                                           onblur="(this.type='text')" required
-                                                                           data-tooltip="Please enter your Completion date, must be in future">
-                                                                    <div class="tooltip" id="tooltip-completionDate"></div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div class="col-md-4">
-                                                                <div class="form-group" style="position: relative;">
-                                                                    <select class="form-select" id="collegeName"
-                                                                            name="collegeName" required
-                                                                            data-tooltip="Please enter your college/university">
-                                                                        <option value="" disabled selected>Select College</option>
-                                                                        <option th:each="college : ${colleges}"
-                                                                                th:text="${college.name}" th:value="${college.name}"></option>
-                                                                    </select>
-                                                                    <div class="tooltip" id="tooltip-college"></div>
-                                                                </div>
-                                                                <div class="form-group mt-2" style="position: relative;">
-                                                                    <select class="form-select" id="domain"
-                                                                            name="domain" required data-tooltip="Please enter your internship domain">
-                                                                        <option value="" disabled selected>Select Domain</option>
-                                                                        <option th:each="domain : ${domains}"
-                                                                                th:text="${domain.name}" th:value="${domain.name}"></option>
-                                                                    </select>
-                                                                    <div class="tooltip" id="tooltip-domain"></div>
-                                                                </div>
-                                                                <div class="form-group mt-2" style="position: relative;">
-                                                                    <select class="form-select" id="degree"
-                                                                            name="degree" required data-tooltip="Please enter your degree">
-                                                                        <option value="" disabled selected>Select Degree</option>
-                                                                        <option th:each="degree : ${degrees}"
-                                                                                th:text="${degree.name}" th:value="${degree.name}"></option>
-                                                                    </select>
-                                                                    <div class="tooltip" id="tooltip-degree"></div>
-                                                                </div>
-                                                                <div class="form-group mt-2" style="position: relative;">
-                                                                    <input type="password" class="form-control"
-                                                                           placeholder="Security Pin*" id="securityPin" name="securityPin"
-                                                                           required data-tooltip="Remember your security pin">
-                                                                    <div class="tooltip" id="tooltip-securityPin"></div>
-                                                                    <button type="button" id="toggleSecurityPin"
-                                                                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+                        <!-- Column 2 -->
+                        <!--                    <div class="col-md-4">-->
+                        <div class="form-group" style="position: relative;">
+                            <select class="form-select" id="collegeName"
+                                    name="collegeName" required
+                                    data-tooltip="Please enter your college/university">
+                                <option value="" disabled selected>Select College</option>
+                                <option th:each="college : ${colleges}"
+                                        th:text="${college.name}" th:value="${college.name}"></option>
+                            </select>
+                            <div class="tooltip" id="tooltip-college"></div>
+                        </div>
+                        <div class="form-group mt-2" style="position: relative;">
+                            <select class="form-select" id="domain"
+                                    name="domain" required data-tooltip="Please enter your internship domain">
+                                <option value="" disabled selected>Select Domain</option>
+                                <option th:each="domain : ${domains}"
+                                        th:text="${domain.name}" th:value="${domain.name}"></option>
+                            </select>
+                            <div class="tooltip" id="tooltip-domain"></div>
+                        </div>
+                        <div class="form-group mt-2" style="position: relative;">
+                            <select class="form-select" id="degree"
+                                    name="degree" required data-tooltip="Please enter your degree">
+                                <option value="" disabled selected>Select Degree</option>
+                                <option th:each="degree : ${degrees}"
+                                        th:text="${degree.name}" th:value="${degree.name}"></option>
+                            </select>
+                            <div class="tooltip" id="tooltip-degree"></div>
+                        </div>
+                        <div class="form-group mt-2" style="position: relative;">
+                            <input type="password" class="form-control"
+                                   placeholder="Security Pin*" id="securityPin" name="securityPin"
+                                   required maxlength="6" pattern="\d{6}"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,6)"
+                                   data-tooltip="Remember your security pin">
+                            <div class="tooltip" id="tooltip-securityPin"></div>
+                            <button type="button" id="toggleSecurityPin"
+                                    style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+                                                                          background: none; border: none; cursor: pointer;">
+                                👁️
+                            </button>
+                        </div>
+                        <div class="form-group mt-3" style="position: relative;">
+                            <input type="password" id="password" class="form-control"
+                                   placeholder="Password*" name="password" onfocus="showPasswordTooltip()" onblur="hidePasswordTooltip()" required>
+                            <button type="button" id="togglePassword"
+                                    style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
                    background: none; border: none; cursor: pointer;">
-                                                                        👁️
-                                                                    </button>
-                                                                </div>
-                                                                <div class="form-group mt-3" style="position: relative;">
-                                                                    <input type="password" id="password" class="form-control"
-                                                                           placeholder="Password*" name="password" required>
-                                                                    <button type="button" id="togglePassword"
-                                                                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-                   background: none; border: none; cursor: pointer;">
-                                                                        👁️
-                                                                    </button>
+                                👁️
+                            </button>
 
-                                                                    <div id="password-tooltip" class="tooltip-content">
-                                                                        <p id="length" class="invalid">At least 8 characters</p>
-                                                                        <p id="uppercase" class="invalid">At least one uppercase letter</p>
-                                                                        <p id="lowercase" class="invalid">At least one lowercase letter</p>
-                                                                        <p id="number" class="invalid">At least one number</p>
-                                                                        <p id="special" class="invalid">At least one special character (@, #, $, etc.)</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
+                            <div id="password-tooltip" class="tooltip-content" style="display: none; position: absolute; top: 100%; left: 0; z-index: 10; background: #f8f9fa; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                                <p id="length" class="invalid">At least 8 characters</p>
+                                <p id="uppercase" class="invalid">At least one uppercase letter</p>
+                                <p id="lowercase" class="invalid">At least one lowercase letter</p>
+                                <p id="number" class="invalid">At least one number</p>
+                                <p id="special" class="invalid">At least one special character (@, #, $, etc.)</p>
+                            </div>
+                        </div>
+                        <!--                    </div>-->
 
-                                                            <div class="col-md-4">
-                                                                <div class="form-group" style="position: relative;">
-                                                                    <label for="nocPdf" class="form-label text-white mt-1">Upload NOC:</label>
-                                                                    <div class="input-group">
-                                                                        <input type="file" class="form-control" id="nocPdf" name="nocPdf" accept=".pdf" required
-                                                                               data-tooltip="Only PDF files are allowed">
-                                                                        <button type="button" class="btn btn-primary" id="viewNocBtn">View</button>
-                                                                    </div>
-                                                                    <div class="tooltip" id="tooltip-nocPdf"></div>
-                                                                    <label for="resumePdf" class="form-label text-white mt-0">Upload Resume:</label>
-                                                                    <div class="input-group">
-                                                                        <input type="file" class="form-control" id="resumePdf" name="resumePdf"
-                                                                               accept=".pdf" required data-tooltip="Only PDF files are allowed">
-                                                                        <button type="button" class="btn btn-primary" id="viewResumeBtn">View</button>
-                                                                    </div>
-                                                                    <div class="tooltip" id="tooltip-resumePdf"></div>
-                                                                    <label for="passportSizeImage" class="form-label text-white">Passport Size
-                                                                        Image:</label>
-                                                                    <input type="file" class="form-control" id="passportSizeImage"
-                                                                           name="passportSizeImage"
-                                                                           accept=".jpg, .jpeg" required
-                                                                           data-tooltip="Only JPG or JPEG files are allowed">
-                                                                    <div class="tooltip" id="tooltip-passportSizeImage"></div>
-                                                                </div>
-                                                                <div class="form-group" style="position: relative;">
-                                                                    <label for="icardImage" class="form-label text-white mt-1">College ICard
-                                                                        Image:</label>
-                                                                    <input type="file" class="form-control" id="icardImage" name="icardImage"
-                                                                           accept=".jpg, .jpeg" required
-                                                                           data-tooltip="Only JPG or JPEG files are allowed">
-                                                                    <div class="tooltip" id="tooltip-icardImage"></div>
-                                                                </div>
+                        <!-- Column 3 -->
+                        <!--                    <div class="col-md-4">-->
+                        <div class="form-group" style="position: relative;">
+                            <label for="nocPdf" class="form-label text-black mt-1">Upload NOC:</label>
+                            <div class="input-group">
+                                <input type="file" class="form-control" id="nocPdf" name="nocPdf" accept=".pdf" required
+                                       data-tooltip="Only PDF files are allowed">
+                                <button type="button" class="btn btn-primary" id="viewNocBtn">View</button>
+                            </div>
+                            <div class="tooltip" id="tooltip-nocPdf"></div>
+                            <label for="resumePdf" class="form-label text-black mt-0">Upload Resume:</label>
+                            <div class="input-group">
+                                <input type="file" class="form-control" id="resumePdf" name="resumePdf"
+                                       accept=".pdf" required data-tooltip="Only PDF files are allowed">
+                                <button type="button" class="btn btn-primary" id="viewResumeBtn">View</button>
+                            </div>
+                            <div class="tooltip" id="tooltip-resumePdf"></div>
+                            <label for="passportSizeImage" class="form-label text-black">Passport Size
+                                Image:</label>
+                            <input type="file" class="form-control" id="passportSizeImage"
+                                   name="passportSizeImage"
+                                   accept=".jpg, .jpeg" required
+                                   data-tooltip="Only JPG or JPEG files are allowed">
+                            <div class="tooltip" id="tooltip-passportSizeImage"></div>
+                        </div>
+                        <div class="form-group" style="position: relative;">
+                            <label for="icardImage" class="form-label text-black mt-1">College ICard
+                                Image:</label>
+                            <input type="file" class="form-control" id="icardImage" name="icardImage"
+                                   accept=".jpg, .jpeg" required
+                                   data-tooltip="Only JPG or JPEG files are allowed">
+                            <div class="tooltip" id="tooltip-icardImage"></div>
+                        </div>
+                        <div class="form-group" style="position: relative;">
+                        <label for="sign" class="form-label text-black mt-1">Digital Signature:</label>
+                        <input type="file" class="form-control" id="sign" name="sign"
+                               accept=".jpg, .jpeg" required
+                               data-tooltip="Only JPG or JPEG files are allowed">
+                        <div class="tooltip" id="tooltip-sign"></div>
+                    </div>
 
-                                                            </div>
-                                                            <div class="text-center py-4">
-                                                                <button type="submit" class="btnRegister">
-										<span class="spinner-border spinner-border-sm visually-hidden"
-                                              role="status" aria-hidden="true"></span> <span
-                                                                        class="visually-hidden">Loading...</span>Submit
-                                                                </button>
-                                                                <button type="reset" class="btnRegister" style="margin-left: 10px;">Reset</button>
+                    </div>
+                </div>
 
-                                                                <a th:href="@{/}" type="button" class="btnRegister">Home</a>
-                                                            </div>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                <!-- Submit Section -->
+                <div class="text-center py-4">
+                    <button type="submit" class="btn btn-success px-4">Submit</button>
+                    <button type="reset" class="btn btn-secondary px-4 ms-2">Reset</button>
+                    <a th:href="@{/}" class="btn btn-primary px-4 ms-2">Home</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-                                </div>
+<div class="modal fade" th:if="${msg}" id="messageModal" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="messageModalLabel">Message</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div th:class="${msg.contains('Error') ? 'alert alert-danger' : 'alert alert-success'}">
+                    <span th:utext="${msg}"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" th:class="${msg.contains('Error') ? 'btn btn-danger' : 'btn btn-success'}" data-bs-dismiss="modal">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
-                                <!--<div class="modal fade" th:if="${msg}" id="messageModal" tabindex="-1" role="dialog"-->
-                                <!--     aria-labelledby="messageModalLabel" aria-hidden="true">-->
-                                <!--    <div class="modal-dialog" role="document">-->
-                                <!--        <div class="modal-content">-->
-                                <!--            <div class="modal-header">-->
-                                <!--                <h5 class="modal-title" id="messageModalLabel">Message</h5>-->
-                                <!--                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
-                                <!--            </div>-->
-                                <!--            <div class="modal-body">-->
-                                <!--                <th:block>-->
-                                <!--                    <div>-->
-                                <!--                        <div th:class="${msg.contains('Error') ? 'alert alert-danger' : 'alert alert-success'}">-->
-                                <!--                            <span th:utext="${msg}"></span>-->
-                                <!--                        </div>-->
-                                <!--                    </div>-->
-                                <!--                </th:block>-->
-                                <!--            </div>-->
-                                <!--            <div class="modal-footer">-->
-                                <!--                <button type="button"-->
-                                <!--                        th:class="${msg.contains('Error') ? 'btn btn-danger' : 'btn btn-success'}"-->
-                                <!--                        data-bs-dismiss="modal">-->
-                                <!--                    OK-->
-                                <!--                </button>-->
-                                <!--            </div>-->
-                                <!--        </div>-->
-                                <!--    </div>-->
-                                <!--</div>-->
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-                                <div class="modal fade" th:if="${msg}" id="messageModal" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
-                                    <div class="modal-dialog" role="document">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="messageModalLabel">Message</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div th:class="${msg.contains('Error') ? 'alert alert-danger' : 'alert alert-success'}">
-                                                    <span th:utext="${msg}"></span>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" th:class="${msg.contains('Error') ? 'btn btn-danger' : 'btn btn-success'}" data-bs-dismiss="modal">
-                                                    OK
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+<!-- Custom JS for form functionality -->
+<script>
+    // Example: Show/Hide Password
+    document.getElementById('togglePassword')?.addEventListener('click', function () {
+        const pwd = document.getElementById('password');
+        pwd.type = pwd.type === 'password' ? 'text' : 'password';
+    });
 
+    document.getElementById('toggleSecurityPin')?.addEventListener('click', function () {
+        const pin = document.getElementById('securityPin');
+        pin.type = pin.type === 'password' ? 'text' : 'password';
+    });
 
-                                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-                                <!--<script th:inline="javascript">-->
-                                <!--    $(document).ready(function() {-->
-                                <!--        if ($('#messageModal').length > 0) {-->
-                                <!--            var messageModal = new bootstrap.Modal(document.getElementById('messageModal'));-->
-                                <!--            messageModal.show();-->
-                                <!--        }-->
-                                <!--    });-->
-                                <!--</script>-->
+    // Trigger modal if exists
+    window.addEventListener('DOMContentLoaded', () => {
+        if (document.getElementById("messageModal")) {
+            const myModal = new bootstrap.Modal(document.getElementById('messageModal'));
+            myModal.show();
+        }
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+<script>
+    document.querySelector("button[type='reset']").addEventListener("click", function () {
+        // Clear all file inputs
+        document.querySelectorAll("input[type='file']").forEach(input => input.value = "");
+    });
+</script>
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof sessionStorage !== 'undefined' && '${session.msg}' !== '') {
+            $('#messageModal').modal('show');
+            fetch('/remove-session-msg', {
+                method: 'POST'
+            }).then(response => {
+                console.log("Session message removed");
+            }).catch(error => {
+                console.error("Failed to remove session message", error);
+            });
 
+            setTimeout(function() {
+                $('#messageModal').modal('hide');
+            }, 60000);
+        }
+    });
+    $(document).ready(function() {
+        $('.spinner-border').addClass('visually-hidden');
 
-                                <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
-                                        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
-                                        crossorigin="anonymous"></script>
-                                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-                                        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-                                        crossorigin="anonymous"></script>
-                                <script>
-                                    document.querySelector("button[type='reset']").addEventListener("click", function () {
-                                        // Clear all file inputs
-                                        document.querySelectorAll("input[type='file']").forEach(input => input.value = "");
-                                    });
-                                </script>
-                                <script th:inline="javascript">
-                                    document.addEventListener('DOMContentLoaded', function() {
-                                        if (typeof sessionStorage !== 'undefined' && '${session.msg}' !== '') {
-                                            $('#messageModal').modal('show');
-                                            fetch('/remove-session-msg', {
-                                                method: 'POST'
-                                            }).then(response => {
-                                                console.log("Session message removed");
-                                            }).catch(error => {
-                                                console.error("Failed to remove session message", error);
-                                            });
+        $('form').submit(function() {
+            $('.spinner-border').removeClass('visually-hidden');
 
-                                            setTimeout(function() {
-                                                $('#messageModal').modal('hide');
-                                            }, 60000);
-                                        }
-                                    });
-                                    $(document).ready(function() {
-                                        $('.spinner-border').addClass('visually-hidden');
+            setTimeout(function() {
+                $('.spinner-border').addClass('visually-hidden');
+            }, 200000);
+        });
+    });
+    const passwordInput = document.getElementById("password");
+    const tooltip = document.getElementById("password-tooltip");
 
-                                        $('form').submit(function() {
-                                            $('.spinner-border').removeClass('visually-hidden');
+    passwordInput.addEventListener("focus", () => tooltip.style.display = "block");
+    passwordInput.addEventListener("mouseover", () => tooltip.style.display = "block");
 
-                                            setTimeout(function() {
-                                                $('.spinner-border').addClass('visually-hidden');
-                                            }, 200000);
-                                        });
-                                    });
-                                    const passwordInput = document.getElementById("password");
-                                    const tooltip = document.getElementById("password-tooltip");
+    passwordInput.addEventListener("blur", () => tooltip.style.display = "none");
+    passwordInput.addEventListener("mouseout", () => tooltip.style.display = "none");
 
-                                    passwordInput.addEventListener("focus", () => tooltip.style.display = "block");
-                                    passwordInput.addEventListener("mouseover", () => tooltip.style.display = "block");
+    passwordInput.addEventListener("input", function () {
+        const value = passwordInput.value;
 
-                                    passwordInput.addEventListener("blur", () => tooltip.style.display = "none");
-                                    passwordInput.addEventListener("mouseout", () => tooltip.style.display = "none");
+        document.getElementById("length").classList.toggle("valid", value.length >= 8);
+        document.getElementById("uppercase").classList.toggle("valid", /[A-Z]/.test(value));
+        document.getElementById("lowercase").classList.toggle("valid", /[a-z]/.test(value));
+        document.getElementById("number").classList.toggle("valid", /[0-9]/.test(value));
+        document.getElementById("special").classList.toggle("valid", /[@#$%^&+=]/.test(value));
+    });
 
-                                    passwordInput.addEventListener("input", function () {
-                                        const value = passwordInput.value;
+    function showTooltip(inputElement, tooltipElement) {
+        tooltipElement.innerText = inputElement.getAttribute("data-tooltip");
+        tooltipElement.style.display = "block";
+    }
 
-                                        document.getElementById("length").classList.toggle("valid", value.length >= 8);
-                                        document.getElementById("uppercase").classList.toggle("valid", /[A-Z]/.test(value));
-                                        document.getElementById("lowercase").classList.toggle("valid", /[a-z]/.test(value));
-                                        document.getElementById("number").classList.toggle("valid", /[0-9]/.test(value));
-                                        document.getElementById("special").classList.toggle("valid", /[@#$%^&+=]/.test(value));
-                                    });
+    function hideTooltip(tooltipElement) {
+        tooltipElement.style.display = "none";
+    }
 
-                                    function showTooltip(inputElement, tooltipElement) {
-                                        tooltipElement.innerText = inputElement.getAttribute("data-tooltip");
-                                        tooltipElement.style.display = "block";
-                                    }
+    document.querySelectorAll("input[data-tooltip]").forEach(input => {
+        const tooltip = document.createElement('div');
+        tooltip.className = 'custom-tooltip';
+        document.body.appendChild(tooltip);
 
-                                    function hideTooltip(tooltipElement) {
-                                        tooltipElement.style.display = "none";
-                                    }
+        input.addEventListener("mouseover", () => showTooltip(input, tooltip));
+        input.addEventListener("mouseout", () => hideTooltip(tooltip));
+        input.addEventListener("focus", () => showTooltip(input, tooltip)); // Show on focus as well
+        input.addEventListener("blur", () => hideTooltip(tooltip)); // Hide on blur
 
-                                    document.querySelectorAll("input[data-tooltip]").forEach(input => {
-                                        const tooltip = document.createElement('div');
-                                        tooltip.className = 'custom-tooltip';
-                                        document.body.appendChild(tooltip);
+        input.addEventListener("mousemove", (e) => {
+            tooltip.style.left = e.pageX + 10 + 'px'; // Offset by 10px to avoid cursor
+            tooltip.style.top = e.pageY + 10 + 'px'; // Offset by 10px to avoid cursor
+        });
+    });
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        let passwordInput = document.getElementById('password');
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            this.textContent = "❌";
+        } else {
+            passwordInput.type = "password";
+            this.textContent = "👁️";
+        }
+    });
+    document.getElementById('toggleSecurityPin').addEventListener('click', function() {
+        let securityPinInput = document.getElementById('securityPin');
+        if (securityPinInput.type === "password") {
+            securityPinInput.type = "text";
+            this.textContent = "❌";
+        } else {
+            securityPinInput.type = "password";
+            this.textContent = "👁️";
+        }
+    });
+</script>
+<script>
+    document.getElementById("viewNocBtn").addEventListener("click", function () {
+        const fileInput = document.getElementById("nocPdf");
+        const file = fileInput.files[0];
 
-                                        input.addEventListener("mouseover", () => showTooltip(input, tooltip));
-                                        input.addEventListener("mouseout", () => hideTooltip(tooltip));
-                                        input.addEventListener("focus", () => showTooltip(input, tooltip)); // Show on focus as well
-                                        input.addEventListener("blur", () => hideTooltip(tooltip)); // Hide on blur
+        if (!file) {
+            alert("Please select a NOC PDF file first.");
+            return;
+        }
 
-                                        input.addEventListener("mousemove", (e) => {
-                                            tooltip.style.left = e.pageX + 10 + 'px'; // Offset by 10px to avoid cursor
-                                            tooltip.style.top = e.pageY + 10 + 'px'; // Offset by 10px to avoid cursor
-                                        });
-                                    });
-                                    document.getElementById('togglePassword').addEventListener('click', function() {
-                                        let passwordInput = document.getElementById('password');
-                                        if (passwordInput.type === "password") {
-                                            passwordInput.type = "text";
-                                            this.textContent = "❌";
-                                        } else {
-                                            passwordInput.type = "password";
-                                            this.textContent = "👁️";
-                                        }
-                                    });
-                                    document.getElementById('toggleSecurityPin').addEventListener('click', function() {
-                                        let securityPinInput = document.getElementById('securityPin');
-                                        if (securityPinInput.type === "password") {
-                                            securityPinInput.type = "text";
-                                            this.textContent = "❌";
-                                        } else {
-                                            securityPinInput.type = "password";
-                                            this.textContent = "👁️";
-                                        }
-                                    });
-                                </script>
-                                <script>
-                                    document.getElementById("viewNocBtn").addEventListener("click", function () {
-                                        const fileInput = document.getElementById("nocPdf");
-                                        const file = fileInput.files[0];
+        if (file.type !== "application/pdf") {
+            alert("Selected file is not a PDF.");
+            return;
+        }
 
-                                        if (!file) {
-                                            alert("Please select a NOC PDF file first.");
-                                            return;
-                                        }
+        const fileURL = URL.createObjectURL(file);
+        window.open(fileURL, '_blank');
+    });
+    document.getElementById("viewResumeBtn").addEventListener("click", function () {
+        const fileInput = document.getElementById("resumePdf");
+        const file = fileInput.files[0];
 
-                                        if (file.type !== "application/pdf") {
-                                            alert("Selected file is not a PDF.");
-                                            return;
-                                        }
+        if (!file) {
+            alert("Please select a Resume PDF file first.");
+            return;
+        }
 
-                                        const fileURL = URL.createObjectURL(file);
-                                        window.open(fileURL, '_blank');
-                                    });
-                                    document.getElementById("viewResumeBtn").addEventListener("click", function () {
-                                        const fileInput = document.getElementById("resumePdf");
-                                        const file = fileInput.files[0];
+        if (file.type !== "application/pdf") {
+            alert("Selected file is not a PDF.");
+            return;
+        }
 
-                                        if (!file) {
-                                            alert("Please select a Resume PDF file first.");
-                                            return;
-                                        }
-
-                                        if (file.type !== "application/pdf") {
-                                            alert("Selected file is not a PDF.");
-                                            return;
-                                        }
-
-                                        const fileURL = URL.createObjectURL(file);
-                                        window.open(fileURL, '_blank');
-                                    });
-                                </script>
+        const fileURL = URL.createObjectURL(file);
+        window.open(fileURL, '_blank');
+    });
+</script>
 <script>
     function toTitleCase(str) {
         return str.toLowerCase().replace(/\b\w/g, function (char) {
@@ -619,6 +524,87 @@
                 input.value = toTitleCase(input.value.trim());
             }
         });
+    }
+</script>
+<script>
+    const maxSizeKB = 500; // 150 KB
+    const maxSizeBytes = maxSizeKB * 1024;
+
+    function validateFileSize(inputId) {
+        const input = document.getElementById(inputId);
+        input.addEventListener('change', function () {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                if (file.size > maxSizeBytes) {
+                    alert(`The selected file for "${inputId}" exceeds the 500KB limit. Kindly choose a smaller file.`);
+                    this.value = ''; // Clear the file input
+                }
+            }
+        });
+    }
+
+    // Call validation on DOM load
+    document.addEventListener("DOMContentLoaded", function () {
+        validateFileSize('nocPdf');
+        validateFileSize('resumePdf');
+        validateFileSize('passportSizeImage');
+        validateFileSize('icardImage');
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const pinInput = document.getElementById("securityPin");
+
+        document.getElementById("toggleSecurityPin").addEventListener("click", function () {
+            pinInput.type = pinInput.type === "password" ? "text" : "password";
+        });
+
+        // Validate on blur (when leaving the input)
+        pinInput.addEventListener("blur", function () {
+            if (pinInput.value.length !== 6) {
+                alert("Security Pin must be exactly 6 digits.");
+                pinInput.focus();
+            }
+        });
+
+        // Or validate on form submit
+        document.querySelector("form").addEventListener("submit", function (e) {
+            if (pinInput.value.length !== 6) {
+                alert("Security Pin must be exactly 6 digits.");
+                e.preventDefault(); // prevent form submission
+                pinInput.focus();
+            }
+        });
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const pinInput = document.getElementById("password");
+        const togglePassword = document.getElementById("togglePassword");
+        const tooltip = document.getElementById("password-tooltip");
+
+        // Toggle password visibility
+        togglePassword.addEventListener("click", function () {
+            pinInput.type = pinInput.type === "password" ? "text" : "password";
+        });
+
+        // Show tooltip on focus
+        pinInput.addEventListener("focus", function () {
+            tooltip.style.display = "block";
+        });
+
+        // Hide tooltip on blur
+        pinInput.addEventListener("blur", function () {
+            tooltip.style.display = "none";
+        });
+    });
+</script>
+<script>
+    function setMaxPastDate(input) {
+        const today = new Date();
+        today.setDate(today.getDate() - 1); // yesterday
+        const maxDate = today.toISOString().split("T")[0];
+        input.max = maxDate;
     }
 </script>
 </body>

@@ -1,618 +1,209 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta content="width=device-width, initial-scale=1.0" name="viewport">
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>BISAG-N Internship Portal</title>
+	<link rel="icon" href="assets/img/logo.jpg" type="image/jpg" />
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+	<style>
+		body {
+			padding-top: 70px;
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			background-color: #f4f6f9;
+		}
+		.hero {
+			background: linear-gradient(to right, #f8f9fa, #e9ecef);
+			padding: 60px 20px;
+			text-align: center;
+		}
+		.announcement-marquee {
+			background-color: #fff3cd;
+			padding: 10px;
+			border-left: 5px solid #ffc107;
+			font-weight: 500;
+		}
+		.info-section {
+			padding: 40px 0;
+		}
+		.footer {
+			background-color: #343a40;
+			color: white;
+			padding: 20px 0;
+		}
+		.footer a {
+			color: #adb5bd;
+			text-decoration: none;
+		}
+		.footer a:hover {
+			text-decoration: underline;
+		}
 
-<title>Welcome To BISAG-N</title>
-<meta content="" name="description">
-<meta content="" name="keywords">
-
-<!-- Favicons -->
-<link href="assets/img/logo.jpg" rel="icon">
-<link href="assets/img/logo.jpg" rel="apple-touch-icon">
-<link
-	href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Raleway:300,300i,400,400i,500,500i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i"
-	rel="stylesheet">
-<link href="assets/vendor/bootstrap/css/bootstrap.min.css"
-	rel="stylesheet">
-<link href="assets/vendor/bootstrap-icons/bootstrap-icons.css"
-	rel="stylesheet">
-<link href="assets/vendor/boxicons/css/boxicons.min.css"
-	rel="stylesheet">
-<link href="assets/vendor/glightbox/css/glightbox.min.css"
-	rel="stylesheet">
-<link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
-<link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
-<link href="assets/css/style2.css" rel="stylesheet">
+		.navbar {
+			background-color: #ffffff !important;
+		}
+		.navbar-brand {
+			color: #0d6efd !important;
+		}
+		.hero {
+			background: linear-gradient(to right, #71a6e3, #dbe7f3);
+			padding: 80px 20px;
+			text-align: center;
+		}
+		.hero h1 {
+			color: #0d3b66;
+		}
+		.hero p {
+			color: #495057;
+		}
+		.btn-outline-primary:hover {
+			background-color: #0d6efd;
+			color: white;
+		}
+		.btn-primary:hover {
+			background-color: #0b5ed7;
+		}
+		.card-body input {
+			border-radius: 6px;
+		}
+		.card-footer a {
+			color: #0d6efd;
+		}
+		.gradient-bg {
+			background: linear-gradient(to right, #001f85, #d9e1fa); /* dark to light blue */
+			color: #fff;                   /* white text for contrast */
+			border-radius: 0.25rem;         /* optional rounded corners */
+		}
+	</style>
 </head>
-
 <body>
-<<header id="header-bar">
-	<div class="container d-flex justify-content-between align-items-center">
-		<!-- Left side: Logo and Institute Name -->
-		<div class="header-left">
-			<h1 style="color: #0c0c0c">BISAG-N</h1>
-			<h2 id="typing-text">Bhaskaracharya National Institute for Space Applications and Geo-informatics</h2>
-		</div>
 
-		<!-- Right side: Buttons and Navbar -->
-		<div class="header-right d-flex align-items-center">
-			<nav class="navbar">
-				<ul class="nav-list d-flex">
-					<li><a href="#header">Home</a></li>
-					<li><a href="#about">About</a></li>
-					<li><a href="https://bisag-n.gov.in/" target="_blank">Portfolio</a></li>
-				</ul>
-			</nav>
-			<div class="btn-group me-3">
-				<a th:href="@{/bisag_internship}" class="btn btn-primary mx-2" target="_blank">Apply For Internship</a>
-				<a th:href="@{/login}" class="btn btn-primary" target="_blank">Login</a>
-			</div>
-
+<nav class="navbar navbar-expand-lg navbar-light fixed-top shadow-sm">
+	<div class="container-fluid">
+		<a class="navbar-brand fw-bold" href="@{/}">
+			<img src="assets/img/bisag_logo.png" alt="Logo" width="30" height="30" class="d-inline-block align-text-top me-2">
+			BISAG-N
+		</a>
+		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+		<div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+			<ul class="navbar-nav">
+				<li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+				<li class="nav-item"><a class="nav-link" href="#gallery">Gallery</a></li>
+				<li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+			</ul>
 		</div>
 	</div>
-</header>
-<div class="background-slideshow">
-	<div class="bg-slide bg1"></div>
-	<div class="bg-slide bg2"></div>
-	<div class="bg-slide bg3"></div>
-	<div class="bg-slide bg4"></div>
-</div>
-	<section id="about" class="about">
-		<div class="about-me container">
-			<div class="section-title">
-				<h2>About</h2>
-				<p>Learn more about Bisag</p>
-			</div>
-			<div class="row">
-				<div class="col-lg-4 mt-3" data-aos="fade-right">
-					<img src="assets/img/slides-1.jpg" class="img-fluid" alt="">
-					<img src="assets/img/slides-2.jpg" class="img-fluid" alt="">
-				</div>
-				<div class="col-lg-8 pt-4 pt-lg-0 content" data-aos="fade-left">
-					<h3>Visions</h3>
-					<p class="fst-italic">To empower and serve the Nation through
-						development of Space and Geo-spatial Technologies, its
-						applications/solutions/services in accordance to governance
-						principles for socio-economic welfare of the Society.</p>
-					<div class="row">
-						<h3>Role of BISAG-N</h3>
-						<p class="fst-italic">The Institute works in close
-							co-ordination with GoI Ministries and State Government
-							departments/agencies and has thus emerged as a National level
-							agency to use satellite communication and Space & Geo-spatial
-							technologies for the planning and development activities in
-							various sectors of the Government.</p>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero">
+	<div class="container">
+		<h1 class="display-5 fw-bold">Welcome to BISAG-N Internship Portal</h1>
+		<p class="lead mb-4">Empowering innovation through Geo-informatics and Space Technology</p>
+		<div class="d-flex justify-content-center gap-3">
+			<a href="/login" class="btn btn-outline-primary btn-lg">Login</a>
+			<a href="/bisag_internship" class="btn btn-primary btn-lg">Apply for Internship</a>
+		</div>
+	</div>
+</section>
+
+<section class="info-section" id="gallery">
+	<div class="container">
+		<h2 class="text-center gradient-bg mb-5">Gallery</h2>
+		<div class="row g-4">
+			<div class="col-md-4">
+				<div class="card h-100 shadow-sm">
+					<div class="card-body text-center">
+						<img id="galleryImg1" src="assets/img/1.jpg" class="card-img-top p-3 img-fluid rounded" alt="Image 1">
 					</div>
-					<div class="row mt-2">
-						<h3>Profile</h3>
-						<p class="fst-italic">BISAG-N provides specialized services
-							and solutions in implementing map-based Geographic Information
-							Systems. BISAG-N undertakes all services for the entire process
-							of implementing an enterprise level GIS system. These services
-							include GIS database design and development, map
-							creation/updation and finishing, data migration/conversion and
-							format translation, software development and customization,
-							systems integration and technical consulting. BISAG-N also
-							provides complete GIS solutions, which bundle hardware and
-							software with GIS systems development services.</p>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="card h-100 shadow-sm">
+					<div class="card-body text-center">
+						<img id="galleryImg2" src="assets/img/2.jpg" class="card-img-top p-3 img-fluid rounded" alt="Image 2">
+					</div>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="card h-100 shadow-sm">
+					<div class="card-body text-center">
+						<img id="galleryImg3" src="assets/img/3.jpg" class="card-img-top p-3 img-fluid rounded" alt="Image 3">
 					</div>
 				</div>
 			</div>
 		</div>
-		<div class="counts container">
+	</div>
+</section>
 
-			<div class="row">
+<!-- About Section -->
+<section class="info-section bg-light" id="about">
+	<div class="container text-center">
+		<h2 class="mb-4 gradient-bg">About BISAG-N</h2>
+		<p class="lead text-muted" style="text-align: justify;">BISAG-N provides specialized services and solutions in implementing map-based Geographic Information Systems. BISAG-N undertakes all services for the entire process of implementing an enterprise level GIS system. These services include GIS database design and development, map creation/updation and finishing, data migration/conversion and format translation, software development and customization, systems integration and technical consulting. BISAG-N also provides complete GIS solutions, which bundle hardware and software with GIS systems development services.</p>
 
-				<div class="col-lg-3 col-md-6">
-					<div class="count-box">
-						<i class="bi bi-emoji-smile"></i> <span data-purecounter-start="0"
-							data-purecounter-end="200" data-purecounter-duration="1"
-							class="purecounter"></span>
-						<p>Happy Interns</p>
-					</div>
-				</div>
+		<p class="lead text-muted" style="text-align: justify;">BISAG-N provides a full complement of specialized services in implementing end-to-end Space and Geo-Spatial Technology based applications in the areas of Ground Control Survey, Digital Photogrammetry, Digital Terrain / Elevation Models and Contouring, Vector Data Capture, Digital Orthophotography and Ortho-mosaicing, Image Analysis and Interpretation for Thematic Mapping, Cadastral / Parcel Mapping, GIS Database Design and Development, Map Creation / Updation and Finishing, Data Migration/Conversion and Format Translation, Software Development and Customization, Geo database Modeling as well as high-end Domain & Geo-Spatial Technical Consulting and Support.</p>
 
-				<div class="col-lg-3 col-md-6 mt-5 mt-md-0">
-					<div class="count-box">
-						<i class="bi bi-journal-richtext"></i> <span
-							data-purecounter-start="0" data-purecounter-end="50"
-							data-purecounter-duration="1" class="purecounter"></span>
-						<p>Projects</p>
-					</div>
-				</div>
+		<p class="lead text-muted" style="text-align: justify;">BISAG-N has strengthened its range of high-end Geo-Spatial services in large-scale mapping by using advanced Photogrammetry and D-GPS technologies to cover elevation modelling, surface modelling and true ortho-photo generation.</p>
 
-				<div class="col-lg-3 col-md-6 mt-5 mt-lg-0">
-					<div class="count-box">
-						<i class="bi bi-headset"></i> <span data-purecounter-start="0"
-							data-purecounter-end="1200" data-purecounter-duration="1"
-							class="purecounter"></span>
-						<p>Staff Support</p>
-					</div>
-				</div>
+		<p class="lead text-muted" style="text-align: justify;">BISAG-N offers comprehensive GIS/PHOTOGRAMMETRIC solutions over large geographical areas. These include solutions and services in the areas of mapping, cartography, imaging, photogrammetry and utility / environment resource management. BISAG-N provides solutions based on Remote Sensing, using Multi-spectral data, for specific applications like agricultural crop monitoring, watershed management, forest fire mapping etc.</p>
 
-				<div class="col-lg-3 col-md-6 mt-5 mt-lg-0">
-					<div class="count-box">
-						<i class="bi bi-award"></i> <span data-purecounter-start="0"
-							data-purecounter-end="20" data-purecounter-duration="1"
-							class="purecounter"></span>
-						<p>Awards</p>
-					</div>
-				</div>
+		<p class="lead text-muted" style="text-align: justify;">BISAG-N also offers leading-edge Mapping - GIS solutions for disaster management and specialized needs of Public Safety Additionally, a full complement of e-governance solutions is also offered, to address varying GIS and MIS needs of central and various State Governments.</p>
+	</div>
+</section>
 
-			</div>
+<!-- Contact Section -->
+<section class="info-section bg-light" id="contact">
+	<div class="container text-center">
+		<h2 class="gradient-bg mb-4">Contact Us</h2>
+		<p class="mb-1">BISAG-N, Near CH '0' Circle, Indulal Yagnik Marg,
+			Gandhinagar-Ahmedabad Highway, Gandhinagar - 382007 Gujarat, India</p>
+		<p>Website: <a href="https://bisag-n.gov.in/" target="_blank">www.bisag-n.gov.in</a></p>
+	</div>
+</section>
 
-		</div>
-		<!-- End Counts -->
-		<!-- ======= Skills  ======= -->
-		<div class="skills container">
-			<div class="section-title">
-				<h2>Training Domains</h2>
-			</div>
+<!-- Footer -->
+<footer class="footer text-center">
+	<div class="container">
+		<p>&copy; 2025 BISAG-N. All rights reserved.</p>
+		<p><a href="#privacy">Privacy Policy</a> | <a href="#terms">Terms of Use</a></p>
+	</div>
+</footer>
 
-			<div class="row skills-content">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+	document.addEventListener("DOMContentLoaded", function () {
+		const allImages = [
+			"assets/img/1.jpg", "assets/img/2.jpg", "assets/img/3.jpg",
+			"assets/img/4.jpg", "assets/img/7.jpg", "assets/img/15.jpg",
+			"assets/img/16.jpg", "assets/img/17.jpg", "assets/img/18.jpg",
+			"assets/img/19.jpg", "assets/img/22.jpg", "assets/img/23.jpg",
+			"assets/img/25.jpg", "assets/img/30.jpg", "assets/img/43.jpg",
+			"assets/img/26.jpg", "assets/img/36.jpg", "assets/img/33.jpg",
+			"assets/img/35.jpg", "assets/img/31.jpg", "assets/img/37.jpg",
+			"assets/img/38.jpg", "assets/img/39.jpg", "assets/img/40.jpg",
+			"assets/img/41.jpg", "assets/img/42.jpg", "assets/img/28.jpg"
+		];
 
-				<div class="col-lg-6">
+		const imgElements = [
+			document.getElementById("galleryImg1"),
+			document.getElementById("galleryImg2"),
+			document.getElementById("galleryImg3")
+		];
 
-					<div class="progress">
-						<span class="skill">JAVA <i class="val">100%</i></span>
-						<div class="progress-bar-wrap">
-							<div class="progress-bar" role="progressbar" aria-valuenow="100"
-								aria-valuemin="0" aria-valuemax="100"></div>
-						</div>
-					</div>
+		let index = 0;
 
-					<div class="progress">
-						<span class="skill">Data Science <i class="val">90%</i></span>
-						<div class="progress-bar-wrap">
-							<div class="progress-bar" role="progressbar" aria-valuenow="90"
-								aria-valuemin="0" aria-valuemax="100"></div>
-						</div>
-					</div>
-
-					<div class="progress">
-						<span class="skill">MERN <i class="val">75%</i></span>
-						<div class="progress-bar-wrap">
-							<div class="progress-bar" role="progressbar" aria-valuenow="75"
-								aria-valuemin="0" aria-valuemax="100"></div>
-						</div>
-					</div>
-
-				</div>
-
-				<div class="col-lg-6">
-
-					<div class="progress">
-						<span class="skill">DJango <i class="val">80%</i></span>
-						<div class="progress-bar-wrap">
-							<div class="progress-bar" role="progressbar" aria-valuenow="80"
-								aria-valuemin="0" aria-valuemax="100"></div>
-						</div>
-					</div>
-
-					<div class="progress">
-						<span class="skill">UI/UX <i class="val">90%</i></span>
-						<div class="progress-bar-wrap">
-							<div class="progress-bar" role="progressbar" aria-valuenow="90"
-								aria-valuemin="0" aria-valuemax="100"></div>
-						</div>
-					</div>
-
-					<div class="progress">
-						<span class="skill">Image Processing <i class="val">55%</i></span>
-						<div class="progress-bar-wrap">
-							<div class="progress-bar" role="progressbar" aria-valuenow="55"
-								aria-valuemin="0" aria-valuemax="100"></div>
-						</div>
-					</div>
-
-				</div>
-
-			</div>
-
-		</div>
-		<!-- End Skills -->
-
-		<!-- ======= Interests ======= -->
-		<div class="interests container">
-
-			<div class="section-title">
-				<h2>Activities</h2>
-			</div>
-
-			<div class="row">
-				<div class="col-lg-3 col-md-4">
-					<div class="icon-box">
-						<i class="ri-store-line" style="color: #ffbb2c;"></i>
-						<h3>Satellite Communication</h3>
-					</div>
-				</div>
-				<div class="col-lg-3 col-md-4 mt-4 mt-md-0">
-					<div class="icon-box">
-						<i class="ri-bar-chart-box-line" style="color: #5578ff;"></i>
-						<h3>Remote Sensing Applications</h3>
-					</div>
-				</div>
-				<div class="col-lg-3 col-md-4 mt-4 mt-md-0">
-					<div class="icon-box">
-						<i class="ri-calendar-todo-line" style="color: #e80368;"></i>
-						<h3>Geo-informatics System</h3>
-					</div>
-				</div>
-				<div class="col-lg-3 col-md-4 mt-4 mt-lg-0">
-					<div class="icon-box">
-						<i class="ri-paint-brush-line" style="color: #e361ff;"></i>
-						<h3>Photogrammetry</h3>
-					</div>
-				</div>
-				<div class="col-lg-3 col-md-4 mt-4">
-					<div class="icon-box">
-						<i class="ri-database-2-line" style="color: #47aeff;"></i>
-						<h3>Global Navigation Satellite System</h3>
-					</div>
-				</div>
-				<div class="col-lg-3 col-md-4 mt-4">
-					<div class="icon-box">
-						<i class="ri-gradienter-line" style="color: #ffa76e;"></i>
-						<h3>Land Survey</h3>
-					</div>
-				</div>
-				<div class="col-lg-3 col-md-4 mt-4">
-					<div class="icon-box">
-						<i class="ri-file-list-3-line" style="color: #11dbcf;"></i>
-						<h3>Disaster Management</h3>
-					</div>
-				</div>
-				<div class="col-lg-3 col-md-4 mt-4">
-					<div class="icon-box">
-						<i class="ri-price-tag-2-line" style="color: #4233ff;"></i>
-						<h3>Software Development</h3>
-					</div>
-				</div>
-				<div class="col-lg-3 col-md-4 mt-4">
-					<div class="icon-box">
-						<i class="ri-anchor-line" style="color: #b2904f;"></i>
-						<h3>Technology Transfer</h3>
-					</div>
-				</div>
-				<div class="col-lg-3 col-md-4 mt-4">
-					<div class="icon-box">
-						<i class="ri-disc-line" style="color: #b20969;"></i>
-						<h3>Value Added Services</h3>
-					</div>
-				</div>
-				<div class="col-lg-3 col-md-4 mt-4">
-					<div class="icon-box">
-						<i class="ri-base-station-line" style="color: #ff5828;"></i>
-						<h3>Education, Research and Training</h3>
-					</div>
-				</div>
-				<div class="col-lg-3 col-md-4 mt-4">
-					<div class="icon-box">
-						<i class="ri-fingerprint-line" style="color: #29cc61;"></i>
-						<h3>Top Level Management</h3>
-					</div>
-				</div>
-			</div>
-
-		</div>
-		<!-- End Interests -->
-
-	</section>
-	<!-- End About Section -->
-	<!-- ======= Portfolio Section ======= -->
-	<section id="portfolio" class="portfolio">
-		<div class="container">
-
-			<div class="section-title">
-				<h2>Portfolio</h2>
-				<p>My Works</p>
-			</div>
-
-			<div class="row">
-				<div class="col-lg-12 d-flex justify-content-center">
-					<ul id="portfolio-flters">
-						<li data-filter="*" class="filter-active">All</li>
-						<li data-filter=".filter-app">App</li>
-						<li data-filter=".filter-card">Card</li>
-						<li data-filter=".filter-web">Web</li>
-					</ul>
-				</div>
-			</div>
-
-			<div class="row portfolio-container">
-
-				<div class="col-lg-4 col-md-6 portfolio-item filter-app">
-					<div class="portfolio-wrap">
-						<img src="assets/img/portfolio/portfolio-1.jpg" class="img-fluid"
-							alt="">
-						<div class="portfolio-info">
-							<h4>App 1</h4>
-							<p>App</p>
-							<div class="portfolio-links">
-								<a href="assets/img/portfolio/portfolio-1.jpg"
-									data-gallery="portfolioGallery" class="portfolio-lightbox"
-									title="App 1"><i class="bx bx-plus"></i></a> <a
-									href="portfolio-details.html"
-									data-gallery="portfolioDetailsGallery"
-									data-glightbox="type: external"
-									class="portfolio-details-lightbox" title="Portfolio Details"><i
-									class="bx bx-link"></i></a>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="col-lg-4 col-md-6 portfolio-item filter-web">
-					<div class="portfolio-wrap">
-						<img src="assets/img/portfolio/portfolio-2.jpg" class="img-fluid"
-							alt="">
-						<div class="portfolio-info">
-							<h4>Web 3</h4>
-							<p>Web</p>
-							<div class="portfolio-links">
-								<a href="assets/img/portfolio/portfolio-2.jpg"
-									data-gallery="portfolioGallery" class="portfolio-lightbox"
-									title="Web 3"><i class="bx bx-plus"></i></a> <a
-									href="portfolio-details.html"
-									data-gallery="portfolioDetailsGallery"
-									data-glightbox="type: external"
-									class="portfolio-details-lightbox" title="Portfolio Details"><i
-									class="bx bx-link"></i></a>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="col-lg-4 col-md-6 portfolio-item filter-app">
-					<div class="portfolio-wrap">
-						<img src="assets/img/portfolio/portfolio-3.jpg" class="img-fluid"
-							alt="">
-						<div class="portfolio-info">
-							<h4>App 2</h4>
-							<p>App</p>
-							<div class="portfolio-links">
-								<a href="assets/img/portfolio/portfolio-3.jpg"
-									data-gallery="portfolioGallery" class="portfolio-lightbox"
-									title="App 2"><i class="bx bx-plus"></i></a> <a
-									href="portfolio-details.html"
-									data-gallery="portfolioDetailsGallery"
-									data-glightbox="type: external"
-									class="portfolio-details-lightbox" title="Portfolio Details"><i
-									class="bx bx-link"></i></a>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="col-lg-4 col-md-6 portfolio-item filter-card">
-					<div class="portfolio-wrap">
-						<img src="assets/img/portfolio/portfolio-4.jpg" class="img-fluid"
-							alt="">
-						<div class="portfolio-info">
-							<h4>Card 2</h4>
-							<p>Card</p>
-							<div class="portfolio-links">
-								<a href="assets/img/portfolio/portfolio-4.jpg"
-									data-gallery="portfolioGallery" class="portfolio-lightbox"
-									title="Card 2"><i class="bx bx-plus"></i></a> <a
-									href="portfolio-details.html"
-									data-gallery="portfolioDetailsGallery"
-									data-glightbox="type: external"
-									class="portfolio-details-lightbox" title="Portfolio Details"><i
-									class="bx bx-link"></i></a>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="col-lg-4 col-md-6 portfolio-item filter-web">
-					<div class="portfolio-wrap">
-						<img src="assets/img/portfolio/portfolio-5.jpg" class="img-fluid"
-							alt="">
-						<div class="portfolio-info">
-							<h4>Web 2</h4>
-							<p>Web</p>
-							<div class="portfolio-links">
-								<a href="assets/img/portfolio/portfolio-5.jpg"
-									data-gallery="portfolioGallery" class="portfolio-lightbox"
-									title="Web 2"><i class="bx bx-plus"></i></a> <a
-									href="portfolio-details.html"
-									data-gallery="portfolioDetailsGallery"
-									data-glightbox="type: external"
-									class="portfolio-details-lightbox" title="Portfolio Details"><i
-									class="bx bx-link"></i></a>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="col-lg-4 col-md-6 portfolio-item filter-app">
-					<div class="portfolio-wrap">
-						<img src="assets/img/portfolio/portfolio-6.jpg" class="img-fluid"
-							alt="">
-						<div class="portfolio-info">
-							<h4>App 3</h4>
-							<p>App</p>
-							<div class="portfolio-links">
-								<a href="assets/img/portfolio/portfolio-6.jpg"
-									data-gallery="portfolioGallery" class="portfolio-lightbox"
-									title="App 3"><i class="bx bx-plus"></i></a> <a
-									href="portfolio-details.html"
-									data-gallery="portfolioDetailsGallery"
-									data-glightbox="type: external"
-									class="portfolio-details-lightbox" title="Portfolio Details"><i
-									class="bx bx-link"></i></a>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="col-lg-4 col-md-6 portfolio-item filter-card">
-					<div class="portfolio-wrap">
-						<img src="assets/img/portfolio/portfolio-7.jpg" class="img-fluid"
-							alt="">
-						<div class="portfolio-info">
-							<h4>Card 1</h4>
-							<p>Card</p>
-							<div class="portfolio-links">
-								<a href="assets/img/portfolio/portfolio-7.jpg"
-									data-gallery="portfolioGallery" class="portfolio-lightbox"
-									title="Card 1"><i class="bx bx-plus"></i></a> <a
-									href="portfolio-details.html"
-									data-gallery="portfolioDetailsGallery"
-									data-glightbox="type: external"
-									class="portfolio-details-lightbox" title="Portfolio Details"><i
-									class="bx bx-link"></i></a>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="col-lg-4 col-md-6 portfolio-item filter-card">
-					<div class="portfolio-wrap">
-						<img src="assets/img/portfolio/portfolio-8.jpg" class="img-fluid"
-							alt="">
-						<div class="portfolio-info">
-							<h4>Card 3</h4>
-							<p>Card</p>
-							<div class="portfolio-links">
-								<a href="assets/img/portfolio/portfolio-8.jpg"
-									data-gallery="portfolioGallery" class="portfolio-lightbox"
-									title="Card 3"><i class="bx bx-plus"></i></a> <a
-									href="portfolio-details.html"
-									data-gallery="portfolioDetailsGallery"
-									data-glightbox="type: external"
-									class="portfolio-details-lightbox" title="Portfolio Details"><i
-									class="bx bx-link"></i></a>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="col-lg-4 col-md-6 portfolio-item filter-web">
-					<div class="portfolio-wrap">
-						<img src="assets/img/portfolio/portfolio-9.jpg" class="img-fluid"
-							alt="">
-						<div class="portfolio-info">
-							<h4>Web 3</h4>
-							<p>Web</p>
-							<div class="portfolio-links">
-								<a href="assets/img/portfolio/portfolio-9.jpg"
-									data-gallery="portfolioGallery" class="portfolio-lightbox"
-									title="Web 3"><i class="bx bx-plus"></i></a> <a
-									href="portfolio-details.html"
-									data-gallery="portfolioDetailsGallery"
-									data-glightbox="type: external"
-									class="portfolio-details-lightbox" title="Portfolio Details"><i
-									class="bx bx-link"></i></a>
-							</div>
-						</div>
-					</div>
-				</div>
-
-			</div>
-
-		</div>
-	</section>
-	<!-- End Portfolio Section -->
-
-	<!-- ======= Contact Section ======= -->
-	<section id="contact" class="contact">
-		<div class="container">
-
-			<div class="section-title">
-				<h2>Contact</h2>
-				<p>Feel Free To Enquire</p>
-			</div>
-
-			<div class="row mt-2">
-
-				<div class="col-md-6 d-flex align-items-stretch">
-					<div class="info-box">
-						<i class="bx bx-map"></i>
-						<h3>My Address</h3>
-						<p>Near CH '0' Circle, Highway, Indulal Yagnik Marg,
-							Gandhinagar - Ahmedabad Rd, Gandhinagar, Gujarat 382007</p>
-					</div>
-				</div>
-
-				<div class="col-md-6 d-flex align-items-stretch">
-					<div class="info-box">
-						<i class="bx bx-envelope"></i>
-						<h3>Contact</h3>
-						<p>info@bisag.gujarat.gov.in</p>
-						<p>+91 79232 13091</p>
-					</div>
-				</div>
-			</div>
-
-			<form action="forms/contact.php" method="post" role="form"
-				class="php-email-form mt-4">
-				<div class="row">
-					<div class="col-md-6 form-group">
-						<input type="text" name="name" class="form-control" id="name"
-							placeholder="Your Name" required>
-					</div>
-					<div class="col-md-6 form-group mt-3 mt-md-0">
-						<input type="email" class="form-control" name="email" id="email"
-							placeholder="Your Email" required>
-					</div>
-				</div>
-				<div class="form-group mt-3">
-					<input type="text" class="form-control" name="subject" id="subject"
-						placeholder="Subject" required>
-				</div>
-				<div class="form-group mt-3">
-					<textarea class="form-control" name="message" rows="5"
-						placeholder="Message" required></textarea>
-				</div>
-				<div class="my-3">
-					<div class="loading">Loading</div>
-					<div class="error-message"></div>
-					<div class="sent-message">Your message has been sent. Thank
-						you!</div>
-				</div>
-				<div class="text-center">
-					<button type="submit">Send Message</button>
-				</div>
-			</form>
-
-		</div>
-	</section>
-	<!-- End Contact Section -->
-
-	<div class="credits" style="color: black;">Designed by BISAG-N</div>
-
-	<!-- Vendor JS Files -->
-	<script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
-	<script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-	<script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
-	<script src="assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
-	<script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
-	<script src="assets/vendor/waypoints/noframework.waypoints.js"></script>
-	<script src="assets/vendor/php-email-form/validate.js"></script>
-
-	<!-- Template Main JS File -->
-	<script src="assets/js/main2.js"></script>
-
-	<script>
-		// Optional: You can add a delay before starting the typing animation
-		// setTimeout(startTypingAnimation, 1000);
-
-		// Start the typing animation
-		startTypingAnimation();
-
-		function startTypingAnimation() {
-			const typingText = document.getElementById('typing-text');
-			typingText.style.animation = 'none'; // Reset animation
-			void typingText.offsetWidth; // Trigger reflow
-			typingText.style.animation = 'typing 5s steps(40) infinite';
-		}
-	</script>
-
+		setInterval(() => {
+			for (let i = 0; i < imgElements.length; i++) {
+				// use modulo to loop back to start when reaching end of list
+				const imgIndex = (index + i) % allImages.length;
+				imgElements[i].src = allImages[imgIndex];
+			}
+			index = (index + 3) % allImages.length; // advance by 3 images per interval
+		}, 2200);
+	});
+</script>
 </body>
-
 </html>
